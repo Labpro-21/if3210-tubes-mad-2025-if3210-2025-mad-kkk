@@ -18,25 +18,8 @@ import com.example.purrytify.ui.component.BottomNavigationBar
 import com.example.purrytify.ui.component.NavigationRailBar
 
 @Composable
-fun ProfileScreen(navController: NavHostController, navigationType: PurrytifyNavigationType, modifier: Modifier = Modifier) {
-    Box(modifier = modifier) {
-        Row(Modifier.fillMaxSize()) {
-            AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.NAVIGATION_RAIL) {
-                NavigationRailBar(navController)
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.inverseOnSurface)
-            ) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("Profile Page")
-                }
-
-                AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION) {
-                    BottomNavigationBar(navController)
-                }
-            }
-        }
+fun ProfileScreen(navController: NavHostController, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text("Profile Page")
     }
 }

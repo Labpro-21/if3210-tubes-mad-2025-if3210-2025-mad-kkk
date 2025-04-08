@@ -32,12 +32,12 @@ class MainActivity : ComponentActivity() {
                 val layoutDirection = LocalLayoutDirection.current
                 Surface(
                     modifier = Modifier
-                        .padding(
-                            start = WindowInsets.safeDrawing.asPaddingValues()
-                                .calculateStartPadding(layoutDirection),
-                            end = WindowInsets.safeDrawing.asPaddingValues()
-                                .calculateEndPadding(layoutDirection)
-                        )
+//                        .padding(
+//                            start = WindowInsets.safeDrawing.asPaddingValues()
+//                                .calculateStartPadding(layoutDirection),
+//                            end = WindowInsets.safeDrawing.asPaddingValues()
+//                                .calculateEndPadding(layoutDirection)
+//                        )
                 ) {
                     val windowSize = calculateWindowSizeClass(this)
                     PurrytifyApp(windowSize = windowSize.widthSizeClass)

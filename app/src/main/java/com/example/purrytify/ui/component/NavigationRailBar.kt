@@ -21,7 +21,7 @@ fun NavigationRailBar(navController: NavHostController, modifier: Modifier = Mod
                 selected = currentRoute == screen.route,
                 onClick = { navController.navigate(screen.route) },
                 icon = { Icon(screen.icon, contentDescription = screen.title) },
-//                label = { Text(screen.title) }
+                label = { Text(screen.title) }
             )
         }
     }
