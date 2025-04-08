@@ -208,7 +208,7 @@ fun PurrytifyApp(
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
+        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.SongDetail.route -> true
         else -> false
     }
 
@@ -283,7 +283,7 @@ fun PurrytifyApp(
 
                 // Bottom navigation bar at the very bottom
                 AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION && hasNavbar) {
-                    BottomNavigationBar(navController, modifier = Modifier.height(86.dp))
+                    BottomNavigationBar(navController, modifier = Modifier.height(92.dp).offset(y = 5.dp))
                 }
             }
         }
