@@ -70,7 +70,7 @@ fun PurrytifyApp(
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
+        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.SongDetail.route -> true
         else -> false
     }
 
@@ -98,6 +98,7 @@ fun PurrytifyApp(
                     composable(Screen.Home.route) {
                         HomeScreen(
                             navController,
+                            navigationType
                         )
                     }
                     composable(Screen.Library.route) {
