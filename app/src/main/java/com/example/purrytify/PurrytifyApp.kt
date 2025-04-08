@@ -55,6 +55,7 @@ import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.ui.screen.Song
 import android.util.Log
+import androidx.compose.foundation.layout.offset
 
 @Composable
 fun CurrentSongPlayerCard(
@@ -239,7 +240,6 @@ fun PurrytifyApp(
                     composable(Screen.Home.route) {
                         HomeScreen(
                             navController,
-                            navigationType
                         )
                     }
                     composable(Screen.Library.route) {
