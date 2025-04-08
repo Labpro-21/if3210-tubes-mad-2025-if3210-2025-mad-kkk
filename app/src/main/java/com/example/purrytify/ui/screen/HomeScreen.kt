@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.width
+import com.example.purrytify.ui.theme.Poppins
 
 
 import okhttp3.Call;
@@ -106,7 +107,8 @@ fun HomeScreen(
                             color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = 12.dp),
+                            fontFamily = Poppins
                         )
 
                         LazyRow(
@@ -127,7 +129,8 @@ fun HomeScreen(
                             color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = 12.dp),
+                            fontFamily = Poppins
                         )
                     }
 
@@ -178,7 +181,8 @@ fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
                 color = Color.White,
                 fontSize = 16.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                fontFamily = Poppins
             )
 
             Text(
@@ -186,7 +190,8 @@ fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
                 color = Color.Gray,
                 fontSize = 14.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                fontFamily = Poppins
             )
         }
     }
@@ -216,7 +221,8 @@ fun NewSongItem(song: Song, onClick: () -> Unit) {
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            fontFamily = Poppins
         )
 
         Text(
@@ -224,7 +230,8 @@ fun NewSongItem(song: Song, onClick: () -> Unit) {
             color = Color.Gray,
             fontSize = 12.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            fontFamily = Poppins
         )
     }
 }

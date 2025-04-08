@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
+import com.example.purrytify.ui.theme.Poppins
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -147,12 +148,14 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
                         text = "Starboy",
                         color = Color.White,
                         fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = Poppins
                     )
                     Text(
                         text = "The Weeknd, Daft Punk",
                         color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        fontFamily = Poppins
                     )
                 }
 

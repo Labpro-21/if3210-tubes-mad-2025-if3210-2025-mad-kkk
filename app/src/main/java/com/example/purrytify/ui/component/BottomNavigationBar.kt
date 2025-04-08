@@ -3,6 +3,9 @@ package com.example.purrytify.ui.component
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,7 +25,14 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
                 selected = currentRoute == nav.route,
                 onClick = { navController.navigate(nav.route) },
                 icon = { Icon(nav.icon, contentDescription = nav.title) },
-                label = { Text(nav.title) }
+                label = { Text(nav.title) },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color.Transparent,
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    unselectedIconColor = Color.Gray,
+                    unselectedTextColor = Color.Gray
+                )
             )
         }
     }
