@@ -1,5 +1,6 @@
 package com.example.purrytify.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,7 +20,7 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
     val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavigationBar(modifier = modifier, containerColor = Color.Transparent, contentColor = Color.White) {
+    NavigationBar(modifier = modifier.background(Color.Transparent), containerColor = Color.Transparent, contentColor = Color.White) {
         for (nav in items) {
             NavigationBarItem(
                 selected = currentRoute == nav.route,

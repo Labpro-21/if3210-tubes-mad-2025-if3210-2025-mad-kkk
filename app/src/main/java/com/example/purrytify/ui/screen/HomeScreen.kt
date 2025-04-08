@@ -85,70 +85,53 @@ fun HomeScreen(
         Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy)
     )
 
-    Box(modifier = modifier.background(Color.White)) {
-        Row(Modifier.fillMaxSize()) {
-//            AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.NAVIGATION_RAIL) {
-//                NavigationRailBar(navController)
-//            }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.inverseOnSurface)
+    LazyColumn(
+        modifier = modifier
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "New songs",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp),
+                fontFamily = Poppins
+            )
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(16.dp).weight(1f)
-                ) {
-                    item {
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Text(
-                            text = "New songs",
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 12.dp),
-                            fontFamily = Poppins
-                        )
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(newSongs) { song ->
-                                NewSongItem(song = song, onClick = {
-                                    navController.navigate(Screen.SongDetail.createRoute(song.id))
-                                })
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = "Recently played",
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 12.dp),
-                            fontFamily = Poppins
-                        )
-                    }
-
-                    items(recentlyPlayed) { song ->
-                        RecentlyPlayedItem(song = song, onClick = {
-                            navController.navigate(Screen.SongDetail.createRoute(song.id))
-                        })
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(70.dp))
-                    }
+                items(newSongs) { song ->
+                    NewSongItem(song = song, onClick = {
+                        navController.navigate(Screen.SongDetail.createRoute(song.id))
+                    })
                 }
-
-//                AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION) {
-//                    BottomNavigationBar(navController)
-//                }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Recently played",
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp),
+                fontFamily = Poppins
+            )
+        }
+
+        items(recentlyPlayed) { song ->
+            RecentlyPlayedItem(song = song, onClick = {
+                navController.navigate(Screen.SongDetail.createRoute(song.id))
+            })
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(70.dp))
         }
     }
 }
@@ -182,7 +165,7 @@ fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
                 fontSize = 16.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                fontFamily = Poppins
+                fontFamily = Poppins,
             )
 
             Text(
