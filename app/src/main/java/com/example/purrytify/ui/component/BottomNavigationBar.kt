@@ -6,6 +6,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.purrytify.navigation.Screen
@@ -15,13 +16,13 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
     val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavigationBar(modifier = modifier) {
+    NavigationBar(modifier = modifier, containerColor = Color.Transparent, contentColor = Color.White) {
         for (nav in items) {
             NavigationBarItem(
                 selected = currentRoute == nav.route,
                 onClick = { navController.navigate(nav.route) },
                 icon = { Icon(nav.icon, contentDescription = nav.title) },
-//                label = { Text(nav.title) }
+                label = { Text(nav.title) }
             )
         }
     }
