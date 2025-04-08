@@ -75,14 +75,21 @@ fun HomeScreen(
         Song("6", "Loose", "Daniel Caesar", R.drawable.starboy),
         Song("7", "Nights", "Frank Ocean", R.drawable.starboy),
         Song("8", "Kiss of Life", "Sade", R.drawable.starboy),
-        Song("9", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy)
+        Song("9", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
+        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy)
     )
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.background(Color.White)) {
         Row(Modifier.fillMaxSize()) {
-            AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.NAVIGATION_RAIL) {
-                NavigationRailBar(navController)
-            }
+//            AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.NAVIGATION_RAIL) {
+//                NavigationRailBar(navController)
+//            }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -93,7 +100,7 @@ fun HomeScreen(
                         .padding(16.dp).weight(1f)
                 ) {
                     item {
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(32.dp))
 
                         Text(
                             text = "New songs",
@@ -103,7 +110,6 @@ fun HomeScreen(
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
 
-                        // New songs horizontal scrolling row
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -126,7 +132,6 @@ fun HomeScreen(
                         )
                     }
 
-                    // Recently played list
                     items(recentlyPlayed) { song ->
                         RecentlyPlayedItem(song = song, onClick = {
                             navController.navigate(Screen.SongDetail.createRoute(song.id))
@@ -134,14 +139,13 @@ fun HomeScreen(
                     }
 
                     item {
-                        // Add spacing before bottom bar
                         Spacer(modifier = Modifier.height(70.dp))
                     }
                 }
 
-                AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION) {
-                    BottomNavigationBar(navController)
-                }
+//                AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION) {
+//                    BottomNavigationBar(navController)
+//                }
             }
         }
     }
