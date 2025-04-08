@@ -59,7 +59,6 @@ data class Song(
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    navigationType: PurrytifyNavigationType,
     modifier: Modifier = Modifier
 ) {
 //    val dummySongs = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")

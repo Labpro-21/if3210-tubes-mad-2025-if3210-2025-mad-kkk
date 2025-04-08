@@ -98,7 +98,6 @@ fun PurrytifyApp(
                     composable(Screen.Home.route) {
                         HomeScreen(
                             navController,
-                            navigationType
                         )
                     }
                     composable(Screen.Library.route) {
@@ -120,7 +119,7 @@ fun PurrytifyApp(
                     }
                 }
                 AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION && hasNavbar) {
-                    BottomNavigationBar(navController, modifier = Modifier.height(86.dp))
+                    BottomNavigationBar(navController, modifier = Modifier.height(92.dp).offset(y = 5.dp))
                 }
             }
         }

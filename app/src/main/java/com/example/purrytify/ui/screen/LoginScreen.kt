@@ -69,18 +69,19 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
     LaunchedEffect(Unit) {
         val exists = viewModel.checkIsTokenExist()
         if (exists) {
-            TokenPreferences.clearAccessToken()
-            TokenPreferences.clearRefreshToken()
-//            viewModel.validateToken(
-//                onValid = {
-//                    navController.navigate(Screen.Home.route) {
-//                        popUpTo(Screen.Login.route) { inclusive = true }
-//                    }
-//                },
-//                onRefreshFailed = {
-//                    // Stay on login
-//                }
-//            )
+            // uncomment this if you want to clear the token
+//            TokenPreferences.clearAccessToken()
+//            TokenPreferences.clearRefreshToken()
+            viewModel.validateToken(
+                onValid = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onRefreshFailed = {
+                    // Stay on login
+                }
+            )
         }
     }
 
@@ -150,8 +151,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
                     placeholder = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Gray,
-                        unfocusedTextColor = Color.Gray,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
                         focusedBorderColor = Color.Gray,
                         unfocusedBorderColor = Color.DarkGray,
                         cursorColor = Color.White,
@@ -186,8 +187,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
                         imeAction = ImeAction.Next
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Gray,
-                        unfocusedTextColor = Color.Gray,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
                         focusedBorderColor = Color.Gray,
                         unfocusedBorderColor = Color.DarkGray,
                         cursorColor = Color.White,
