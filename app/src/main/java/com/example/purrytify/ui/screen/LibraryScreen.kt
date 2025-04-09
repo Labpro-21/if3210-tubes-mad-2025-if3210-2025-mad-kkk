@@ -1,7 +1,10 @@
 package com.example.purrytify.ui.screen
 
-import android.util.Log
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,12 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.model.LibraryViewModel
 
@@ -137,12 +143,13 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
             UploadSongDialog(
                 onDismiss = { showUploadDialog = false },
                 onSave = { title, artist ->
-                    if (title.isNotEmpty() && artist.isNotEmpty()) {
-//                        songs.add(Song((songs.size + 1).toLong(), title, artist, R.drawable.starboy.toString()))
+                    if (title.isNotEmpty() && artist.isNotEmpty() && viewModel.selectedAudioUri.value != null && viewModel.selectedImageUri.value != null) {
+                        viewModel.uploadSong(title, artist)
                         showUploadDialog = false
                     }
                 },
-                sheetState = sheetState
+                sheetState = sheetState,
+                viewModel = viewModel
             )
         }
     }
@@ -154,23 +161,24 @@ fun UploadSongDialog(
     onDismiss: () -> Unit,
     onSave: (String, String) -> Unit,
     sheetState: SheetState,
+    viewModel: LibraryViewModel
 ) {
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
-//    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
-//    val selectedAudioUri by viewModel.selectedAudioUri.collectAsState()
-//
-//    val imagePickerLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.GetContent()
-//    ) { uri: Uri? ->
-//        uri?.let { viewModel.setSelectedImageUri(it) }
-//    }
-//
-//    val audioPickerLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.GetContent()
-//    ) { uri: Uri? ->
-//        uri?.let { viewModel.setSelectedAudioUri(it) }
-//    }
+    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
+    val selectedAudioUri by viewModel.selectedAudioUri.collectAsState()
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.setSelectedImageUri(it) }
+    }
+
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.setSelectedAudioUri(it) }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -211,31 +219,25 @@ fun UploadSongDialog(
                         modifier = Modifier
                             .size(120.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.DarkGray),
-//                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .background(Color.DarkGray)
+                            .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-//                        if (selectedImageUri != null) {
-//                            Image(
-//                                painter = rememberAsyncImagePainter(selectedImageUri),
-//                                contentDescription = "Selected Image",
-//                                modifier = Modifier.fillMaxSize(),
-//                                contentScale = ContentScale.Crop
-//                            )
-//                        } else {
-//                            Icon(
-//                                imageVector = Icons.Outlined.Image,
-//                                contentDescription = "Upload Photo",
-//                                tint = Color.Gray,
-//                                modifier = Modifier.size(48.dp)
-//                            )
-//                        }
-                        Icon(
-                            imageVector = Icons.Outlined.Image,
-                            contentDescription = "Upload Photo",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(44.dp)
-                        )
+                        if (selectedImageUri != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(selectedImageUri),
+                                contentDescription = "Selected Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Image,
+                                contentDescription = "Upload Photo",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
                     }
                     Text(
                         text = "Upload Photo",
@@ -256,59 +258,44 @@ fun UploadSongDialog(
                         modifier = Modifier
                             .size(120.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.DarkGray),
-//                            .clickable { audioPickerLauncher.launch("audio/*") },
+                            .background(Color.DarkGray)
+                            .clickable { audioPickerLauncher.launch("audio/*") },
                         contentAlignment = Alignment.Center
                     ) {
-//                        if (selectedAudioUri != null) {
-//                            Icon(
-//                                imageVector = Icons.Default.AudioFile,
-//                                contentDescription = "Audio Selected",
-//                                tint = Color(0xFF1DB954),
-//                                modifier = Modifier.size(48.dp)
-//                            )
-//                        } else {
-//                            // Simple waveform icon
-//                            Row(
-//                                modifier = Modifier.fillMaxWidth(),
-//                                horizontalArrangement = Arrangement.SpaceEvenly,
-//                                verticalAlignment = Alignment.CenterVertically
-//                            ) {
-//                                for (i in 1..5) {
-//                                    Box(
-//                                        modifier = Modifier
-//                                            .width(6.dp)
-//                                            .height((20 + (i % 3) * 10).dp)
-//                                            .background(Color.Gray)
-//                                    )
-//                                }
-//                            }
-//                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (i in 1..3) {
+                        if (selectedAudioUri != null) {
+                            Icon(
+                                imageVector = Icons.Default.AudioFile,
+                                contentDescription = "Audio Selected",
+                                tint = Color(0xFF1DB954),
+                                modifier = Modifier.size(44.dp)
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                for (i in 1..3) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(6.dp)
+                                            .height((10 + i * 10).dp)
+                                            .background(Color.Gray)
+                                    )
+                                }
                                 Box(
                                     modifier = Modifier
                                         .width(6.dp)
-                                        .height((10 + i * 10).dp)
+                                        .height((10 + 2 * 10).dp)
+                                        .background(Color.Gray)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(6.dp)
+                                        .height((10 + 1 * 10).dp)
                                         .background(Color.Gray)
                                 )
                             }
-                            Box(
-                                modifier = Modifier
-                                    .width(6.dp)
-                                    .height((10 + 2 * 10).dp)
-                                    .background(Color.Gray)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(6.dp)
-                                    .height((10 + 1 * 10).dp)
-                                    .background(Color.Gray)
-                            )
                         }
                     }
                     Text(
