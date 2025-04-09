@@ -55,17 +55,14 @@ private fun extractColorsFromImage(
                 val resourceId = imagePath.toIntOrNull() ?: R.drawable.starboy
                 BitmapFactory.decodeResource(context.resources, resourceId)
             }
-            // Case 2: Check if imagePath is a file path
             File(imagePath).exists() -> {
                 BitmapFactory.decodeFile(imagePath)
             }
-            // Default case: use default image
             else -> {
                 BitmapFactory.decodeResource(context.resources, R.drawable.starboy)
             }
         }
 
-        // If bitmap couldn't be loaded, use default and return
         if (bitmap == null) {
             val defaultBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.starboy)
             processBitmap(defaultBitmap, onColorsExtracted)
@@ -78,7 +75,6 @@ private fun extractColorsFromImage(
     }
 }
 
-// Helper function to process bitmap and extract colors
 private fun processBitmap(bitmap: Bitmap, onColorsExtracted: (List<Color>) -> Unit) {
     val width = bitmap.width
     val height = bitmap.height
@@ -134,7 +130,6 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
             )
     ) {
         if (song == null) {
-            // Loading state
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
