@@ -18,6 +18,14 @@ class SongRepository(
     val recentlyPlayedSongs: Flow<List<SongEntity>> = songDao.getRecentlyPlayedSongs()
     val lastPlayedSong: Flow<SongEntity?> = songDao.getLastPlayedSong()
 
+    fun searchAllSongs(query: String): Flow<List<SongEntity>> {
+        return songDao.searchAllSongs(query)
+    }
+
+    fun searchLikedSongs(query: String): Flow<List<SongEntity>> {
+        return songDao.searchAllLikedSongs(query)
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,

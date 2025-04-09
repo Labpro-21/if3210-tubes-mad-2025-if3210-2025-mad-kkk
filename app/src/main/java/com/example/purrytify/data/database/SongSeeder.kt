@@ -18,14 +18,14 @@ object DatabasePrePopulator {
         lifecycleScope.launch {
             val songs = repository.allSongs.first()
 
-//            if (songs.isEmpty()) {
-//                withContext(Dispatchers.IO) {
-//                    insertSampleSongs(context, repository)
-//                }
-//            }
-            if (!songs.isEmpty()) {
-                deleteAllSongs(repository)
+            if (songs.isEmpty()) {
+                withContext(Dispatchers.IO) {
+                    insertSampleSongs(context, repository)
+                }
             }
+//            if (!songs.isEmpty()) {
+//                deleteAllSongs(repository)
+//            }
         }
     }
 
