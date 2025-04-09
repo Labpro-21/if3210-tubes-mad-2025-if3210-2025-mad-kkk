@@ -28,6 +28,10 @@ class SongRepository(
         return songDao.searchAllLikedSongs(query)
     }
 
+    fun getSongById(songId: Long): Flow<SongEntity?> {
+        return songDao.getSong(songId)
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,

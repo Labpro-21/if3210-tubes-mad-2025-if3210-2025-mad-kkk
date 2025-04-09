@@ -47,6 +47,8 @@ import androidx.compose.runtime.getValue
 import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.service.GlobalState
+import com.example.purrytify.ui.model.GlobalViewModel
 
 
 import okhttp3.Call;
@@ -61,6 +63,7 @@ import okhttp3.Response;
 @Composable
 fun HomeScreen(
     navController: NavHostController,
+    globalViewModel: GlobalViewModel,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -93,7 +96,8 @@ fun HomeScreen(
             ) {
                 items(songs) { song ->
                     NewSongItem(song = song, onClick = {
-                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                        globalViewModel.forceChange(song)
+//                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
                 }
             }
@@ -112,7 +116,8 @@ fun HomeScreen(
 
         items(recentlyPlayedSongs) { song ->
             RecentlyPlayedItem(song = song, onClick = {
-                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                globalViewModel.forceChange(song)
+//                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
             })
         }
 
