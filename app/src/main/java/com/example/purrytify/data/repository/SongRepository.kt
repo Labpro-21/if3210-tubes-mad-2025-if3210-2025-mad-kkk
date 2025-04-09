@@ -15,6 +15,8 @@ class SongRepository(
 ) {
     val allSongs: Flow<List<SongEntity>> = songDao.getAllSongs()
     val likedSongs: Flow<List<SongEntity>> = songDao.getLikedSongs()
+    val recentlyPlayedSongs: Flow<List<SongEntity>> = songDao.getRecentlyPlayedSongs()
+    val lastPlayedSong: Flow<SongEntity?> = songDao.getLastPlayedSong()
 
     suspend fun insertSong(
         title: String,
@@ -45,6 +47,10 @@ class SongRepository(
 
     suspend fun deleteAllSongs() {
         songDao.deleteAll()
+    }
+
+    suspend fun setLastPlayed(songId: Long) {
+        songDao.updateLastPlayed(songId, System.currentTimeMillis())
     }
 
     suspend fun deleteSong(song: SongEntity) {

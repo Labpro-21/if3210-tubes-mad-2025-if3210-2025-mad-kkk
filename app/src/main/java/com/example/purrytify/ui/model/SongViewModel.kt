@@ -42,7 +42,6 @@ class SongViewModel(application: Application) : AndroidViewModel(application) {
                 FilterType.LIKED -> repository.likedSongs
             }.map { entities -> entities.map { it.toSong() } }
         }
-
     }
 
     fun setFilter(filterType: FilterType) {
