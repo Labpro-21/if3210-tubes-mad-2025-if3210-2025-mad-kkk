@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,15 +34,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.purrytify.R
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.ui.model.LibraryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifier) {
-    val songs = remember {
+    val hardCodedSongs = remember {
         mutableStateListOf(
             Song(1, "Starboy", "The Weeknd, Daft Punk", R.drawable.starboy.toString()),
             Song(2, "Here Comes The Sun", "The Beatles", R.drawable.starboy.toString()),
@@ -55,9 +58,26 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
         )
     }
 
+    val context = LocalContext.current
+    val viewModel: LibraryViewModel = viewModel(
+        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application)
+    )
+
+    val songs by viewModel.songs.collectAsState()
+    val likedSongs by viewModel.likedSongs.collectAsState()
+
     var showUploadDialog by remember { mutableStateOf(false) }
-    var currentPlayingSong by remember { mutableStateOf(songs[0]) }
+//    var currentPlayingSong by remember { mutableStateOf(songs[0]) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var selectedFilter by remember { mutableStateOf("All") }
+
+    // Update the displayed songs based on the selected filter
+    val displayedSongs = when (selectedFilter) {
+        "All" -> songs
+        "Liked" -> likedSongs
+        else -> songs
+    }
 
     val accentGreen = Color(0xFF1DB954)
 
@@ -98,12 +118,13 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(if (true) accentGreen else Color.DarkGray)
+                        .background(if (selectedFilter == "All") accentGreen else Color.DarkGray)
                         .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .clickable { selectedFilter = "All" }
                 ) {
                     Text(
                         text = "All",
-                        color = Color.Black,
+                        color = if (selectedFilter == "All") Color.Black else Color.White,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -113,12 +134,13 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color.DarkGray)
+                        .background(if (selectedFilter == "Liked") accentGreen else Color.DarkGray)
                         .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clickable { selectedFilter = "Liked" }
                 ) {
                     Text(
                         text = "Liked",
-                        color = Color.White,
+                        color = if (selectedFilter == "Liked") Color.Black else Color.White,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -131,7 +153,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                     .weight(1f)
                     .padding(top = 16.dp)
             ) {
-                items(songs) { song ->
+                items(displayedSongs) { song ->
                     RecentlyPlayedItem(song = song, onClick = {
                         navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
@@ -145,7 +167,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 onDismiss = { showUploadDialog = false },
                 onSave = { title, artist ->
                     if (title.isNotEmpty() && artist.isNotEmpty()) {
-                        songs.add(Song((songs.size + 1).toLong(), title, artist, R.drawable.starboy.toString()))
+//                        songs.add(Song((songs.size + 1).toLong(), title, artist, R.drawable.starboy.toString()))
                         showUploadDialog = false
                     }
                 },
