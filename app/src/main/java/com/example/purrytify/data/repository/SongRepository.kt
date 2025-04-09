@@ -43,6 +43,10 @@ class SongRepository(
         songDao.updateLikedStatus(songId, isLiked)
     }
 
+    suspend fun deleteAllSongs() {
+        songDao.deleteAll()
+    }
+
     suspend fun deleteSong(song: SongEntity) {
         // Delete associated files
         song.imagePath?.let { deleteFile(it) }

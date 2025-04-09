@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DatabasePrePopulator.prepopulateDatabase(applicationContext, lifecycleScope)
+        DatabasePrePopulator.prepopulateDatabase(this.applicationContext, lifecycleScope)
         enableEdgeToEdge()
         setContent {
             PurrytifyTheme (darkTheme = true) {
