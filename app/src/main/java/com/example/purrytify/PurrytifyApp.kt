@@ -53,9 +53,10 @@ import com.example.purrytify.ui.screen.LoginScreen
 import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
-import com.example.purrytify.ui.screen.Song
+import com.example.purrytify.data.model.Song
 import android.util.Log
 import androidx.compose.foundation.layout.offset
+import com.example.purrytify.ui.model.ImageLoader
 
 @Composable
 fun CurrentSongPlayerCard(
@@ -83,8 +84,8 @@ fun CurrentSongPlayerCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Album cover
-            Image(
-                painter = painterResource(id = song.coverResId),
+            ImageLoader.LoadImage(
+                imagePath = song.imagePath,
                 contentDescription = "${song.title} album cover",
                 modifier = Modifier
                     .size(48.dp)
@@ -197,10 +198,10 @@ fun PurrytifyApp(
     val currentPlayingSong by remember {
         mutableStateOf(
             Song(
-                id = "1",
+                id = 1,
                 title = "Starboy",
                 artist = "The Weeknd",
-                coverResId = R.drawable.starboy
+                imagePath = R.drawable.starboy.toString()
             )
         )
     }
@@ -272,7 +273,7 @@ fun PurrytifyApp(
                         CurrentSongPlayerCard(
                             song = currentPlayingSong,
                             onCardClick = {
-                                navController.navigate(Screen.SongDetail.createRoute(currentPlayingSong.id))
+                                navController.navigate(Screen.SongDetail.createRoute(currentPlayingSong.id.toString()))
                             },
                             onPlayPauseClick = { /* Toggle playback */ },
                             isPlaying = isPlaying,

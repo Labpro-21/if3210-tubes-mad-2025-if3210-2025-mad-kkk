@@ -20,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
 import com.example.purrytify.data.TokenPreferences
+import com.example.purrytify.data.database.DatabasePrePopulator
 import com.example.purrytify.ui.theme.PurrytifyTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,6 +30,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TokenPreferences.init(this)
+        DatabasePrePopulator.prepopulateDatabase(applicationContext, lifecycleScope)
         enableEdgeToEdge()
         setContent {
             PurrytifyTheme (darkTheme = true) {
