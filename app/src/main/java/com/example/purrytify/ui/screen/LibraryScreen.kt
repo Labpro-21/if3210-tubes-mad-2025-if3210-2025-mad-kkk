@@ -47,12 +47,13 @@ import coil.load
 import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
+import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LibraryViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifier) {
+fun LibraryScreen(navController: NavHostController, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
         factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application)
@@ -175,6 +176,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                     .padding(top = 8.dp),
                 update = { recyclerView ->
                     val adapter = SongAdapter(songs, context) { song ->
+                        globalViewModel.playSong(song)
                         navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     }
                     recyclerView.adapter = adapter

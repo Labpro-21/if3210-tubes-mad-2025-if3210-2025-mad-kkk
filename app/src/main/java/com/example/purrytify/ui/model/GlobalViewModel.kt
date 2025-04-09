@@ -41,18 +41,24 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val _maxHistorySize = 18
     private val repository: SongRepository
 
-    var currentSong by mutableStateOf<Song?>(null)
-        private set
-    var isPlaying by mutableStateOf(false)
-        private set
-    var currentPosition by mutableStateOf(0)
-        private set
-    var duration by mutableStateOf(0)
-        private set
-    var queue by mutableStateOf<List<Song>>(emptyList())
-        private set
-    var history by mutableStateOf<List<Song>>(emptyList())
-        private set
+    private val _currentSong = MutableStateFlow<Song?>(null)
+    val currentSong: StateFlow<Song?> = _currentSong
+
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying
+
+    private val _currentPosition = MutableStateFlow(0.0)
+    val currentPosition: StateFlow<Double> = _currentPosition
+
+    private val _duration = MutableStateFlow(0.0)
+    val duration: StateFlow<Double> = _duration
+
+    private val _queue_list = MutableStateFlow<List<Song>>(emptyList())
+    val queue: StateFlow<List<Song>> = _queue_list
+
+    private val _history_list = MutableStateFlow<List<Song>>(emptyList())
+    val history: StateFlow<List<Song>> = _history_list
+
 
     // TODO: check if this is needed
     init {
@@ -66,9 +72,14 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private val mediaListener = object : Player.Listener {
-        override fun onPlaybackStateChanged(state: Int) {
-            if (state == Player.STATE_ENDED) {
-                // TODO: handle state change
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (isPlaying) {
+                resumeProgressUpdate()
+            }
+        }
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_READY && mediaController?.isPlaying == true) {
+                resumeProgressUpdate()
             }
         }
     }
@@ -87,14 +98,15 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun updatePlaybackState() {
         mediaController?.let { service ->
-            isPlaying = service.isPlaying
-            currentPosition = service.currentPosition.toDouble().div(1000).roundToInt()
-            duration = service.duration.toDouble().div(1000).roundToInt()
+            _isPlaying.value = service.isPlaying
+            _currentPosition.value = service.currentPosition.toDouble().div(1000)
+            _duration.value = service.duration.toDouble().div(1000)
         }
     }
 
-    fun play(song: Song) {
+    private fun play(song: Song) {
         val uri: Uri = getUriFromPath(song.audioPath)
+        val imageUri: Uri = getUriFromPath(song.imagePath)
         val mediaItem = MediaItem.Builder()
             .setUri(uri)
             .setMediaMetadata(
@@ -102,10 +114,15 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                     .setTitle(song.title)
                     .setArtist(song.artist)
                     .setDisplayTitle(song.title)
+                    .setArtworkUri(imageUri)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
                     .build()
             )
             .build()
+
+        viewModelScope.launch {
+            repository.setLastPlayed(song.id)
+        }
 
         mediaController?.apply {
             setMediaItem(mediaItem)
@@ -115,11 +132,11 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playSong(song: Song) {
-        currentSong?.let {
+        currentSong.value?.let {
             addToHistory(it)
         }
         play(song)
-        currentSong = song
+        _currentSong.value = song
         refreshQueueAndHistoryUI()
     }
 
@@ -167,8 +184,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun refreshQueueAndHistoryUI() {
-        queue = _queue.toList()
-        history = _history.toList()
+        _queue_list.value = _queue.toList()
+        _history_list.value = _history.toList()
     }
 
     fun playNextSong() {
@@ -186,18 +203,18 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             val prevSong = _history.removeFirst()
 
             // Add current song to the front of the queue
-            currentSong?.let { _queue.addFirst(it) }
+            currentSong.value?.let { _queue.addFirst(it) }
 
             // Play the previous song
             play(prevSong)
-            currentSong = prevSong
+            _currentSong.value = prevSong
 
             refreshQueueAndHistoryUI()
         }
     }
 
     fun togglePlayPause() {
-        if (isPlaying) {
+        if (isPlaying.value) {
             mediaController?.pause()
         } else {
             if (currentSong == null && _queue.isNotEmpty()) {
@@ -229,7 +246,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         )
     }
 
-    fun getUriFromPath(path: String): Uri {
+    private fun getUriFromPath(path: String): Uri {
         return if (path.startsWith("content://")) path.toUri()
         else Uri.fromFile(File(path))
     }
