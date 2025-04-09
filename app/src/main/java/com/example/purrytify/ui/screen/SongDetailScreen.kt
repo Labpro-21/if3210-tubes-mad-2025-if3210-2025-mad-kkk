@@ -120,7 +120,7 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
     LaunchedEffect(song) {
         song?.let {
             extractColorsFromImage(context, song!!.imagePath) { extractedColors ->
-                gradientColors = extractedColors
+                gradientColors = extractedColors + Color(0xFF101510)
             }
         }
     }

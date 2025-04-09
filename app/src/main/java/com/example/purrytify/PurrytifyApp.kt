@@ -215,7 +215,7 @@ fun PurrytifyApp(
     }
 
     // Determine if we should show the player (show on all screens except splash and login)
-    val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route
+    val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute != Screen.SongDetail.route
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
