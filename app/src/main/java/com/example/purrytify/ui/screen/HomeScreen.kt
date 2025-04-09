@@ -68,8 +68,8 @@ fun HomeScreen(
         factory = HomeViewModel.HomeViewModelFactory(context.applicationContext as android.app.Application)
     )
 
-    val songs by viewModel.songs.collectAsState()
-    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
+    val songs by viewModel.recentlyAddedSongs.collectAsState(emptyList())
+    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState(emptyList())
 
     LazyColumn(
         modifier = modifier

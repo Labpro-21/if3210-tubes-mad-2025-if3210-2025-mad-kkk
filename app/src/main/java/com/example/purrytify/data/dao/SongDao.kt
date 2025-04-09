@@ -21,6 +21,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 12")
     fun getRecentlyPlayedSongs(): Flow<List<SongEntity>>
 
+    @Query("SELECT * FROM songs ORDER BY dateAdded LIMIT 8")
+    fun getRecentlyAddedSongs(): Flow<List<SongEntity>>
+
     @Query("SELECT * FROM songs WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 1")
     fun getLastPlayedSong(): Flow<SongEntity?>
 
