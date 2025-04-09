@@ -1,4 +1,4 @@
-package com.example.purrytify.model
+package com.example.purrytify.ui.model
 
 import android.util.Log
 import androidx.compose.runtime.getValue

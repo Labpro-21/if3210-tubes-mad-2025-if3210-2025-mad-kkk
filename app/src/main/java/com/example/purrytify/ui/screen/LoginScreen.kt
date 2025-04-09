@@ -52,7 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.purrytify.R
 import com.example.purrytify.data.TokenPreferences
-import com.example.purrytify.model.LoginViewModel
+import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.theme.Poppins
 
