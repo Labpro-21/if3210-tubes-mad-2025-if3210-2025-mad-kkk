@@ -1,6 +1,7 @@
 package com.example.purrytify.ui.screen
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -146,6 +147,8 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                     if (title.isNotEmpty() && artist.isNotEmpty() && viewModel.selectedAudioUri.value != null && viewModel.selectedImageUri.value != null) {
                         viewModel.uploadSong(title, artist)
                         showUploadDialog = false
+                    } else {
+                        Toast.makeText(context, "Please fill all fields and select both audio and image", Toast.LENGTH_SHORT).show()
                     }
                 },
                 sheetState = sheetState,
