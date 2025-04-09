@@ -175,6 +175,7 @@ fun CurrentSongPlayerCard(
 @Composable
 fun PurrytifyApp(
     windowSize: WindowWidthSizeClass,
+    globalViewModel: GlobalViewModel,
     navController: NavHostController = rememberNavController(),
     modifier: Modifier = Modifier
 ) {
@@ -198,18 +199,6 @@ fun PurrytifyApp(
         }
     }
 
-    // Current playing song (this should eventually come from a ViewModel)
-//    var currentPlayingSong = remember {
-//        mutableStateOf(
-//            Song(
-//                id = 1,
-//                title = "Starboy",
-//                artist = "The Weeknd",
-//                imagePath = R.drawable.starboy.toString()
-//            )
-//        )
-//    }
-
     val isPlaying by remember { mutableStateOf(true) }
     val songProgress by remember { mutableStateOf(0.3f) }
 
@@ -222,11 +211,7 @@ fun PurrytifyApp(
     // Determine if we should show the player (show on all screens except splash and login)
     val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute != Screen.SongDetail.route
 
-    val globalViewModel: GlobalViewModel = viewModel(
-        factory = GlobalViewModel.GlobalViewModelFactory(LocalContext.current.applicationContext as android.app.Application)
-    )
-
-    val currentSong = globalViewModel.currentlyPlayingSong.collectAsState().value
+    val currentSong = globalViewModel.currentSong
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
@@ -275,24 +260,24 @@ fun PurrytifyApp(
                 }
 
                 // Player card - visible on all screens except splash and login
-                if (showPlayer) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .background(Color.Transparent)
-                    ) {
-                        CurrentSongPlayerCard(
-                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist"),
-                            onCardClick = {
-                                navController.navigate(Screen.SongDetail.createRoute(currentSong?.id.toString()))
-                            },
-                            onPlayPauseClick = { /* Toggle playback */ },
-                            isPlaying = isPlaying,
-                            progress = songProgress
-                        )
-                    }
-                }
+//                if (showPlayer) {
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(horizontal = 8.dp)
+//                            .background(Color.Transparent)
+//                    ) {
+//                        CurrentSongPlayerCard(
+//                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist"),
+//                            onCardClick = {
+//                                navController.navigate(Screen.SongDetail.createRoute(currentSong?.id.toString()))
+//                            },
+//                            onPlayPauseClick = { /* Toggle playback */ },
+//                            isPlaying = isPlaying,
+//                            progress = songProgress
+//                        )
+//                    }
+//                }
 
                 // Bottom navigation bar at the very bottom
                 AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION && hasNavbar) {

@@ -94,8 +94,8 @@ fun HomeScreen(
             ) {
                 items(songs) { song ->
                     NewSongItem(song = song, onClick = {
-                        globalViewModel.forceChange(song)
-//                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                        globalViewModel.play(song)
+                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
                 }
             }
@@ -114,8 +114,8 @@ fun HomeScreen(
 
         items(recentlyPlayedSongs) { song ->
             RecentlyPlayedItem(song = song, onClick = {
-                globalViewModel.forceChange(song)
-//                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                globalViewModel.play(song)
+                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
             })
         }
 
