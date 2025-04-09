@@ -1,6 +1,7 @@
 package com.example.purrytify
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -54,6 +55,11 @@ import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.data.model.Song
 import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.model.ImageLoader
 
 @Composable
@@ -193,18 +199,17 @@ fun PurrytifyApp(
     }
 
     // Current playing song (this should eventually come from a ViewModel)
-    val currentPlayingSong by remember {
-        mutableStateOf(
-            Song(
-                id = 1,
-                title = "Starboy",
-                artist = "The Weeknd",
-                imagePath = R.drawable.starboy.toString(),
-                audioPath = "",
-                duration = 0,
-            )
-        )
-    }
+//    var currentPlayingSong = remember {
+//        mutableStateOf(
+//            Song(
+//                id = 1,
+//                title = "Starboy",
+//                artist = "The Weeknd",
+//                imagePath = R.drawable.starboy.toString()
+//            )
+//        )
+//    }
+
     val isPlaying by remember { mutableStateOf(true) }
     val songProgress by remember { mutableStateOf(0.3f) }
 
@@ -216,6 +221,12 @@ fun PurrytifyApp(
 
     // Determine if we should show the player (show on all screens except splash and login)
     val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute != Screen.SongDetail.route
+
+    val globalViewModel: GlobalViewModel = viewModel(
+        factory = GlobalViewModel.GlobalViewModelFactory(LocalContext.current.applicationContext as android.app.Application)
+    )
+
+    val currentSong = globalViewModel.currentlyPlayingSong.collectAsState().value
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
@@ -241,6 +252,7 @@ fun PurrytifyApp(
                     composable(Screen.Home.route) {
                         HomeScreen(
                             navController,
+                            globalViewModel
                         )
                     }
                     composable(Screen.Library.route) {
@@ -271,9 +283,9 @@ fun PurrytifyApp(
                             .background(Color.Transparent)
                     ) {
                         CurrentSongPlayerCard(
-                            song = currentPlayingSong,
+                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist"),
                             onCardClick = {
-                                navController.navigate(Screen.SongDetail.createRoute(currentPlayingSong.id.toString()))
+                                navController.navigate(Screen.SongDetail.createRoute(currentSong?.id.toString()))
                             },
                             onPlayPauseClick = { /* Toggle playback */ },
                             isPlaying = isPlaying,

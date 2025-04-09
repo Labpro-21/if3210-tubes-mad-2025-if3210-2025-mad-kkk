@@ -2,4 +2,8 @@
 <resources>
 
     <style name="Theme.Purrytify" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="roundedImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">4dp</item>
+    </style>
 </resources>

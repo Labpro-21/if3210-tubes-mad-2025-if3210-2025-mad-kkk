@@ -1,6 +1,15 @@
 package com.example.purrytify.ui.screen
 
+import android.content.ContentResolver
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,8 +18,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -23,15 +30,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil.compose.rememberAsyncImagePainter
+import coil.load
+import com.example.purrytify.R
+import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.model.LibraryViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,94 +66,120 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val accentGreen = Color(0xFF1DB954)
+//    val backgroundColor = Color(0xFF121212)
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
+            .fillMaxSize()
+//            .background(backgroundColor)
     ) {
+        // Main content
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Your Library",
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color.White,
+            // Header with Library title and add button - always visible at top
+            Column(modifier = Modifier.padding(top = 32.dp).zIndex(10f).background(MaterialTheme.colorScheme.background)) {
+                Row(
                     modifier = Modifier
-                        .size(24.dp)
-                        .clickable { showUploadDialog = true }
-                )
-            }
-
-            Row(
-                modifier = Modifier
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (filterType == LibraryViewModel.FilterType.ALL) accentGreen else Color.DarkGray)
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .clickable {
-                            viewModel.setFilter(
-                                LibraryViewModel.FilterType.ALL
-                            )
-                        }
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "All",
-                        color = if (filterType == LibraryViewModel.FilterType.ALL) Color.Black else Color.White,
-                        fontWeight = FontWeight.Medium
+                        text = "Your Library",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { showUploadDialog = true }
                     )
                 }
+                 Box(modifier = Modifier.height(8.dp).fillMaxWidth().zIndex(10f))
+            }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
+            // Filter row - now with solid background and higher z-index
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .zIndex(10f)
+            ) {
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (filterType == LibraryViewModel.FilterType.LIKED) accentGreen else Color.DarkGray)
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .clickable {
-                            viewModel.setFilter(
-                                LibraryViewModel.FilterType.LIKED
-                            )
-                        }
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
                 ) {
-                    Text(
-                        text = "Liked",
-                        color = if (filterType == LibraryViewModel.FilterType.LIKED) Color.Black else Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (filterType == LibraryViewModel.FilterType.ALL) accentGreen else Color.DarkGray)
+                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                            .clickable {
+                                viewModel.setFilter(
+                                    LibraryViewModel.FilterType.ALL
+                                )
+                            }
+                    ) {
+                        Text(
+                            text = "All",
+                            color = if (filterType == LibraryViewModel.FilterType.ALL) Color.Black else Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (filterType == LibraryViewModel.FilterType.LIKED) accentGreen else Color.DarkGray)
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .clickable {
+                                viewModel.setFilter(
+                                    LibraryViewModel.FilterType.LIKED
+                                )
+                            }
+                    ) {
+                        Text(
+                            text = "Liked",
+                            color = if (filterType == LibraryViewModel.FilterType.LIKED) Color.Black else Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
-            // Song list
-            LazyColumn(
+            // RecyclerView inside AndroidView
+            AndroidView(
+                factory = { context ->
+                    RecyclerView(context).apply {
+                        id = View.generateViewId() // Generate a unique ID
+                        layoutManager = LinearLayoutManager(context)
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        clipToPadding = false
+                        setPadding(0, 0, 0, 100) // Bottom padding for player controls
+                    }
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(top = 16.dp)
-            ) {
-                items(songs) { song ->
-                    RecentlyPlayedItem(song = song, onClick = {
+                    .fillMaxSize()
+                    .padding(top = 8.dp),
+                update = { recyclerView ->
+                    val adapter = SongAdapter(songs, context) { song ->
                         navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
-                    })
+                    }
+                    recyclerView.adapter = adapter
                 }
-            }
+            )
         }
 
         // Upload song dialog
@@ -156,6 +199,61 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
             )
         }
     }
+}
+
+
+// RecyclerView Adapter for Songs
+class SongAdapter(
+    private val songs: List<Song>,
+    val context: Context,
+    private val onItemClick: (Song) -> Unit
+) : RecyclerView.Adapter<SongAdapter.SongViewHolder>() {
+
+    class SongViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val songImage: ImageView = itemView.findViewById(R.id.song_image)
+        val songTitle: TextView = itemView.findViewById(R.id.song_title)
+        val songArtist: TextView = itemView.findViewById(R.id.song_artist)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_song, parent, false)
+        return SongViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
+        val song = songs[position]
+
+        holder.songTitle.text = song.title
+        holder.songArtist.text = song.artist
+        val path = song.imagePath ?: R.drawable.starboy.toString()
+        val img = when {
+            path.toIntOrNull() != null -> {
+                val resID = path.toIntOrNull() ?: R.drawable.starboy
+                BitmapFactory.decodeResource(context.resources, resID)
+            }
+            File(path).exists() -> {
+                BitmapFactory.decodeFile(path)
+            }
+            else -> {
+                BitmapFactory.decodeResource(context.resources, R.drawable.starboy)
+            }
+        }
+
+        // Load image using Coil
+        holder.songImage.load(img) {
+            crossfade(true)
+//            placeholder(R.drawable.placeholder_image)
+//            error(R.drawable.error_image)
+        }
+
+        // Set click listener
+        holder.itemView.setOnClickListener {
+            onItemClick(song)
+        }
+    }
+
+    override fun getItemCount(): Int = songs.size
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

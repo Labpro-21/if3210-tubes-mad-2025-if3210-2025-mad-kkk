@@ -45,4 +45,6 @@ interface SongDao {
     @Query("UPDATE songs SET lastPlayed = :timestamp WHERE id = :id")
     suspend fun updateLastPlayed(id: Long, timestamp: Long)
 
+    @Query("SELECT * FROM songs where id = :songId")
+    fun getSong(songId: Long): Flow<SongEntity?>
 }
