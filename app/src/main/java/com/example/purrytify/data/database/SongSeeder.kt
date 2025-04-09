@@ -23,6 +23,9 @@ object DatabasePrePopulator {
                     insertSampleSongs(context, repository)
                 }
             }
+//            if (!songs.isEmpty()) {
+//                deleteAllSongs(repository)
+//            }
         }
     }
 
@@ -57,6 +60,10 @@ object DatabasePrePopulator {
             repository.insertSong(title, artist, path, null)
         }
         Log.d("SEEDER", "SEEDER SUCCESSS")
+    }
+
+    private suspend fun deleteAllSongs(repository: SongRepository) {
+        repository.deleteAllSongs()
     }
 
     fun prepopulateDatabase(context: Context, lifecycleScope: LifecycleCoroutineScope) {

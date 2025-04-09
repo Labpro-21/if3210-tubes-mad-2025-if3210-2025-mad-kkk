@@ -51,13 +51,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.purrytify.R
-import com.example.purrytify.data.TokenPreferences
+import com.example.purrytify.data.TokenManager
 import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.theme.Poppins
 
 @Composable
-fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = viewModel()) {
+fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())) {
     val context = LocalContext.current
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { message ->
@@ -69,9 +69,6 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
     LaunchedEffect(Unit) {
         val exists = viewModel.checkIsTokenExist()
         if (exists) {
-            // uncomment this if you want to clear the token
-//            TokenPreferences.clearAccessToken()
-//            TokenPreferences.clearRefreshToken()
             viewModel.validateToken(
                 onValid = {
                     navController.navigate(Screen.Home.route) {

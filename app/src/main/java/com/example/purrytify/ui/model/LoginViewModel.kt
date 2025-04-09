@@ -5,15 +5,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.purrytify.data.TokenPreferences
+import com.example.purrytify.PurrytifyApplication
+import com.example.purrytify.data.TokenManager
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.AuthService
 import com.example.purrytify.service.LoginRequest
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.launch
 
-class LoginViewModel() : ViewModel() {
+class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     var email by mutableStateOf("")
     var password by mutableStateOf("")
     var isLoading by mutableStateOf(false)
@@ -25,59 +27,79 @@ class LoginViewModel() : ViewModel() {
             isSubmitLoading = true
             try {
                 val response = ApiClient.authService.login(LoginRequest(email, password))
-                Log.d("CONSOLE_DEBUG", "${response.refreshToken} ${response.accessToken}")
-                TokenPreferences.saveAccessToken(response.accessToken)
-                TokenPreferences.saveRefreshToken(response.refreshToken)
+                Log.d("CONSOLE_DEBUG", "Login successful")
+                tokenManager.saveAccessToken(response.accessToken)
+                tokenManager.saveRefreshToken(response.refreshToken)
                 onSuccess()
             } catch (e: Exception) {
-                Log.d("CONSOLE_DEBUG", e.message?: "")
+                Log.e("CONSOLE_DEBUG", "Login failed", e)
                 errorMessage = "Login failed"
+            } finally {
+                isSubmitLoading = false
             }
-            isSubmitLoading = false
         }
     }
 
     suspend fun checkIsTokenExist(): Boolean {
-        val token = TokenPreferences.getAccessToken()
-        return token != null
+        return tokenManager.getAccessToken() != null
     }
 
-    suspend fun validateToken(
+    fun validateToken(
         onValid: () -> Unit,
         onRefreshFailed: () -> Unit
     ) {
-        isLoading = true
-        val accessToken = TokenPreferences.getAccessToken() ?: run {
-            isLoading = false
-            return onRefreshFailed()
-        }
-        try {
-            val response = ApiClient.authService.validate("Bearer $accessToken")
-            if (response.valid) {
-                onValid()
-            } else {
-                refreshToken(onValid, onRefreshFailed)
+        viewModelScope.launch {
+            isLoading = true
+            try {
+                val accessToken = tokenManager.getAccessToken() ?: run {
+                    isLoading = false
+                    onRefreshFailed()
+                    return@launch
+                }
+
+                try {
+                    val response = ApiClient.authService.validate("Bearer $accessToken")
+                    if (response.valid) {
+                        onValid()
+                    } else {
+                        refreshToken(onValid, onRefreshFailed)
+                    }
+                } catch (e: Exception) {
+                    Log.e("CONSOLE_DEBUG", "Token validation failed", e)
+                    refreshToken(onValid, onRefreshFailed)
+                }
+            } finally {
+                isLoading = false
             }
-        } catch (e: Exception) {
-            refreshToken(onValid, onRefreshFailed)
-        } finally {
-            isLoading = false
         }
     }
-
 
     private suspend fun refreshToken(
         onSuccess: () -> Unit,
         onFailed: () -> Unit
     ) {
-        val refreshToken = TokenPreferences.getRefreshToken() ?: return onFailed()
+        val refreshToken = tokenManager.getRefreshToken() ?: run {
+            onFailed()
+            return
+        }
+
         try {
             val response = ApiClient.authService.refresh(RefreshRequest(refreshToken))
-            TokenPreferences.saveAccessToken(response.accessToken)
-            TokenPreferences.saveRefreshToken(response.refreshToken)
+            tokenManager.saveAccessToken(response.accessToken)
+            tokenManager.saveRefreshToken(response.refreshToken)
             onSuccess()
         } catch (e: Exception) {
+            Log.e("CONSOLE_DEBUG", "Token refresh failed", e)
             onFailed()
+        }
+    }
+
+    companion object {
+        fun provideFactory(): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LoginViewModel(PurrytifyApplication.tokenManager) as T
+            }
         }
     }
 }

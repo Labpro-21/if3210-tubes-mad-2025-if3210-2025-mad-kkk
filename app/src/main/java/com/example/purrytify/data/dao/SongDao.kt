@@ -23,4 +23,7 @@ interface SongDao {
 
     @Query("UPDATE songs SET isLiked = :isLiked WHERE id = :songId")
     suspend fun updateLikedStatus(songId: Long, isLiked: Boolean)
+
+    @Query("DELETE FROM songs")
+    suspend fun deleteAll()
 }
