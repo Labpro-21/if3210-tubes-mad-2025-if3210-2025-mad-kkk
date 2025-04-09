@@ -41,14 +41,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun SongEntity.toSong(): Song {
         // TODO: changed later
-        val coverResId = this.imagePath ?: R.drawable.starboy.toString()
         return Song(
             id = this.id,
             title = this.title,
             artist = this.artist,
-            imagePath = coverResId,
+            imagePath = this.imagePath,
             audioPath = this.audioPath,
-            isLiked = this.isLiked
+            isLiked = this.isLiked,
+            duration = this.duration
         )
     }
 
@@ -60,7 +60,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 artist = this.artist,
                 imagePath = this.imagePath,
                 audioPath = this.audioPath,
-                isLiked = this.isLiked
+                isLiked = this.isLiked,
+                duration = this.duration
             )
         } else null
     }

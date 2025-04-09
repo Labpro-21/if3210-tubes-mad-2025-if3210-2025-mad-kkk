@@ -63,7 +63,9 @@ class SongDetailViewModel(application: Application) : AndroidViewModel(applicati
             id = entity.id,
             title = entity.title,
             artist = entity.artist,
-            imagePath = coverResId
+            imagePath = coverResId,
+            audioPath = entity.audioPath,
+            duration = entity.duration,
         )
     }
 

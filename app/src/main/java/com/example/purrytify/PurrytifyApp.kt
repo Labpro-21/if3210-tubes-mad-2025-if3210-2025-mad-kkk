@@ -1,7 +1,6 @@
 package com.example.purrytify
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -54,7 +53,6 @@ import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.data.model.Song
-import android.util.Log
 import androidx.compose.foundation.layout.offset
 import com.example.purrytify.ui.model.ImageLoader
 
@@ -201,7 +199,9 @@ fun PurrytifyApp(
                 id = 1,
                 title = "Starboy",
                 artist = "The Weeknd",
-                imagePath = R.drawable.starboy.toString()
+                imagePath = R.drawable.starboy.toString(),
+                audioPath = "",
+                duration = 0,
             )
         )
     }
@@ -210,7 +210,7 @@ fun PurrytifyApp(
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.SongDetail.route -> true
+        Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
         else -> false
     }
 

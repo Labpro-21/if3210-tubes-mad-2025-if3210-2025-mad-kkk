@@ -31,21 +31,20 @@ class SongRepository(
     suspend fun insertSong(
         title: String,
         artist: String,
-        imageUri: Uri?,
-        audioUri: Uri?
+        imageUri: Uri,
+        audioUri: Uri,
+        duration: Int
     ): Long {
-        // Process image if provided
-        val imagePath = imageUri?.let { saveFileToInternalStorage(it, "images") }
+        val imagePath = saveFileToInternalStorage(imageUri, "images")
 
-        // Process audio if provided
-        val audioPath = audioUri?.let { saveFileToInternalStorage(it, "audio") }
+        val audioPath = saveFileToInternalStorage(audioUri, "audio")
 
-        // Create and insert the song entity
         val song = SongEntity(
             title = title,
             artist = artist,
             imagePath = imagePath,
-            audioPath = audioPath
+            audioPath = audioPath,
+            duration = duration
         )
 
         return songDao.insertSong(song)
@@ -64,11 +63,8 @@ class SongRepository(
     }
 
     suspend fun deleteSong(song: SongEntity) {
-        // Delete associated files
-        song.imagePath?.let { deleteFile(it) }
-        song.audioPath?.let { deleteFile(it) }
-
-        // Delete from database
+        deleteFile(song.imagePath)
+        deleteFile(song.audioPath)
         songDao.deleteSong(song)
     }
 

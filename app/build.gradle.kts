@@ -72,5 +72,10 @@ dependencies {
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
     implementation(libs.androidx.security.crypto)
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
+    implementation("androidx.media3:media3-exoplayer:1.2.1") // or latest version
+    implementation("androidx.media3:media3-ui:1.2.1")
+    implementation("androidx.media3:media3-session:1.2.1")
+    implementation("androidx.media3:media3-common")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
+    implementation("androidx.media:media:1.6.0")
 }
