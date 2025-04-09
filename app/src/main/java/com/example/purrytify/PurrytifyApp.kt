@@ -59,7 +59,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.purrytify.service.GlobalState
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.model.ImageLoader
