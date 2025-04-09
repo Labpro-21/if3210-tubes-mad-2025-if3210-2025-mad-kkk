@@ -38,7 +38,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.theme.Poppins
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.data.model.Song
 
 
 import okhttp3.Call;
@@ -49,13 +56,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-data class Song(
-    val id: String,
-    val title: String,
-    val artist: String,
-    val coverResId: Int
-)
-
 
 @Composable
 fun HomeScreen(
@@ -64,26 +64,29 @@ fun HomeScreen(
 ) {
 //    val dummySongs = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
     val newSongs = listOf(
-        Song("1", "Starboy", "The Weeknd", R.drawable.starboy),
-        Song("2", "Here Comes The Sun", "The Beatles", R.drawable.here_comes),
-        Song("3", "Midnight Pretenders", "Tomoko Aran", R.drawable.midnight),
-        Song("4", "Violent Crimes", "Kanye West", R.drawable.violent)
+        Song(1, "Starboy", "The Weeknd", R.drawable.starboy.toString()),
+        Song(2, "Here Comes The Sun", "The Beatles", R.drawable.here_comes.toString()),
+        Song(3, "Midnight Pretenders", "Tomoko Aran", R.drawable.midnight.toString()),
+        Song(4, "Violent Crimes", "Kanye West", R.drawable.violent.toString())
     )
 
     val recentlyPlayed = listOf(
-        Song("5", "Jazz is for ordinary people", "berlioz", R.drawable.jazz),
-        Song("6", "Loose", "Daniel Caesar", R.drawable.starboy),
-        Song("7", "Nights", "Frank Ocean", R.drawable.starboy),
-        Song("8", "Kiss of Life", "Sade", R.drawable.starboy),
-        Song("9", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy),
-        Song("10", "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy)
+        Song(5, "Jazz is for ordinary people", "berlioz", R.drawable.jazz.toString()),
+        Song(6, "Loose", "Daniel Caesar", R.drawable.starboy.toString()),
+        Song(7, "Nights", "Frank Ocean", R.drawable.starboy.toString()),
+        Song(8, "Kiss of Life", "Sade", R.drawable.starboy.toString()),
+        Song(9, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString()),
+        Song(10, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString()),
+        Song(10, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString())
     )
+
+    val context = LocalContext.current
+    val viewModel: HomeViewModel = viewModel(
+        factory = HomeViewModel.HomeViewModelFactory(context.applicationContext as android.app.Application)
+    )
+
+    val songs by viewModel.songs.collectAsState()
+    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
 
     LazyColumn(
         modifier = modifier
@@ -105,9 +108,9 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(newSongs) { song ->
+                items(songs) { song ->
                     NewSongItem(song = song, onClick = {
-                        navController.navigate(Screen.SongDetail.createRoute(song.id))
+                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
                 }
             }
@@ -124,9 +127,9 @@ fun HomeScreen(
             )
         }
 
-        items(recentlyPlayed) { song ->
+        items(recentlyPlayedSongs) { song ->
             RecentlyPlayedItem(song = song, onClick = {
-                navController.navigate(Screen.SongDetail.createRoute(song.id))
+                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
             })
         }
 
@@ -145,13 +148,12 @@ fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp)
     ) {
-        Image(
-            painter = painterResource(id = song.coverResId),
+        ImageLoader.LoadImage(
+            imagePath = song.imagePath,
             contentDescription = "${song.title} album cover",
             modifier = Modifier
                 .size(50.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            contentScale = ContentScale.Crop
+                .clip(RoundedCornerShape(4.dp))
         )
 
         Column(
@@ -187,13 +189,12 @@ fun NewSongItem(song: Song, onClick: () -> Unit) {
             .width(120.dp)
             .clickable(onClick = onClick)
     ) {
-        Image(
-            painter = painterResource(id = song.coverResId),
+        ImageLoader.LoadImage(
+            imagePath = song.imagePath,
             contentDescription = "${song.title} album cover",
             modifier = Modifier
                 .size(120.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
+                .clip(RoundedCornerShape(8.dp))
         )
 
         Spacer(modifier = Modifier.height(8.dp))

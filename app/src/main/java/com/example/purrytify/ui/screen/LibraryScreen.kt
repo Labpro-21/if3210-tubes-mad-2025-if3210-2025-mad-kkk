@@ -36,21 +36,22 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import com.example.purrytify.R
 import com.example.purrytify.navigation.Screen
+import com.example.purrytify.data.model.Song
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifier) {
     val songs = remember {
         mutableStateListOf(
-            Song("1", "Starboy", "The Weeknd, Daft Punk", R.drawable.starboy),
-            Song("2", "Here Comes The Sun", "The Beatles", R.drawable.starboy),
-            Song("3", "Midnight Pretenders", "Tomoko Aran", R.drawable.midnight),
-            Song("4", "Violent Crimes", "Kanye West", R.drawable.violent),
-            Song("5", "DENIAL IS A RIVER", "Doechii", R.drawable.starboy),
-            Song("6", "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight),
-            Song("7", "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight),
-            Song("8", "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight),
-            Song("9", "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight)
+            Song(1, "Starboy", "The Weeknd, Daft Punk", R.drawable.starboy.toString()),
+            Song(2, "Here Comes The Sun", "The Beatles", R.drawable.starboy.toString()),
+            Song(3, "Midnight Pretenders", "Tomoko Aran", R.drawable.midnight.toString()),
+            Song(4, "Violent Crimes", "Kanye West", R.drawable.violent.toString()),
+            Song(5, "DENIAL IS A RIVER", "Doechii", R.drawable.starboy.toString()),
+            Song(6, "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight.toString()),
+            Song(7, "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight.toString()),
+            Song(8, "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight.toString()),
+            Song(9, "Doomsday", "MF DOOM, Pebbles The Invisible Girl", R.drawable.midnight.toString())
         )
     }
 
@@ -132,7 +133,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
             ) {
                 items(songs) { song ->
                     RecentlyPlayedItem(song = song, onClick = {
-                        navController.navigate(Screen.SongDetail.createRoute(song.id))
+                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
                 }
             }
@@ -144,7 +145,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 onDismiss = { showUploadDialog = false },
                 onSave = { title, artist ->
                     if (title.isNotEmpty() && artist.isNotEmpty()) {
-                        songs.add(Song((songs.size + 1).toString(), title, artist, R.drawable.starboy))
+                        songs.add(Song((songs.size + 1).toLong(), title, artist, R.drawable.starboy.toString()))
                         showUploadDialog = false
                     }
                 },

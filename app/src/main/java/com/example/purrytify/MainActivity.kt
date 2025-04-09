@@ -20,12 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
+import com.example.purrytify.data.database.DatabasePrePopulator
 import com.example.purrytify.ui.theme.PurrytifyTheme
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DatabasePrePopulator.prepopulateDatabase(applicationContext, lifecycleScope)
         enableEdgeToEdge()
         setContent {
             PurrytifyTheme (darkTheme = true) {
