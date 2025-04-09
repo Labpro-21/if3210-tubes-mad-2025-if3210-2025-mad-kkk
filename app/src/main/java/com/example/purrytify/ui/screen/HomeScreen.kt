@@ -44,7 +44,6 @@ import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.theme.Poppins
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.ui.model.GlobalViewModel

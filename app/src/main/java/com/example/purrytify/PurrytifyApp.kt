@@ -54,7 +54,6 @@ import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.data.model.Song
-import android.util.Log
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
@@ -216,7 +215,7 @@ fun PurrytifyApp(
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.SongDetail.route -> true
+        Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
         else -> false
     }
 

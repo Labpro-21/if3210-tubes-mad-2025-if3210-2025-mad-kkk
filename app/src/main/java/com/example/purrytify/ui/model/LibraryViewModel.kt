@@ -1,6 +1,7 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -74,11 +75,52 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             repository.insertSong(
                 title = title,
                 artist = artist,
-                imageUri = _selectedImageUri.value,
-                audioUri = _selectedAudioUri.value
+                imageUri = _selectedImageUri.value!!,
+                audioUri = _selectedAudioUri.value!!,
+                duration = getDurationFromFile()
             )
             _selectedImageUri.value = null
             _selectedAudioUri.value = null
+        }
+    }
+
+    fun getTitleFromFile(): String? {
+        if (selectedAudioUri.value == null) return null
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(getApplication(), selectedAudioUri.value)
+            return retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+        } catch (e: Exception) {
+            return ""
+        } finally {
+            retriever.release()
+        }
+    }
+
+    fun getArtistFromFile(): String? {
+        if (selectedAudioUri.value == null) return null
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(getApplication(), selectedAudioUri.value)
+            return retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+        } catch (e: Exception) {
+            return ""
+        } finally {
+            retriever.release()
+        }
+    }
+
+    fun getDurationFromFile(): Int {
+        if (selectedAudioUri.value == null) return 0
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(getApplication(), selectedAudioUri.value)
+            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            return (durationMs / 1000).toInt()
+        } catch (e: Exception) {
+            return 0
+        } finally {
+            retriever.release()
         }
     }
 
@@ -95,15 +137,14 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun SongEntity.toSong(): Song {
-        // TODO: changed later
-        val coverResId = this.imagePath ?: R.drawable.starboy.toString()
         return Song(
             id = this.id,
             title = this.title,
             artist = this.artist,
-            imagePath = coverResId,
+            imagePath = this.imagePath,
             audioPath = this.audioPath,
-            isLiked = this.isLiked
+            isLiked = this.isLiked,
+            duration = this.duration
         )
     }
 
@@ -115,7 +156,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 artist = this.artist,
                 imagePath = this.imagePath,
                 audioPath = this.audioPath,
-                isLiked = this.isLiked
+                isLiked = this.isLiked,
+                duration = this.duration
             )
         } else null
     }

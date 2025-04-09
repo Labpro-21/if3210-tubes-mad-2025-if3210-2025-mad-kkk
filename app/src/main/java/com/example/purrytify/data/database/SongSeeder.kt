@@ -18,14 +18,14 @@ object DatabasePrePopulator {
         lifecycleScope.launch {
             val songs = repository.allSongs.first()
 
-            if (songs.isEmpty()) {
-                withContext(Dispatchers.IO) {
-                    insertSampleSongs(context, repository)
-                }
-            }
-//            if (!songs.isEmpty()) {
-//                deleteAllSongs(repository)
+//            if (songs.isEmpty()) {
+//                withContext(Dispatchers.IO) {
+//                    insertSampleSongs(context, repository)
+//                }
 //            }
+            if (!songs.isEmpty()) {
+                deleteAllSongs(repository)
+            }
         }
     }
 
@@ -57,7 +57,7 @@ object DatabasePrePopulator {
                     context.resources.getResourceTypeName(resID) + '/' +
                     context.resources.getResourceEntryName(resID)).toUri();
             // val path = ("android.resource://" + getPackageResourcePath() + "/" + R.drawable.starboy).toUri()
-            repository.insertSong(title, artist, path, null)
+//            repository.insertSong(title, artist, path, "")
         }
         Log.d("SEEDER", "SEEDER SUCCESSS")
     }
