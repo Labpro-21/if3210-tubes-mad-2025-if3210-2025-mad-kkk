@@ -44,6 +44,7 @@ import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.theme.Poppins
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
 
@@ -62,31 +63,13 @@ fun HomeScreen(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-//    val dummySongs = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
-    val newSongs = listOf(
-        Song(1, "Starboy", "The Weeknd", R.drawable.starboy.toString()),
-        Song(2, "Here Comes The Sun", "The Beatles", R.drawable.here_comes.toString()),
-        Song(3, "Midnight Pretenders", "Tomoko Aran", R.drawable.midnight.toString()),
-        Song(4, "Violent Crimes", "Kanye West", R.drawable.violent.toString())
-    )
-
-    val recentlyPlayed = listOf(
-        Song(5, "Jazz is for ordinary people", "berlioz", R.drawable.jazz.toString()),
-        Song(6, "Loose", "Daniel Caesar", R.drawable.starboy.toString()),
-        Song(7, "Nights", "Frank Ocean", R.drawable.starboy.toString()),
-        Song(8, "Kiss of Life", "Sade", R.drawable.starboy.toString()),
-        Song(9, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString()),
-        Song(10, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString()),
-        Song(10, "BEST INTEREST", "Tyler, The Creator", R.drawable.starboy.toString())
-    )
-
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModel.HomeViewModelFactory(context.applicationContext as android.app.Application)
     )
 
-    val songs by viewModel.songs.collectAsState()
-    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
+    val songs by viewModel.recentlyAddedSongs.collectAsState(emptyList())
+    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState(emptyList())
 
     LazyColumn(
         modifier = modifier

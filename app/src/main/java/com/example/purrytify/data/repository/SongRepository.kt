@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.purrytify.data.dao.SongDao
 import com.example.purrytify.data.entity.SongEntity
+import com.example.purrytify.data.model.Song
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 import java.io.FileOutputStream
@@ -15,6 +16,17 @@ class SongRepository(
 ) {
     val allSongs: Flow<List<SongEntity>> = songDao.getAllSongs()
     val likedSongs: Flow<List<SongEntity>> = songDao.getLikedSongs()
+    val recentlyPlayedSongs: Flow<List<SongEntity>> = songDao.getRecentlyPlayedSongs()
+    val recentlyAddedSongs: Flow<List<SongEntity>> = songDao.getRecentlyAddedSongs()
+    val lastPlayedSong: Flow<SongEntity?> = songDao.getLastPlayedSong()
+
+    fun searchAllSongs(query: String): Flow<List<SongEntity>> {
+        return songDao.searchAllSongs(query)
+    }
+
+    fun searchLikedSongs(query: String): Flow<List<SongEntity>> {
+        return songDao.searchAllLikedSongs(query)
+    }
 
     suspend fun insertSong(
         title: String,
@@ -45,6 +57,10 @@ class SongRepository(
 
     suspend fun deleteAllSongs() {
         songDao.deleteAll()
+    }
+
+    suspend fun setLastPlayed(songId: Long) {
+        songDao.updateLastPlayed(songId, System.currentTimeMillis())
     }
 
     suspend fun deleteSong(song: SongEntity) {

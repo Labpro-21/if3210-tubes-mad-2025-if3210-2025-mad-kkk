@@ -1,6 +1,7 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -10,47 +11,58 @@ import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.ui.model.LibraryViewModel.FilterType
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.io.File
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: SongRepository
 
-    private val _songs = MutableStateFlow<List<Song>>(emptyList())
-    val songs: StateFlow<List<Song>> = _songs
-
-    private val _recentlyPlayedSongs = MutableStateFlow<List<Song>>(emptyList())
-    val recentlyPlayedSongs: StateFlow<List<Song>> = _recentlyPlayedSongs
+    val recentlyPlayedSongs: Flow<List<Song>>
+    val recentlyAddedSongs: Flow<List<Song>>
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
-        loadSongs()
-    }
-
-    private fun loadSongs() {
-        viewModelScope.launch {
-            repository.allSongs.collect { songEntities ->
-                val mappedSongs = songEntities.map { it.toSong() }
-                _songs.value = mappedSongs.take(8)
-                _recentlyPlayedSongs.value = mappedSongs
-            }
+        @OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
+        recentlyAddedSongs = repository.recentlyAddedSongs.map {
+            entities -> entities.map { it.toSong() }
+        }
+        recentlyPlayedSongs = repository.recentlyPlayedSongs.map {
+                entities -> entities.map { it.toSong() }
         }
     }
 
     private fun SongEntity.toSong(): Song {
-        val coverResId = imagePath ?: R.drawable.starboy.toString()
-
+        // TODO: changed later
+        val coverResId = this.imagePath ?: R.drawable.starboy.toString()
         return Song(
             id = this.id,
             title = this.title,
             artist = this.artist,
-            imagePath = coverResId
+            imagePath = coverResId,
+            audioPath = this.audioPath,
+            isLiked = this.isLiked
         )
+    }
+
+    private fun Song.toEntity(): SongEntity? {
+        return if (this.id > 0) {
+            SongEntity(
+                id = this.id,
+                title = this.title,
+                artist = this.artist,
+                imagePath = this.imagePath,
+                audioPath = this.audioPath,
+                isLiked = this.isLiked
+            )
+        } else null
     }
 
     class HomeViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
