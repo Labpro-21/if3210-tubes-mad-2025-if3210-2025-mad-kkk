@@ -283,7 +283,7 @@ fun PurrytifyApp(
                             .background(Color.Transparent)
                     ) {
                         CurrentSongPlayerCard(
-                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist"),
+                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist", imagePath = R.drawable.starboy.toString(), audioPath = "null", duration = 30),
                             onCardClick = {
                                 navController.navigate(Screen.SongDetail.createRoute(currentSong?.id.toString()))
                             },

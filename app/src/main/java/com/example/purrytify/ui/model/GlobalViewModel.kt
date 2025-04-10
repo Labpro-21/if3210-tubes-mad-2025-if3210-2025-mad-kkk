@@ -89,7 +89,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             artist = this.artist,
             imagePath = coverResId,
             audioPath = this.audioPath,
-            isLiked = this.isLiked
+            isLiked = this.isLiked,
+            duration = this.duration
         )
     }
 
