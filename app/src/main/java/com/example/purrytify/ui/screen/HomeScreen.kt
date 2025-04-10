@@ -49,15 +49,6 @@ import com.example.purrytify.data.model.Song
 import com.example.purrytify.ui.model.GlobalViewModel
 
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
-
 @Composable
 fun HomeScreen(
     navController: NavHostController,
@@ -94,8 +85,8 @@ fun HomeScreen(
             ) {
                 items(songs) { song ->
                     NewSongItem(song = song, onClick = {
-                        globalViewModel.forceChange(song)
-//                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                        globalViewModel.playSong(song)
+                        navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     })
                 }
             }
@@ -114,8 +105,8 @@ fun HomeScreen(
 
         items(recentlyPlayedSongs) { song ->
             RecentlyPlayedItem(song = song, onClick = {
-                globalViewModel.forceChange(song)
-//                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
+                globalViewModel.playSong(song)
+                navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
             })
         }
 

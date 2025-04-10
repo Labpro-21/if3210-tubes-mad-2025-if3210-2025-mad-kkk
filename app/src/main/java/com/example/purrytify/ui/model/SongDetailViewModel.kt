@@ -36,9 +36,9 @@ class SongDetailViewModel(application: Application) : AndroidViewModel(applicati
         val id = songId.toLongOrNull() ?: return
 
         viewModelScope.launch {
-            repository.allSongs.collect { songs ->
-                val song = songs.find { it.id == id }
-                song?.let {
+
+            repository.getSongById(id).collect { songEntity ->
+                songEntity?.let {
                     _currentSong.value = convertEntityToSong(it)
                     _isLiked.value = it.isLiked
                 }
@@ -52,7 +52,13 @@ class SongDetailViewModel(application: Application) : AndroidViewModel(applicati
 
         viewModelScope.launch {
             repository.updateLikedStatus(songId, newLikedStatus)
+
             _isLiked.value = newLikedStatus
+
+            _currentSong.value?.let { currentSong ->
+                val updatedSong = currentSong.copy(isLiked = newLikedStatus)
+                _currentSong.value = updatedSong
+            }
         }
     }
 
@@ -66,6 +72,7 @@ class SongDetailViewModel(application: Application) : AndroidViewModel(applicati
             imagePath = coverResId,
             audioPath = entity.audioPath,
             duration = entity.duration,
+            isLiked = entity.isLiked
         )
     }
 

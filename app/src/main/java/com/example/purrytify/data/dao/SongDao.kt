@@ -27,6 +27,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 1")
     fun getLastPlayedSong(): Flow<SongEntity?>
 
+    @Query("SELECT COUNT(id) FROM songs")
+    fun getNumberOfSong() : Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity): Long
 

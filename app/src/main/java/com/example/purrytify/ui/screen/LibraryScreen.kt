@@ -47,12 +47,13 @@ import coil.load
 import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
+import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LibraryViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifier) {
+fun LibraryScreen(navController: NavHostController, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
         factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application)
@@ -79,7 +80,6 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            // Header with Library title and add button - always visible at top
             Column(modifier = Modifier.padding(top = 32.dp).zIndex(10f).background(MaterialTheme.colorScheme.background)) {
                 Row(
                     modifier = Modifier
@@ -107,7 +107,6 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                  Box(modifier = Modifier.height(8.dp).fillMaxWidth().zIndex(10f))
             }
 
-            // Filter row - now with solid background and higher z-index
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,7 +158,6 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                 }
             }
 
-            // RecyclerView inside AndroidView
             AndroidView(
                 factory = { context ->
                     RecyclerView(context).apply {
@@ -175,6 +173,7 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
                     .padding(top = 8.dp),
                 update = { recyclerView ->
                     val adapter = SongAdapter(songs, context) { song ->
+                        globalViewModel.playSong(song)
                         navController.navigate(Screen.SongDetail.createRoute(song.id.toString()))
                     }
                     recyclerView.adapter = adapter
@@ -182,7 +181,6 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
             )
         }
 
-        // Upload song dialog
         if (showUploadDialog) {
             UploadSongDialog(
                 onDismiss = { showUploadDialog = false },
@@ -202,7 +200,6 @@ fun LibraryScreen(navController: NavHostController, modifier: Modifier = Modifie
 }
 
 
-// RecyclerView Adapter for Songs
 class SongAdapter(
     private val songs: List<Song>,
     val context: Context,

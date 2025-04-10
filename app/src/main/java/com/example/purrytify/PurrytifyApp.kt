@@ -55,12 +55,20 @@ import com.example.purrytify.ui.screen.SongDetailScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.data.model.Song
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.model.ImageLoader
+
 
 @Composable
 fun CurrentSongPlayerCard(
@@ -68,7 +76,8 @@ fun CurrentSongPlayerCard(
     onCardClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     isPlaying: Boolean,
-    progress: Float = 0.3f,
+    duration: Double,
+    currProgress: Double,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -80,7 +89,6 @@ fun CurrentSongPlayerCard(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
             .clickable(onClick = onCardClick)
     ) {
-        // Content row with album cover, song info, and buttons
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -159,22 +167,26 @@ fun CurrentSongPlayerCard(
             }
         }
 
-        // Progress indicator at the bottom of the card
+        val progress = if (duration > 0) (currProgress / duration).toFloat() else 0f
+
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(2.dp)
                 .align(Alignment.BottomCenter),
             color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
         )
     }
 }
 
+
+
 @Composable
 fun PurrytifyApp(
     windowSize: WindowWidthSizeClass,
+    globalViewModel: GlobalViewModel,
     navController: NavHostController = rememberNavController(),
     modifier: Modifier = Modifier
 ) {
@@ -198,35 +210,18 @@ fun PurrytifyApp(
         }
     }
 
-    // Current playing song (this should eventually come from a ViewModel)
-//    var currentPlayingSong = remember {
-//        mutableStateOf(
-//            Song(
-//                id = 1,
-//                title = "Starboy",
-//                artist = "The Weeknd",
-//                imagePath = R.drawable.starboy.toString()
-//            )
-//        )
-//    }
-
-    val isPlaying by remember { mutableStateOf(true) }
-    val songProgress by remember { mutableStateOf(0.3f) }
-
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
         Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
         else -> false
     }
 
-    // Determine if we should show the player (show on all screens except splash and login)
     val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute != Screen.SongDetail.route
 
-    val globalViewModel: GlobalViewModel = viewModel(
-        factory = GlobalViewModel.GlobalViewModelFactory(LocalContext.current.applicationContext as android.app.Application)
-    )
-
-    val currentSong = globalViewModel.currentlyPlayingSong.collectAsState().value
+    val currentSong by globalViewModel.currentSong.collectAsState()
+    val duration by globalViewModel.duration.collectAsState()
+    val currPosition by globalViewModel.currentPosition.collectAsState()
+    val isPlaying by globalViewModel.isPlaying.collectAsState()
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
@@ -258,6 +253,7 @@ fun PurrytifyApp(
                     composable(Screen.Library.route) {
                         LibraryScreen(
                             navController,
+                            globalViewModel
                         )
                     }
                     composable(Screen.Profile.route) {
@@ -270,12 +266,12 @@ fun PurrytifyApp(
                         arguments = listOf(navArgument("songId") { type = NavType.StringType })
                     ) {
                         val songId = it.arguments?.getString("songId") ?: ""
-                        SongDetailScreen(songId, navController)
+                        SongDetailScreen(songId, navController, globalViewModel = globalViewModel)
                     }
                 }
 
                 // Player card - visible on all screens except splash and login
-                if (showPlayer) {
+                if (showPlayer && currentSong != null) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -283,13 +279,14 @@ fun PurrytifyApp(
                             .background(Color.Transparent)
                     ) {
                         CurrentSongPlayerCard(
-                            song = currentSong ?: Song(id = 1, title = "No Title", artist = "No Artist", imagePath = R.drawable.starboy.toString(), audioPath = "null", duration = 30),
+                            song = currentSong!!,
                             onCardClick = {
                                 navController.navigate(Screen.SongDetail.createRoute(currentSong?.id.toString()))
                             },
                             onPlayPauseClick = { /* Toggle playback */ },
                             isPlaying = isPlaying,
-                            progress = songProgress
+                            currProgress = currPosition,
+                            duration = duration
                         )
                     }
                 }

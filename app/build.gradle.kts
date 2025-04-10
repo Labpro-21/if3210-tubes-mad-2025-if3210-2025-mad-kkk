@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    val media3_version = "1.6.0"
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -76,10 +77,13 @@ dependencies {
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
     implementation(libs.androidx.security.crypto)
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
-    implementation("androidx.media3:media3-exoplayer:1.2.1") // or latest version
-    implementation("androidx.media3:media3-ui:1.2.1")
-    implementation("androidx.media3:media3-session:1.2.1")
-    implementation("androidx.media3:media3-common")
+    implementation("androidx.media3:media3-exoplayer:$media3_version")
+    implementation("androidx.media3:media3-ui-compose:$media3_version")
+    implementation("androidx.media3:media3-ui:$media3_version")
+    implementation("androidx.media3:media3-session:$media3_version")
+    implementation("androidx.media3:media3-common:$media3_version")
+    implementation("androidx.media3:media3-common-ktx:$media3_version")
+    implementation("androidx.media3:media3-datasource:$media3_version")
+    implementation("androidx.media3:media3-extractor:$media3_version")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
-    implementation("androidx.media:media:1.6.0")
 }

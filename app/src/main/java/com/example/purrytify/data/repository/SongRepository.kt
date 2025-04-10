@@ -32,6 +32,10 @@ class SongRepository(
         return songDao.getSong(songId)
     }
 
+    fun getNumberOfSong() : Flow<Int> {
+        return songDao.getNumberOfSong()
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,

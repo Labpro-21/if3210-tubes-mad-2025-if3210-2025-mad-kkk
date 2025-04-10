@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.foundation.Image
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,9 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -32,15 +30,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.palette.graphics.Palette
+import com.example.purrytify.navigation.Screen
+import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.ui.model.SongDetailViewModel
 import com.example.purrytify.ui.theme.Poppins
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 private fun extractColorsFromImage(
     context: Context,
@@ -95,8 +92,16 @@ private fun processBitmap(bitmap: Bitmap, onColorsExtracted: (List<Color>) -> Un
         }
     }
 }
+
+private fun formatTime(seconds: Double): String {
+    val minutes = TimeUnit.SECONDS.toMinutes(seconds.toLong())
+    val remainingSeconds = seconds.toLong() - TimeUnit.MINUTES.toSeconds(minutes)
+    return String.format("%02d:%02d", minutes, remainingSeconds)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongDetailScreen(songId: String, navController: NavHostController, modifier: Modifier = Modifier) {
+fun SongDetailScreen(songId: String, navController: NavHostController, modifier: Modifier = Modifier, globalViewModel: GlobalViewModel) {
 
     val context = LocalContext.current
     val viewModel: SongDetailViewModel = viewModel(
@@ -109,6 +114,18 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
 
     val song by viewModel.currentSong.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
+
+    val isPlaying by globalViewModel.isPlaying.collectAsState()
+    val sliderPosition by globalViewModel.currentPosition.collectAsState()
+    val duration by globalViewModel.duration.collectAsState()
+
+    val validDuration = remember(duration) {
+        maxOf(0.1, duration).toFloat()
+    }
+
+    val validPosition = remember(sliderPosition, validDuration) {
+        sliderPosition.toFloat().coerceIn(0f, validDuration)
+    }
 
     var gradientColors by remember { mutableStateOf(listOf(Color(0x0064B5F6), Color(0x000D47A1))) }
     val scrollState = rememberScrollState()
@@ -213,6 +230,120 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
                             tint = if (isLiked) Color(0xFFFF4081) else Color.White
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Slider(
+                        value = validPosition,
+                        onValueChange = { },
+                        // onValueChange = { sliderPosition = it },
+                        valueRange = 0f..validDuration,
+                        thumb = {
+                            Spacer(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(Color.White, CircleShape),
+                            )
+                        },
+                        colors = SliderDefaults.colors(
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = formatTime(validPosition.toDouble()),
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontFamily = Poppins
+                        )
+
+                        Text(
+                            text = formatTime(validDuration.toDouble()),
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontFamily = Poppins
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            var prevId = globalViewModel.playPreviousSong()
+
+                            if (prevId != 0L) {
+                                navController.navigate(Screen.SongDetail.createRoute(prevId.toString())) {
+                                    launchSingleTop = true
+                                }
+                            }
+                            Log.d("PREVCLICKED", "PREVCLICKED")
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = "Previous",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { /* isPlaying = !isPlaying */  },
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            var nextId = globalViewModel.playNextSong()
+
+                            if (nextId != 0L) {
+                                navController.navigate(Screen.SongDetail.createRoute(nextId.toString())) {
+                                    launchSingleTop = true
+                                }
+                            }
+
+                            Log.d("NEXTCLICKED", "NEXTCLICKED")
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = "Next",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
