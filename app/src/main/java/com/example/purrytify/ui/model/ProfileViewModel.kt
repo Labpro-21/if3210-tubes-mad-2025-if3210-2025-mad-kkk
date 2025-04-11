@@ -16,11 +16,14 @@ import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.Profile
+import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.net.ConnectException
+import java.net.UnknownHostException
 
 data class SongStats(
     val totalSongs: Int = 0,
@@ -47,21 +50,67 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
         songRepository = SongRepository(songDao, application)
     }
 
-    fun loadUserProfile() {
+    fun loadUserProfile(onLogout: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             try {
-                val accessToken = tokenManager.getAccessToken()
-                val response = ApiClient.profileService.getProfile("Bearer $accessToken")
-                _userState.value = response
+                var accessToken = tokenManager.getAccessToken()
+
+                if (accessToken == null) {
+                    onLogout()
+                    return@launch
+                }
+
+                val isValid = try {
+                    ApiClient.authService.validate("Bearer $accessToken").valid
+                } catch (e: Exception) {
+                    if (e is ConnectException || e is UnknownHostException) {
+                        success = false
+                        return@launch
+                    } else {
+                        false
+                    }
+                }
+
+                if (!isValid) {
+                    val refreshToken = tokenManager.getRefreshToken()
+                    if (refreshToken == null) {
+                        onLogout()
+                        return@launch
+                    }
+
+                    try {
+                        val refreshResponse = ApiClient.authService.refresh(RefreshRequest(refreshToken))
+                        accessToken = refreshResponse.accessToken
+                        tokenManager.saveAccessToken(refreshResponse.accessToken)
+                        tokenManager.saveRefreshToken(refreshResponse.refreshToken)
+                    } catch (e: Exception) {
+                        if (e is ConnectException || e is UnknownHostException) {
+                            success = false
+                            return@launch
+                        } else {
+                            onLogout()
+                            return@launch
+                        }
+                    }
+                }
+
+                val profile = ApiClient.profileService.getProfile("Bearer $accessToken")
+                _userState.value = profile
                 success = true
-            } catch (_: Exception) {
-                success = false
+
+            } catch (e: Exception) {
+                if (e is ConnectException || e is UnknownHostException) {
+                    success = false
+                } else {
+                    onLogout()
+                }
             } finally {
                 isLoading = false
             }
         }
     }
+
 
     fun loadSongStats() {
         viewModelScope.launch {
@@ -77,11 +126,10 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
         }
     }
 
-    fun logout(onComplete: () -> Unit, clearUserId: () -> Unit) {
+    fun logout(onComplete: () -> Unit) {
         viewModelScope.launch {
             isLoggingOut = true
             tokenManager.clearTokens()
-            clearUserId()
             isLoggingOut = false
             onComplete()
         }

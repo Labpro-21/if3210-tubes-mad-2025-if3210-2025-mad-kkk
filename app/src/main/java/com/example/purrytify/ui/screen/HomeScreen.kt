@@ -47,12 +47,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavController
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.EditSongBottomSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.component.UploadSongBottomSheet
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
 
@@ -61,6 +64,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     showDetail: () -> Unit,
     globalViewModel: GlobalViewModel,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -85,6 +89,13 @@ fun HomeScreen(
     val showSongSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
+
+    LogoutListener {
+        navController.navigate(Screen.Login.route) {
+            popUpTo(0) { inclusive = true }
+        }
+        globalViewModel.clearUserId()
+    }
 
     LazyColumn(
         modifier = modifier

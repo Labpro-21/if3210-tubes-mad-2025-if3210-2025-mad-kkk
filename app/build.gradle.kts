@@ -86,4 +86,5 @@ dependencies {
     implementation("androidx.media3:media3-datasource:$media3_version")
     implementation("androidx.media3:media3-extractor:$media3_version")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
+    implementation ("androidx.work:work-runtime-ktx:2.10.0")
 }

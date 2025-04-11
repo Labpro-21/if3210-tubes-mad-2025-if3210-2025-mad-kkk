@@ -28,7 +28,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
             isSubmitLoading = true
             try {
                 val response = ApiClient.authService.login(LoginRequest(email, password))
-                val user = ApiClient.profileService.getProfile("Bearer $response.accessToken")
+                val user = ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
                 tokenManager.saveAccessToken(response.accessToken)
                 tokenManager.saveRefreshToken(response.refreshToken)
                 onSuccess(user.id)
@@ -36,7 +36,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
                 if (e is ConnectException) {
                     errorMessage = "No internet connection"
                 } else {
-                    errorMessage = "Login failed"
+                    errorMessage = e.toString()
                 }
             } finally {
                 isSubmitLoading = false

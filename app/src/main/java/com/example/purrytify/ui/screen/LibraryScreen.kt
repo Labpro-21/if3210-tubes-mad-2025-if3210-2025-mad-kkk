@@ -59,13 +59,16 @@ import com.example.purrytify.ui.model.LibraryViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.ui.text.input.ImeAction
+import androidx.navigation.NavController
+import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.EditSongBottomSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
+import com.example.purrytify.worker.LogoutListener
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
-fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
+fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
         factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application, globalViewModel)
@@ -96,9 +99,15 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
         skipPartiallyExpanded = true
     )
 
+    LogoutListener {
+        navController.navigate(Screen.Login.route) {
+            popUpTo(0) { inclusive = true }
+        }
+        globalViewModel.clearUserId()
+    }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
     ) {
         Column(

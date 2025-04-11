@@ -52,6 +52,7 @@ import coil.request.ImageRequest
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.service.baseUrl
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
 
@@ -73,9 +74,23 @@ fun ProfileScreen(
     val songStats by viewModel.songStats.collectAsState()
     val isConnected by globalViewModel.isConnected.collectAsState()
 
+    LogoutListener {
+        navController.navigate(Screen.Login.route) {
+            popUpTo(0) { inclusive = true }
+        }
+        globalViewModel.clearUserId()
+    }
+
     LaunchedEffect(isConnected) {
         if (isConnected) {
-            viewModel.loadUserProfile()
+            viewModel.loadUserProfile({
+                viewModel.logout(onComplete = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    globalViewModel.clearUserId()
+                })
+            })
             viewModel.loadSongStats()
         } else {
             viewModel.isLoading = false
@@ -148,9 +163,8 @@ fun ProfileScreen(
                             onClick = {
                                 viewModel.logout(onComplete = {
                                     navController.navigate(Screen.Login.route) {
-                                        popUpTo(0) { inclusive = true } // Clear backstack
+                                        popUpTo(0) { inclusive = true }
                                     }
-                                }, clearUserId = {
                                     globalViewModel.clearUserId()
                                 })
                             },
@@ -169,6 +183,7 @@ fun ProfileScreen(
                         }
                     }
                 }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -186,7 +201,14 @@ fun ProfileScreen(
         } else {
             NoInternetScreen {
                 scope.launch {
-                    viewModel.loadUserProfile()
+                    viewModel.loadUserProfile({
+                        viewModel.logout(onComplete = {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                            globalViewModel.clearUserId()
+                        })
+                    })
                     viewModel.loadSongStats()
                 }
             }

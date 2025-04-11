@@ -65,7 +65,6 @@ fun PurrytifyApp(
     navController: NavHostController = rememberNavController(),
     modifier: Modifier = Modifier
 ) {
-    // TODO: add view model for song state
     val navigationType: PurrytifyNavigationType = when (windowSize) {
         WindowWidthSizeClass.Compact -> {
             PurrytifyNavigationType.BOTTOM_NAVIGATION
@@ -76,7 +75,6 @@ fun PurrytifyApp(
         }
 
         WindowWidthSizeClass.Expanded -> {
-            // TODO: change to PurrytifyNavigationType.PERMANENT_NAVIGATION_DRAWER
             PurrytifyNavigationType.NAVIGATION_RAIL
         }
 
@@ -142,14 +140,16 @@ fun PurrytifyApp(
                         HomeScreen({
                                 showDetailSheet = true
                             },
-                            globalViewModel
+                            globalViewModel,
+                            navController
                         )
                     }
                     composable(Screen.Library.route) {
                         LibraryScreen({
                                 showDetailSheet = true
                             },
-                            globalViewModel
+                            globalViewModel,
+                            navController
                         )
                     }
                     composable(Screen.Profile.route) {
