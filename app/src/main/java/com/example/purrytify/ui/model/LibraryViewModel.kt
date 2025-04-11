@@ -1,17 +1,23 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
+import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.palette.graphics.Palette
 import com.example.purrytify.R
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.ui.util.extractColorsFromImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class LibraryViewModel(application: Application) : AndroidViewModel(application) {
@@ -42,7 +49,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     init {
         val database = SongDatabase.getDatabase(application)
         repository = SongRepository(database.songDao(), application)
-        @OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
+        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         songs = combine(_filterType, _searchQuery) { filterType, query ->
             filterType to query.trim()
         }.flatMapLatest { (filterType, query) ->
@@ -72,17 +79,28 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun uploadSong(title: String, artist: String) {
         viewModelScope.launch {
-            repository.insertSong(
-                title = title,
-                artist = artist,
-                imageUri = _selectedImageUri.value!!,
-                audioUri = _selectedAudioUri.value!!,
-                duration = getDurationFromFile()
-            )
+            val context = getApplication<Application>().applicationContext
+
+            withContext(Dispatchers.IO) {
+                val colors = extractColorsFromImage(context, _selectedImageUri.value)
+                val primaryColor = colors[0].toArgb()
+                val secondaryColor = colors[1].toArgb()
+
+                repository.insertSong(
+                    title = title,
+                    artist = artist,
+                    imageUri = _selectedImageUri.value!!,
+                    audioUri = _selectedAudioUri.value!!,
+                    primaryColor = primaryColor,
+                    secondaryColor = secondaryColor
+                )
+            }
+
             _selectedImageUri.value = null
             _selectedAudioUri.value = null
         }
     }
+
 
     fun getTitleFromFile(): String? {
         if (selectedAudioUri.value == null) return null
@@ -115,7 +133,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(getApplication(), selectedAudioUri.value)
-            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L
             return (durationMs / 1000).toInt()
         } catch (e: Exception) {
             return 0
@@ -144,7 +163,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             imagePath = this.imagePath,
             audioPath = this.audioPath,
             isLiked = this.isLiked,
-            duration = this.duration
+            primaryColor = this.primaryColor,
+            secondaryColor = this.secondaryColor
         )
     }
 
@@ -157,7 +177,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 imagePath = this.imagePath,
                 audioPath = this.audioPath,
                 isLiked = this.isLiked,
-                duration = this.duration
+                primaryColor = this.primaryColor,
+                secondaryColor = this.secondaryColor
             )
         } else null
     }
@@ -166,7 +187,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         ALL, LIKED
     }
 
-    class LibraryViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class LibraryViewModelFactory(private val application: Application) :
+        ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(LibraryViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")

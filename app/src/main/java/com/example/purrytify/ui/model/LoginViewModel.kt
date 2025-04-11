@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     var email by mutableStateOf("")
     var password by mutableStateOf("")
-    var isLoading by mutableStateOf(false)
+    var isLoading by mutableStateOf(true)
     var isSubmitLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 

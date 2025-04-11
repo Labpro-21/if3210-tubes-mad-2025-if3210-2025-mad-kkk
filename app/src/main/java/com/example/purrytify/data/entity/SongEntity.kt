@@ -15,5 +15,6 @@ data class SongEntity(
     val dateAdded: Long = System.currentTimeMillis(),
     val lastPlayed: Long? = null,
     val isLiked: Boolean = false,
-    val duration: Int
+    val primaryColor: Int,
+    val secondaryColor: Int,
 )

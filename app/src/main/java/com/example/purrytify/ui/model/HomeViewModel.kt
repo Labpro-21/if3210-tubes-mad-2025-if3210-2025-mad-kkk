@@ -48,7 +48,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             imagePath = this.imagePath,
             audioPath = this.audioPath,
             isLiked = this.isLiked,
-            duration = this.duration
+            primaryColor = this.primaryColor,
+            secondaryColor = this.secondaryColor
         )
     }
 
@@ -61,7 +62,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 imagePath = this.imagePath,
                 audioPath = this.audioPath,
                 isLiked = this.isLiked,
-                duration = this.duration
+                primaryColor = this.primaryColor,
+                secondaryColor = this.secondaryColor
             )
         } else null
     }

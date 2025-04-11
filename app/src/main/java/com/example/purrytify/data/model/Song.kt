@@ -7,5 +7,6 @@ data class Song(
     val imagePath: String,
     val audioPath: String,
     val isLiked: Boolean = false,
-    val duration: Int
+    val primaryColor: Int,
+    val secondaryColor: Int,
 )

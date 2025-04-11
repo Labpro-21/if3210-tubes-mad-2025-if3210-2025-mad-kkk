@@ -5,7 +5,6 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 
-// AuthService.kt
 interface AuthService {
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
