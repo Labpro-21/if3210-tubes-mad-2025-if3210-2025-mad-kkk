@@ -31,7 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -46,6 +50,7 @@ import androidx.compose.runtime.setValue
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.ui.component.EditSongBottomSheet
+import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.component.UploadSongBottomSheet
 import com.example.purrytify.ui.model.GlobalViewModel
 import kotlinx.coroutines.launch
@@ -67,14 +72,19 @@ fun HomeScreen(
     val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState(emptyList())
 
     var showUploadDialog by remember { mutableStateOf(false) }
+    var showSongOptionSheet by remember { mutableStateOf(false) }
+
     var showSong by remember { mutableStateOf<Song?>(null) }
 
     val scope = rememberCoroutineScope()
 
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // This is key to making it open fully
+    val uploadSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
     )
 
+    val showSongSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
 
     LazyColumn(
         modifier = modifier
@@ -121,9 +131,8 @@ fun HomeScreen(
                     showDetail()
                 },
                 onLongClick = {
-                    showUploadDialog = true
+                    showSongOptionSheet = true
                     showSong = song
-                    Log.d("LONG CLICKED", "LLLLLL")
                 })
         }
 
@@ -131,20 +140,41 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(70.dp))
         }
     }
+    if (showSongOptionSheet && showSong != null) {
+        SongOptionsSheet(
+            song = showSong!!,
+            onDismiss = {
+                scope.launch {
+                    showSongSheetState.hide()
+                    showSongOptionSheet = false
+                }
+            },
+            onEdit = {
+                scope.launch {
+                    showSongSheetState.hide()
+                    showSongOptionSheet = false
+                }
+                showUploadDialog = true
+            },
+            onDelete = {},
+            sheetState = showSongSheetState
+        )
+    }
+
     if (showUploadDialog && showSong != null) {
         EditSongBottomSheet(
             song = showSong!!,
             onDismiss = {
                 scope.launch {
-                    sheetState.hide()
+                    uploadSheetState.hide()
                     showUploadDialog = false
                 }
             },
-            sheetState = sheetState,
+            sheetState = uploadSheetState,
             onUpdate = { id, title, artist, image, audio ->
                 viewModel.updateSong(id, title, artist, image, audio)
                 scope.launch {
-                    sheetState.hide()
+                    uploadSheetState.hide()
                     showUploadDialog = false
                 }
             }
@@ -195,6 +225,15 @@ fun RecentlyPlayedItem(song: Song, onClick: () -> Unit, onLongClick: () -> Unit)
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontFamily = Poppins
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = onLongClick) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "More options",
+                tint = Color.LightGray,
+                modifier = Modifier.size(24.dp)
             )
         }
     }

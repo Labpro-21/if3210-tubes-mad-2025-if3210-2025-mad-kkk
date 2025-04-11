@@ -8,8 +8,10 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -19,6 +21,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -34,6 +37,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -55,6 +59,8 @@ import com.example.purrytify.ui.model.LibraryViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.ui.text.input.ImeAction
+import com.example.purrytify.ui.component.EditSongBottomSheet
+import com.example.purrytify.ui.component.SongOptionsSheet
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -80,6 +86,17 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
 
     val focusManager = LocalFocusManager.current
 
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showSongOptionSheet by remember { mutableStateOf(false) }
+    var showSong by remember { mutableStateOf<Song?>(null) }
+    val editSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    val songOptionSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -88,6 +105,11 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
                 .padding(horizontal = 16.dp)
         ) {
             Column(modifier = Modifier.padding(top = 32.dp).zIndex(10f).background(MaterialTheme.colorScheme.background)) {
@@ -120,7 +142,7 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                     onValueChange = { viewModel.setSearchQuery(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 5.dp),
                     placeholder = { Text("Search songs or artists") },
                     leadingIcon = {
                         Icon(
@@ -217,27 +239,46 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
             AndroidView(
                 factory = { context ->
                     RecyclerView(context).apply {
-                        id = View.generateViewId() // Generate a unique ID
+                        id = View.generateViewId()
                         layoutManager = LinearLayoutManager(context)
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
                         clipToPadding = false
-                        setPadding(0, 0, 0, 100) // Bottom padding for player controls
+                        setPadding(0, 0, 0, 100)
+                        setOnTouchListener { view, event ->
+                            if (event.action == MotionEvent.ACTION_DOWN) {
+                                focusManager.clearFocus()
+                            }
+                            if (event.action == MotionEvent.ACTION_UP) {
+                                view.performClick()
+                            }
+                            false
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 8.dp),
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = {
+                            focusManager.clearFocus()
+                        })
+                    },
                 update = { recyclerView ->
-                    val adapter = SongAdapter(songs, context) { song ->
-                        globalViewModel.playSong(song)
-                        showDetail()
-                    }
+                    val adapter = SongAdapter(
+                        songs,
+                        context,
+                        { song ->
+                            globalViewModel.playSong(song)
+                            showDetail()
+                        },
+                        { song ->
+                            showSong = song
+                            showSongOptionSheet = true
+                        }
+                    )
                     recyclerView.adapter = adapter
                 }
             )
         }
-
-
 
         if (showUploadDialog) {
             UploadSongBottomSheet(
@@ -262,6 +303,47 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                 viewModel = viewModel
             )
         }
+
+        if (showSongOptionSheet && showSong != null) {
+            SongOptionsSheet(
+                song = showSong!!,
+                onDismiss = {
+                    scope.launch {
+                        songOptionSheetState.hide()
+                        showSongOptionSheet = false
+                    }
+                },
+                onEdit = {
+                    scope.launch {
+                        songOptionSheetState.hide()
+                        showSongOptionSheet = false
+                    }
+                    showEditDialog = true
+                },
+                onDelete = {},
+                sheetState = songOptionSheetState
+            )
+        }
+
+        if (showEditDialog && showSong != null) {
+            EditSongBottomSheet(
+                song = showSong!!,
+                onDismiss = {
+                    scope.launch {
+                        editSheetState.hide()
+                        showEditDialog = false
+                    }
+                },
+                sheetState = editSheetState,
+                onUpdate = { id, title, artist, image, audio ->
+                    viewModel.updateSong(id, title, artist, image, audio)
+                    scope.launch {
+                        editSheetState.hide()
+                        showEditDialog = false
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -269,13 +351,15 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
 class SongAdapter(
     private val songs: List<Song>,
     val context: Context,
-    private val onItemClick: (Song) -> Unit
+    private val onItemClick: (Song) -> Unit,
+    private val onSongOptionClick: (Song) -> Unit
 ) : RecyclerView.Adapter<SongAdapter.SongViewHolder>() {
 
     class SongViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val songImage: ImageView = itemView.findViewById(R.id.song_image)
         val songTitle: TextView = itemView.findViewById(R.id.song_title)
         val songArtist: TextView = itemView.findViewById(R.id.song_artist)
+        val moreOptionsButton: ImageButton = itemView.findViewById(R.id.more_options)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
@@ -313,6 +397,15 @@ class SongAdapter(
         // Set click listener
         holder.itemView.setOnClickListener {
             onItemClick(song)
+        }
+
+        holder.moreOptionsButton.setOnClickListener {
+            onSongOptionClick(song)
+        }
+
+        holder.itemView.setOnLongClickListener {
+            onSongOptionClick(song)
+            true
         }
     }
 

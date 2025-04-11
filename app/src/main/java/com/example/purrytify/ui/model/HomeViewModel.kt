@@ -45,7 +45,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun SongEntity.toSong(): Song {
-        // TODO: changed later
         return Song(
             id = this.id,
             title = this.title,

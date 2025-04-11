@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -181,6 +182,47 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 secondaryColor = this.secondaryColor
             )
         } else null
+    }
+
+    fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
+        viewModelScope.launch {
+            val context = getApplication<Application>().applicationContext
+            var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
+            var thumbnail = songEntity.imagePath
+            var audio = songEntity.audioPath
+            var primaryColor = songEntity.primaryColor
+            var secondaryColor = songEntity.secondaryColor
+
+            if (uriImage != null) {
+                withContext(Dispatchers.IO) {
+                    val imagePath = repository.saveThumbnail(uriImage)
+
+                    thumbnail = imagePath
+
+                    val colors = extractColorsFromImage(context, uriImage)
+                    primaryColor = colors[0].toArgb()
+                    secondaryColor = colors[1].toArgb()
+
+                }
+            }
+
+            if (uriAudio != null) {
+                withContext(Dispatchers.IO) {
+                    val audioPath = repository.saveAudio(uriAudio)
+                    audio = audioPath
+                }
+            }
+
+            repository.updateSongById(
+                id = id,
+                title = title,
+                artist = artist,
+                imageUri = thumbnail,
+                audioUri = audio,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor
+            )
+        }
     }
 
     enum class FilterType {
