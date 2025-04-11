@@ -13,6 +13,7 @@ interface ProfileService {
 
 }
 data class Profile(
+    val id: Int = 1,
     val username: String = "13522xxx",
     val email: String = "13522xxx@std.stei.itb.ac.id",
     val profilePhoto: String = "None",

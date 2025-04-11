@@ -14,6 +14,7 @@ import com.example.purrytify.service.AuthService
 import com.example.purrytify.service.LoginRequest
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.launch
+import java.net.ConnectException
 
 class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     var email by mutableStateOf("")
@@ -22,18 +23,21 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     var isSubmitLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    fun login(onSuccess: () -> Unit) {
+    fun login(onSuccess: (Int) -> Unit) {
         viewModelScope.launch {
             isSubmitLoading = true
             try {
                 val response = ApiClient.authService.login(LoginRequest(email, password))
-                Log.d("CONSOLE_DEBUG", "Login successful")
+                val user = ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
                 tokenManager.saveAccessToken(response.accessToken)
                 tokenManager.saveRefreshToken(response.refreshToken)
-                onSuccess()
+                onSuccess(user.id)
             } catch (e: Exception) {
-                Log.e("CONSOLE_DEBUG", "Login failed", e)
-                errorMessage = "Login failed"
+                if (e is ConnectException) {
+                    errorMessage = "No internet connection"
+                } else {
+                    errorMessage = e.toString()
+                }
             } finally {
                 isSubmitLoading = false
             }
@@ -45,7 +49,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     }
 
     fun validateToken(
-        onValid: () -> Unit,
+        onValid: (Int) -> Unit,
         onRefreshFailed: () -> Unit
     ) {
         viewModelScope.launch {
@@ -60,13 +64,17 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
                 try {
                     val response = ApiClient.authService.validate("Bearer $accessToken")
                     if (response.valid) {
-                        onValid()
+                        val user = ApiClient.profileService.getProfile("Bearer $accessToken")
+                        onValid(user.id)
                     } else {
                         refreshToken(onValid, onRefreshFailed)
                     }
                 } catch (e: Exception) {
-                    Log.e("CONSOLE_DEBUG", "Token validation failed", e)
-                    refreshToken(onValid, onRefreshFailed)
+                    if (e is ConnectException) {
+                        errorMessage = "No internet connection"
+                    } else {
+                        refreshToken(onValid, onRefreshFailed)
+                    }
                 }
             } finally {
                 isLoading = false
@@ -75,7 +83,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     }
 
     private suspend fun refreshToken(
-        onSuccess: () -> Unit,
+        onSuccess: (Int) -> Unit,
         onFailed: () -> Unit
     ) {
         val refreshToken = tokenManager.getRefreshToken() ?: run {
@@ -85,11 +93,14 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
 
         try {
             val response = ApiClient.authService.refresh(RefreshRequest(refreshToken))
+            val user = ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
             tokenManager.saveAccessToken(response.accessToken)
             tokenManager.saveRefreshToken(response.refreshToken)
-            onSuccess()
+            onSuccess(user.id)
         } catch (e: Exception) {
-            Log.e("CONSOLE_DEBUG", "Token refresh failed", e)
+            if (e is ConnectException) {
+                errorMessage = "No internet connection"
+            }
             onFailed()
         }
     }

@@ -34,6 +34,7 @@ import java.io.File
 import kotlin.math.roundToInt
 import androidx.core.net.toUri
 import kotlin.math.min
+import com.example.purrytify.network.NetworkMonitor
 
 class GlobalViewModel(application: Application) : AndroidViewModel(application) {
     private var mediaController: MediaController? = null
@@ -69,10 +70,16 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private val A_queue_picker = 1
     private val B_queue_picker = 1
+    private val _user_id = MutableStateFlow<Int?>(null)
+    val user_id: StateFlow<Int?> =_user_id
+
+    private val networkMonitor = NetworkMonitor(application)
+    val isConnected = networkMonitor.isConnected
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
+        networkMonitor.register()
 
         viewModelScope.launch {
             var songSize = repository.getNumberOfSong().first()
@@ -86,6 +93,19 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 _queue_list.value = _userQueue.toList() + _queue.toList()
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        networkMonitor.unregister()
+    }
+
+    fun setUserId(newId: Int) {
+        _user_id.value = newId
+    }
+
+    fun clearUserId() {
+        _user_id.value = null
     }
 
     fun bindMediaController(controller: MediaController) {

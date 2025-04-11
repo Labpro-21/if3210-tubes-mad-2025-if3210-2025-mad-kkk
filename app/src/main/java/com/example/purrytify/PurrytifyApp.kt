@@ -1,5 +1,6 @@
 package com.example.purrytify
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,12 +37,20 @@ import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.SplashScreen
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.purrytify.ui.component.CurrentSongPlayerCard
 import com.example.purrytify.ui.component.SongDetailSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
@@ -55,7 +65,6 @@ fun PurrytifyApp(
     navController: NavHostController = rememberNavController(),
     modifier: Modifier = Modifier
 ) {
-    // TODO: add view model for song state
     val navigationType: PurrytifyNavigationType = when (windowSize) {
         WindowWidthSizeClass.Compact -> {
             PurrytifyNavigationType.BOTTOM_NAVIGATION
@@ -66,7 +75,6 @@ fun PurrytifyApp(
         }
 
         WindowWidthSizeClass.Expanded -> {
-            // TODO: change to PurrytifyNavigationType.PERMANENT_NAVIGATION_DRAWER
             PurrytifyNavigationType.NAVIGATION_RAIL
         }
 
@@ -96,6 +104,17 @@ fun PurrytifyApp(
         skipPartiallyExpanded = true
     )
 
+    val isConnected by globalViewModel.isConnected.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(isConnected) {
+        if (!isConnected) {
+            snackbarHostState.showSnackbar(message = "No internet connection", withDismissAction = true, duration = SnackbarDuration. Indefinite)
+        } else {
+            snackbarHostState.currentSnackbarData?.dismiss()
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
             AnimatedVisibility(visible = (navigationType == PurrytifyNavigationType.NAVIGATION_RAIL && hasNavbar)) {
@@ -116,25 +135,25 @@ fun PurrytifyApp(
                     composable(Screen.Splash.route) {
                         SplashScreen(navController)
                     }
-                    composable(Screen.Login.route) { LoginScreen(navController) }
+                    composable(Screen.Login.route) { LoginScreen(navController, globalViewModel) }
                     composable(Screen.Home.route) {
                         HomeScreen({
                                 showDetailSheet = true
                             },
-                            globalViewModel
+                            globalViewModel,
+                            navController
                         )
                     }
                     composable(Screen.Library.route) {
                         LibraryScreen({
                                 showDetailSheet = true
                             },
-                            globalViewModel
+                            globalViewModel,
+                            navController
                         )
                     }
                     composable(Screen.Profile.route) {
-                        ProfileScreen(
-                            navController,
-                        )
+                        ProfileScreen(globalViewModel, navController)
                     }
                 }
 
@@ -203,5 +222,11 @@ fun PurrytifyApp(
                 )
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 }
