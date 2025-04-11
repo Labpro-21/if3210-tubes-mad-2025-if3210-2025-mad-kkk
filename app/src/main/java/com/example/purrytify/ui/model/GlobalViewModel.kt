@@ -62,6 +62,9 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _userQueue: ArrayDeque<Song> = ArrayDeque<Song>()
 
+    private val _isRepeat = MutableStateFlow<Boolean>(false)
+    val isRepeat: StateFlow<Boolean> = _isRepeat
+
     private val queueSize = 5
 
     private val A_queue_picker = 1
@@ -126,7 +129,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         override fun onPlaybackStateChanged(playbackState: Int) {
             checkAndUpdateProgress()
             if (playbackState == Player.STATE_ENDED) {
-                playNextSong()
+                playNextSong(true)
             }
         }
     }
@@ -350,6 +353,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         refreshQueueAndHistoryUI()
     }
 
+    fun toggleRepeat() {
+        _isRepeat.value = !_isRepeat.value
+    }
+
     fun clearQueue() {
         viewModelScope.launch {
             _userQueue.clear()
@@ -417,7 +424,16 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         _history_list.value = _history.toList()
     }
 
-    fun playNextSong() : Long {
+    fun playNextSong(auto: Boolean = false) : Long {
+
+        if (auto && _isRepeat.value) {
+            var currentSong = _currentSong.value ?: return 0
+            playSong(currentSong)
+            return currentSong.id
+        }
+
+        _isRepeat.value = false
+
         if (_userQueue.isNotEmpty()) {
             val nextSong = _userQueue.removeFirst()
             var lastSong = nextSong

@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +44,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.Image
@@ -59,11 +63,14 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.Divider
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,12 +80,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.ui.theme.Poppins
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+
 
 private fun formatTime(seconds: Double): String {
     val minutes = TimeUnit.SECONDS.toMinutes(seconds.toLong())
@@ -94,6 +104,12 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
     val sliderPosition by globalViewModel.currentPosition.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
 
+    val queueList by globalViewModel.queue.collectAsState()
+
+    val scope = rememberCoroutineScope()
+    var showQueueSheet by remember { mutableStateOf(false) }
+    val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     val validDuration = remember(duration) {
         maxOf(0.1, duration).toFloat()
     }
@@ -104,6 +120,8 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
 
     val gradientColors by remember (song) { mutableStateOf(listOf(Color(song?.primaryColor?:0x0064B5F6), Color( song?.secondaryColor?: 0x000D47A1), Color(0xFF101510))) }
     val scrollState = rememberScrollState()
+
+    val isRepeatEnabled by globalViewModel.isRepeat.collectAsState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null, contentWindowInsets = {WindowInsets(0)}
@@ -155,7 +173,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(50.dp))
 
                     Box(
                         modifier = Modifier
@@ -171,7 +189,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         )
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.height(96.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -299,8 +317,192 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
+
+                    Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        IconButton(
+                            onClick = { showQueueSheet = true },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QueueMusic,
+                                contentDescription = "View Queue",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                globalViewModel.toggleRepeat()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "Repeat",
+                                tint = if (isRepeatEnabled) Color(0xFFFF4081) else Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
             }
+        }
+    }
+    if (showQueueSheet) {
+        QueueSheet(
+            queueList = queueList,
+            onDismiss = {
+                scope.launch {
+                    queueSheetState.hide()
+                    showQueueSheet = false
+                }
+            },
+            onSongClick = { song ->
+                globalViewModel.playSong(song)
+                scope.launch {
+                    queueSheetState.hide()
+                    showQueueSheet = false
+                }
+            },
+            sheetState = queueSheetState
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QueueSheet(
+    queueList: List<com.example.purrytify.data.model.Song>,
+    onDismiss: () -> Unit,
+    onSongClick: (com.example.purrytify.data.model.Song) -> Unit,
+    sheetState: SheetState
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Queue",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = Poppins
+                )
+
+                IconButton(
+                    onClick = {
+                        // Toggle the visual state (no functionality yet)
+//                            isRepeatEnabled = !isRepeatEnabled
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Repeat,
+                        contentDescription = "Repeat",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Divider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+
+            if (queueList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Queue is empty",
+                        color = Color.Gray,
+                        fontFamily = Poppins
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    items(queueList) { song ->
+                        QueueItem(
+                            song = song,
+                            onClick = { onSongClick(song) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QueueItem(
+    song: com.example.purrytify.data.model.Song,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(4.dp))
+        ) {
+            ImageLoader.LoadImage(
+                imagePath = song.imagePath,
+                contentDescription = "${song.title} Album Cover",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = song.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = Poppins,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = song.artist,
+                fontSize = 14.sp,
+                color = Color.Gray,
+                fontFamily = Poppins,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        if (song.isLiked) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "Liked",
+                tint = Color(0xFFFF4081),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

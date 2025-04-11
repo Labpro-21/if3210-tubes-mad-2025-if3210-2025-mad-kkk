@@ -1,5 +1,6 @@
 package com.example.purrytify.ui.component
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.purrytify.data.model.Song
@@ -41,6 +43,7 @@ import com.example.purrytify.ui.model.ImageLoader
 @Composable
 fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit, sheetState: SheetState, detail: Boolean = false, onAddToQueue: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        var context = LocalContext.current
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,6 +66,7 @@ fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDe
 
             SheetOption(icon = Icons.Default.QueueMusic, text = "Add to Queue") {
                 onAddToQueue()
+                Toast.makeText(context, "Added To Queue", Toast.LENGTH_SHORT).show()
                 onDismiss()
             } // TODO: change later
             SheetOption(icon = Icons.Default.Favorite, text = "Add to Like") { onDismiss() } //  TODO: change later
