@@ -36,6 +36,10 @@ class SongRepository(
         return songDao.getNumberOfSong()
     }
 
+    fun getCountOfListenedSong() : Flow<Int> {
+        return songDao.getCountOfListenedSong()
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,

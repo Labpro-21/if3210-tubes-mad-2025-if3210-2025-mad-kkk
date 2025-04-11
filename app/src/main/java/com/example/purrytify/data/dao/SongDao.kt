@@ -30,6 +30,9 @@ interface SongDao {
     @Query("SELECT COUNT(id) FROM songs")
     fun getNumberOfSong() : Flow<Int>
 
+    @Query("SELECT COUNT(id) FROM songs WHERE lastPlayed is NOT NULL")
+    fun getCountOfListenedSong() : Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity): Long
 
@@ -50,4 +53,5 @@ interface SongDao {
 
     @Query("SELECT * FROM songs where id = :songId")
     fun getSong(songId: Long): Flow<SongEntity?>
+
 }

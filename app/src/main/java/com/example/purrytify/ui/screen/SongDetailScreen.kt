@@ -132,6 +132,7 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
 
     LaunchedEffect(song) {
         song?.let {
+            Log.d("LOG SONG", it.title)
             extractColorsFromImage(context, song!!.imagePath) { extractedColors ->
                 gradientColors = extractedColors + Color(0xFF101510)
             }
@@ -298,6 +299,7 @@ fun SongDetailScreen(songId: String, navController: NavHostController, modifier:
                             if (prevId != 0L) {
                                 navController.navigate(Screen.SongDetail.createRoute(prevId.toString())) {
                                     launchSingleTop = true
+//                                    popUpTo(Screen.Splash.route) { inclusive = true }
                                 }
                             }
                             Log.d("PREVCLICKED", "PREVCLICKED")
