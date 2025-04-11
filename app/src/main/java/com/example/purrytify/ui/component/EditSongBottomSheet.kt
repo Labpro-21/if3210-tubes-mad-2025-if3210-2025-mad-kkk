@@ -1,6 +1,7 @@
 package com.example.purrytify.ui.component
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -62,10 +63,35 @@ import com.example.purrytify.ui.model.ImageLoader
 fun EditSongBottomSheet(
     song: Song,
     onDismiss: () -> Unit,
+    onUpdate: (Long, String, String, Uri?, Uri?) -> Unit,
     sheetState: SheetState
 ) {
-    var title = song.title
-    var artist = song.artist
+    var title by remember { mutableStateOf(song.title) }
+    var artist by remember { mutableStateOf(song.artist) }
+
+    var thumbnail = remember { mutableStateOf(song.imagePath) }
+    var audio = remember { mutableStateOf(song.audioPath) }
+
+    var audioChanged = remember { mutableStateOf(false) }
+    var thumbnailChanged = remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            thumbnail.value = it.toString()
+            thumbnailChanged.value = true
+        }
+    }
+
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            audio.value = it.toString()
+            audioChanged.value = true
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -127,16 +153,24 @@ fun EditSongBottomSheet(
                             .size(120.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.DarkGray)
-                            /* .clickable { imagePickerLauncher.launch("image/*") }*/ */,
+                            .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        ImageLoader.LoadImage(
-                            imagePath = song.imagePath,
-                            contentDescription = "Selected Image",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-
+                        if (thumbnailChanged.value) {
+                            Image(
+                                painter = rememberAsyncImagePainter(thumbnail.value.toUri()),
+                                contentDescription = "Selected Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            ImageLoader.LoadImage(
+                                imagePath = thumbnail.value,
+                                contentDescription = "Selected Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                     Text(
                         text = "Change Photo",
@@ -158,7 +192,7 @@ fun EditSongBottomSheet(
                             .size(120.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.DarkGray)
-                            /* .clickable { audioPickerLauncher.launch("audio/*") } */ */,
+                            .clickable { audioPickerLauncher.launch("audio/*") } ,
                         contentAlignment = Alignment.Center
                     ) {
 //                        if (selectedAudioUri != null) {
@@ -287,7 +321,17 @@ fun EditSongBottomSheet(
 
                 // Update button
                 Button(
-                    onClick = {  },
+                    onClick = {
+                        var newThumbnail: Uri? = null
+                        var newAudio: Uri? = null
+                        if (thumbnailChanged.value) {
+                            newThumbnail = thumbnail.value.toUri()
+                        }
+                        if (audioChanged.value) {
+                            newAudio = thumbnail.value.toUri()
+                        }
+                        onUpdate(song.id, title, artist, newThumbnail, newAudio )
+                              },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1DB954),
                         contentColor = Color.Black

@@ -2,6 +2,7 @@ package com.example.purrytify.ui.model
 
 import android.app.Application
 import android.net.Uri
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -12,13 +13,17 @@ import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.ui.model.LibraryViewModel.FilterType
+import com.example.purrytify.ui.util.extractColorsFromImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -66,6 +71,47 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 secondaryColor = this.secondaryColor
             )
         } else null
+    }
+
+    fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
+        viewModelScope.launch {
+            val context = getApplication<Application>().applicationContext
+            var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
+            var thumbnail = songEntity.imagePath
+            var audio = songEntity.audioPath
+            var primaryColor = songEntity.primaryColor
+            var secondaryColor = songEntity.secondaryColor
+
+            if (uriImage != null) {
+                withContext(Dispatchers.IO) {
+                    val imagePath = repository.saveThumbnail(uriImage)
+
+                    thumbnail = imagePath
+
+                    val colors = extractColorsFromImage(context, uriImage)
+                    primaryColor = colors[0].toArgb()
+                    secondaryColor = colors[1].toArgb()
+
+                }
+            }
+
+            if (uriAudio != null) {
+                withContext(Dispatchers.IO) {
+                    val audioPath = repository.saveAudio(uriAudio)
+                    audio = audioPath
+                }
+            }
+
+            repository.updateSongById(
+                id = id,
+                title = title,
+                artist = artist,
+                imageUri = thumbnail,
+                audioUri = audio,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor
+            )
+        }
     }
 
     class HomeViewModelFactory(private val application: Application) : ViewModelProvider.Factory {

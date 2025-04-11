@@ -1,6 +1,8 @@
 package com.example.purrytify.data.repository
 
 import android.content.Context
+import android.content.UriMatcher
+import android.media.Image
 import android.net.Uri
 import com.example.purrytify.data.dao.SongDao
 import com.example.purrytify.data.entity.SongEntity
@@ -64,6 +66,29 @@ class SongRepository(
         return songDao.insertSong(song)
     }
 
+    suspend fun updateSongById(
+        id: Long,
+        title: String,
+        artist: String,
+        imageUri: String,
+        audioUri: String,
+        primaryColor: Int,
+        secondaryColor: Int,
+        isLiked: Boolean = false
+    ) {
+        val song = SongEntity(
+            id = id,
+            title = title,
+            artist = artist,
+            imagePath = imageUri,
+            audioPath = audioUri,
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+            isLiked = isLiked
+        )
+        songDao.updateSong(song)
+    }
+
     suspend fun updateLikedStatus(songId: Long, isLiked: Boolean) {
         songDao.updateLikedStatus(songId, isLiked)
     }
@@ -80,6 +105,16 @@ class SongRepository(
         deleteFile(song.imagePath)
         deleteFile(song.audioPath)
         songDao.deleteSong(song)
+    }
+
+    fun saveThumbnail(uri: Uri) : String {
+        val imagePath = saveFileToInternalStorage(uri, "images")
+        return imagePath
+    }
+
+    fun saveAudio(uri: Uri) : String {
+        val audioPath = saveFileToInternalStorage(uri, "audio")
+        return audioPath
     }
 
     private fun saveFileToInternalStorage(uri: Uri, folderName: String): String {

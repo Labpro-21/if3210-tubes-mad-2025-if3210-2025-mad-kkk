@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.data.model.Song
@@ -67,6 +68,8 @@ fun HomeScreen(
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var showSong by remember { mutableStateOf<Song?>(null) }
+
+    val scope = rememberCoroutineScope()
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // This is key to making it open fully
@@ -132,9 +135,19 @@ fun HomeScreen(
         EditSongBottomSheet(
             song = showSong!!,
             onDismiss = {
-                showUploadDialog = false
+                scope.launch {
+                    sheetState.hide()
+                    showUploadDialog = false
+                }
             },
-            sheetState = sheetState
+            sheetState = sheetState,
+            onUpdate = { id, title, artist, image, audio ->
+                viewModel.updateSong(id, title, artist, image, audio)
+                scope.launch {
+                    sheetState.hide()
+                    showUploadDialog = false
+                }
+            }
         )
     }
 
