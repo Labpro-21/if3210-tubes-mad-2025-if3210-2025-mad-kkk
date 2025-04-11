@@ -289,6 +289,7 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                 onSave = { title, artist ->
                     if (title.isNotEmpty() && artist.isNotEmpty() && viewModel.selectedAudioUri.value != null && viewModel.selectedImageUri.value != null) {
                         viewModel.uploadSong(title, artist)
+                        globalViewModel.notifyAddSong()
                         scope.launch {
                             sheetState.hide()
                             showUploadDialog = false
