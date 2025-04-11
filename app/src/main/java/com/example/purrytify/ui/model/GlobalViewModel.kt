@@ -276,6 +276,34 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun notifyUpdateSong(song: Song) {
+        viewModelScope.launch {
+            val updatedQueue = ArrayDeque<Song>()
+            for (s in _queue) {
+                if (s.id == song.id) {
+                    updatedQueue.add(song)
+                } else {
+                    updatedQueue.add(s)
+                }
+            }
+            _queue.clear()
+            _queue.addAll(updatedQueue)
+
+            // update history
+            val updatedHistory = ArrayDeque<Song>()
+            for (s in _history) {
+                if (s.id == song.id) {
+                    continue
+                } else {
+                    updatedHistory.add(s)
+                }
+            }
+            _history.clear()
+            _history.addAll(updatedHistory)
+            refreshQueueAndHistoryUI()
+        }
+    }
+
     fun addToQueue(song: Song) {
         _queue.add(song)
         refreshQueueAndHistoryUI()

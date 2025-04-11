@@ -68,7 +68,7 @@ import java.util.concurrent.Executors
 fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
-        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application)
+        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application, globalViewModel)
     )
 
     val songs by viewModel.songs.collectAsState(initial = emptyList())
@@ -289,7 +289,6 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                 onSave = { title, artist ->
                     if (title.isNotEmpty() && artist.isNotEmpty() && viewModel.selectedAudioUri.value != null && viewModel.selectedImageUri.value != null) {
                         viewModel.uploadSong(title, artist)
-                        globalViewModel.notifyAddSong()
                         scope.launch {
                             sheetState.hide()
                             showUploadDialog = false

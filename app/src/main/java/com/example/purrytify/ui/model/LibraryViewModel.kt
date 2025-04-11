@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class LibraryViewModel(application: Application) : AndroidViewModel(application) {
+class LibraryViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
 
     private val repository: SongRepository
 
@@ -99,6 +99,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
             _selectedImageUri.value = null
             _selectedAudioUri.value = null
+
+            globalViewModel.notifyAddSong()
         }
     }
 
@@ -222,6 +224,20 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor
             )
+
+            val updatedSong = Song(
+                id = id,
+                title = title,
+                artist = artist,
+                imagePath = thumbnail,
+                audioPath = audio,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor,
+                isLiked = false
+            )
+
+            globalViewModel.notifyUpdateSong(updatedSong)
+
         }
     }
 
@@ -229,12 +245,12 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         ALL, LIKED
     }
 
-    class LibraryViewModelFactory(private val application: Application) :
+    class LibraryViewModelFactory(private val application: Application, private val globalViewModel: GlobalViewModel) :
         ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(LibraryViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return LibraryViewModel(application) as T
+                return LibraryViewModel(application, globalViewModel) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

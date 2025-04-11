@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
 
     private val repository: SongRepository
 
@@ -108,16 +108,30 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 imageUri = thumbnail,
                 audioUri = audio,
                 primaryColor = primaryColor,
-                secondaryColor = secondaryColor
+                secondaryColor = secondaryColor,
+                isLiked = false
             )
+
+            val updatedSong = Song(
+                id = id,
+                title = title,
+                artist = artist,
+                imagePath = thumbnail,
+                audioPath = audio,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor,
+                isLiked = false
+            )
+
+            globalViewModel.notifyUpdateSong(updatedSong)
         }
     }
 
-    class HomeViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class HomeViewModelFactory(private val application: Application, private val globalViewModel: GlobalViewModel) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return HomeViewModel(application) as T
+                return HomeViewModel(application, globalViewModel) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
