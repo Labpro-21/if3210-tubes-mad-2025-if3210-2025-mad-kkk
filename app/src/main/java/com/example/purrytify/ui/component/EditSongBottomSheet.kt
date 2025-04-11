@@ -328,7 +328,7 @@ fun EditSongBottomSheet(
                             newThumbnail = thumbnail.value.toUri()
                         }
                         if (audioChanged.value) {
-                            newAudio = thumbnail.value.toUri()
+                            newAudio = audio.value.toUri()
                         }
                         onUpdate(song.id, title, artist, newThumbnail, newAudio )
                               },
