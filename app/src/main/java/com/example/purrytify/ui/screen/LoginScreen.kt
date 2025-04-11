@@ -1,6 +1,9 @@
 package com.example.purrytify.ui.screen
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -30,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,9 +61,31 @@ import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.theme.Poppins
 
+fun Activity.lockPortraitOrientation() {
+    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+}
+
+fun Activity.unlockOrientation() {
+    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+}
+
+
 @Composable
 fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())) {
     val context = LocalContext.current
+
+    val activity = LocalActivity.current
+
+    LaunchedEffect(Unit) {
+        activity?.lockPortraitOrientation()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            activity?.unlockOrientation()
+        }
+    }
+
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
@@ -79,6 +106,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
                     // Stay on login
                 }
             )
+        } else {
+            viewModel.isLoading = false
         }
     }
 
@@ -96,7 +125,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF121212))
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -133,7 +162,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
                     fontSize = 24.sp,
                 )
             )
-            Column (verticalArrangement = Arrangement.Bottom, modifier = Modifier.weight(1f).navigationBarsPadding().padding(horizontal = 16.dp)) {
+            Column (modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
                 Text(
                     "Email",
                     style = TextStyle(
@@ -211,7 +240,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel = vi
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp)
+                        .padding(top = 24.dp)
                         .height(52.dp)
                 ) {
                     Text("Log In", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Poppins)

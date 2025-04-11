@@ -60,19 +60,20 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     val history: StateFlow<List<Song>> = _history_list
 
 
-    // TODO: check if this is needed
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
 
         viewModelScope.launch {
             var songSize = repository.getNumberOfSong().first()
-            Log.d("INIT GLOBAL VIEW MODEL", songSize.toString())
-            for (i in 1..18) {
-                var song = repository.getSongById(i.mod(songSize).toLong() + 1).first()?.toSong()
-                song?.let { _queue.add(song) }
+            if (songSize > 0) {
+                Log.d("INIT GLOBAL VIEW MODEL", songSize.toString())
+                for (i in 1..18) {
+                    var song = repository.getSongById(i.mod(songSize).toLong() + 1).first()?.toSong()
+                    song?.let { _queue.add(song) }
+                }
+                _queue_list.value = _queue.toList()
             }
-            _queue_list.value = _queue.toList()
         }
     }
 
@@ -81,30 +82,48 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         controller.addListener(mediaListener)
     }
 
-    private val mediaListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            if (isPlaying) {
-                resumeProgressUpdate()
-            }
-        }
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_READY && mediaController?.isPlaying == true) {
-                resumeProgressUpdate()
-            }
-        }
-    }
-    private var progressUpdateJob: Job? = null
-
 
     private fun resumeProgressUpdate() {
-        progressUpdateJob?.cancel()
+        if (progressUpdateJob?.isActive == true) return
         progressUpdateJob = viewModelScope.launch {
             while (isActive) {
                 updatePlaybackState()
-                delay(500) // Update every half second
+                delay(500)
             }
         }
     }
+
+    private fun stopProgressUpdate() {
+        progressUpdateJob?.cancel()
+        progressUpdateJob = null
+    }
+
+    private fun checkAndUpdateProgress() {
+        val isPlaying = mediaController?.isPlaying == true
+        val isReady = mediaController?.playbackState == Player.STATE_READY
+
+        if (isPlaying && isReady) {
+            resumeProgressUpdate()
+        } else {
+            stopProgressUpdate()
+        }
+    }
+
+
+    private val mediaListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            checkAndUpdateProgress()
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            checkAndUpdateProgress()
+            if (playbackState == Player.STATE_ENDED) {
+                playNextSong()
+            }
+        }
+    }
+
+    private var progressUpdateJob: Job? = null
 
     private fun updatePlaybackState() {
         mediaController?.let { service ->
@@ -138,6 +157,45 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             setMediaItem(mediaItem)
             prepare()
             play()
+        }
+    }
+
+    fun toggleLikedStatus() {
+        val songId = _currentSong.value?.id ?: return
+        val isLiked = _currentSong.value?.isLiked ?: return
+
+        viewModelScope.launch {
+            repository.updateLikedStatus(songId, !isLiked)
+            _currentSong.value?.let { currentSong ->
+                // update current song
+                val updatedSong = currentSong.copy(isLiked = !isLiked)
+                _currentSong.value = updatedSong
+
+                // update queue
+                val updatedQueue = ArrayDeque<Song>()
+                for (s in _queue) {
+                    if (s.id == songId) {
+                        updatedQueue.add(s.copy(isLiked = !isLiked))
+                    } else {
+                        updatedQueue.add(s)
+                    }
+                }
+                _queue.clear()
+                _queue.addAll(updatedQueue)
+
+                // update history
+                val updatedHistory = ArrayDeque<Song>()
+                for (s in _history) {
+                    if (s.id == songId) {
+                        updatedHistory.add(s.copy(isLiked = !isLiked))
+                    } else {
+                        updatedHistory.add(s)
+                    }
+                }
+                _history.clear()
+                _history.addAll(updatedHistory)
+                refreshQueueAndHistoryUI()
+            }
         }
     }
 
@@ -208,7 +266,6 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             viewModelScope.launch {
                 var songSize = repository.getNumberOfSong().first()
 
-
                 var song = repository.getSongById((lastSong.id).mod(songSize).toLong() + 1).first()?.toSong()
                 song?.let { _queue.add(song) }
 
@@ -274,7 +331,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             imagePath = this.imagePath,
             audioPath = this.audioPath,
             isLiked = this.isLiked,
-            duration = this.duration
+            primaryColor = this.primaryColor,
+            secondaryColor = this.secondaryColor
         )
     }
 

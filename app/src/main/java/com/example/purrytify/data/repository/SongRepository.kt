@@ -41,7 +41,8 @@ class SongRepository(
         artist: String,
         imageUri: Uri,
         audioUri: Uri,
-        duration: Int
+        primaryColor: Int,
+        secondaryColor: Int
     ): Long {
         val imagePath = saveFileToInternalStorage(imageUri, "images")
 
@@ -52,7 +53,8 @@ class SongRepository(
             artist = artist,
             imagePath = imagePath,
             audioPath = audioPath,
-            duration = duration
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
         )
 
         return songDao.insertSong(song)
