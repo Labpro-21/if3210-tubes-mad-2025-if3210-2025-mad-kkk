@@ -108,7 +108,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
         sliderPosition.toFloat().coerceIn(0f, validDuration)
     }
 
-    val gradientColors by remember { mutableStateOf(listOf(Color(song?.primaryColor?:0x0064B5F6), Color( song?.secondaryColor?: 0x000D47A1), Color(0xFF101510))) }
+    val gradientColors by remember (song) { mutableStateOf(listOf(Color(song?.primaryColor?:0x0064B5F6), Color( song?.secondaryColor?: 0x000D47A1), Color(0xFF101510))) }
     val scrollState = rememberScrollState()
 
     ModalBottomSheet(
