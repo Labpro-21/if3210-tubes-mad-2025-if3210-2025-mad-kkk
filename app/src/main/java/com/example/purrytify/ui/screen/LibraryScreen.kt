@@ -21,15 +21,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,9 +54,10 @@ import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LibraryViewModel
 import kotlinx.coroutines.launch
 import java.io.File
+import androidx.compose.ui.text.input.ImeAction
 import java.util.concurrent.Executors
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -65,6 +73,12 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val accentGreen = Color(0xFF1DB954)
+
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
@@ -99,8 +113,54 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                             .size(24.dp)
                             .clickable { showUploadDialog = true }
                     )
+
                 }
-                 Box(modifier = Modifier.height(8.dp).fillMaxWidth().zIndex(10f))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.setSearchQuery(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    placeholder = { Text("Search songs or artists") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = Color.Gray
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedTextColor = Color.White,
+                        focusedTextColor = Color.White,
+                        unfocusedContainerColor = Color.DarkGray.copy(alpha = 0.5f),
+                        focusedContainerColor = Color.DarkGray.copy(alpha = 0.5f),
+                        cursorColor = accentGreen,
+                        focusedBorderColor = accentGreen,
+                        unfocusedBorderColor = Color.Gray
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }
+                    )
+                )
+
+                Box(modifier = Modifier.height(8.dp).fillMaxWidth().zIndex(10f))
             }
 
             Box(
