@@ -68,7 +68,7 @@ import java.util.concurrent.Executors
 fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
-        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application)
+        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application, globalViewModel)
     )
 
     val songs by viewModel.songs.collectAsState(initial = emptyList())
@@ -319,7 +319,10 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                     showEditDialog = true
                 },
                 onDelete = {},
-                sheetState = songOptionSheetState
+                sheetState = songOptionSheetState,
+                onAddToQueue = {
+                    globalViewModel.addToQueue(showSong!!)
+                }
             )
         }
 

@@ -215,7 +215,10 @@ fun PurrytifyApp(
                     onEdit = {},
                     onDelete = {},
                     sheetState = showSongOptionSheetState,
-                    detail = true
+                    detail = true,
+                    onAddToQueue = {
+                        globalViewModel.addToQueue(currentSong!!)
+                    }
                 )
             }
         }

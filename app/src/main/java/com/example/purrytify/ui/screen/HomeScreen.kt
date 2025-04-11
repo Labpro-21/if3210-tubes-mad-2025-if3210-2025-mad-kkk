@@ -65,7 +65,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModel.HomeViewModelFactory(context.applicationContext as android.app.Application)
+        factory = HomeViewModel.HomeViewModelFactory(context.applicationContext as android.app.Application, globalViewModel)
     )
 
     val songs by viewModel.recentlyAddedSongs.collectAsState(emptyList())
@@ -157,7 +157,10 @@ fun HomeScreen(
                 showUploadDialog = true
             },
             onDelete = {},
-            sheetState = showSongSheetState
+            sheetState = showSongSheetState,
+            onAddToQueue = {
+                globalViewModel.addToQueue(showSong!!)
+            }
         )
     }
 
