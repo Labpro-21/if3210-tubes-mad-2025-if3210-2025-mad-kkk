@@ -60,6 +60,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val _history_list = MutableStateFlow<List<Song>>(emptyList())
     val history: StateFlow<List<Song>> = _history_list
 
+    private val _userQueue: ArrayDeque<Song> = ArrayDeque<Song>()
+
     private val queueSize = 5
 
     private val A_queue_picker = 1
@@ -78,7 +80,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                     var song = allSongs[i - 1].toSong()
                     song.let { _queue.add(song) }
                 }
-                _queue_list.value = _queue.toList()
+                _queue_list.value = _userQueue.toList() + _queue.toList()
             }
         }
     }
@@ -200,6 +202,17 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 _history.clear()
                 _history.addAll(updatedHistory)
+
+                val updatedUserQ = ArrayDeque<Song>()
+                for (s in _userQueue) {
+                    if (s.id == songId) {
+                        updatedUserQ.add(s.copy(isLiked = !isLiked))
+                    } else {
+                        updatedUserQ.add(s)
+                    }
+                }
+                _userQueue.clear()
+                _userQueue.addAll(updatedUserQ)
                 refreshQueueAndHistoryUI()
             }
         }
@@ -300,23 +313,75 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             }
             _history.clear()
             _history.addAll(updatedHistory)
+
+            val updatedUserQ = ArrayDeque<Song>()
+            for (s in _userQueue) {
+                if (s.id == song.id) {
+                    updatedUserQ.add(song)
+                } else {
+                    updatedUserQ.add(s)
+                }
+            }
+            _userQueue.clear()
+            _userQueue.addAll(updatedUserQ)
             refreshQueueAndHistoryUI()
         }
     }
 
     fun addToQueue(song: Song) {
-        _queue.add(song)
+        _userQueue.add(song)
+        val userQSize = _userQueue.size
+        var systemQSize = _queue.size
+        while (userQSize + systemQSize > queueSize && systemQSize > 0) {
+            _queue.removeLast()
+            systemQSize--
+        }
         refreshQueueAndHistoryUI()
     }
 
     fun addAllToQueue(songs: List<Song>) {
-        _queue.addAll(songs)
+        _userQueue.addAll(songs)
+        val userQSize = _userQueue.size
+        var systemQSize = _queue.size
+        while (userQSize + systemQSize > queueSize && systemQSize > 0) {
+            _queue.removeLast()
+            systemQSize--
+        }
         refreshQueueAndHistoryUI()
     }
 
     fun clearQueue() {
-        _queue.clear()
-        refreshQueueAndHistoryUI()
+        viewModelScope.launch {
+            _userQueue.clear()
+            val userQSize = _userQueue.size
+            var systemQSize = _queue.size
+            var allSongs = repository.allSongs.first()
+            var songSize = allSongs.size
+
+            var lastIndex = -1
+            var iterator = 0
+
+            var lastSong = 1L
+
+            if (_queue.isNotEmpty()) {
+                lastSong = _queue.last().id
+            }
+
+            for (song in allSongs) {
+                if (song.id == lastSong) {
+                    lastIndex = iterator
+                }
+                iterator++
+            }
+
+            while (userQSize + systemQSize < queueSize) {
+                lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
+                var song = allSongs[lastSong.toInt()]
+                _queue.add(song.toSong())
+                systemQSize++
+            }
+            refreshQueueAndHistoryUI()
+        }
     }
 
     fun removeFromQueue(song: Song) {
@@ -348,13 +413,13 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun refreshQueueAndHistoryUI() {
-        _queue_list.value = _queue.toList()
+        _queue_list.value = _userQueue.toList() + _queue.toList()
         _history_list.value = _history.toList()
     }
 
     fun playNextSong() : Long {
-        if (_queue.isNotEmpty()) {
-            val nextSong = _queue.removeFirst()
+        if (_userQueue.isNotEmpty()) {
+            val nextSong = _userQueue.removeFirst()
             var lastSong = nextSong
 
             if (_queue.isNotEmpty()) {
@@ -364,14 +429,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             playSong(nextSong)
 
             viewModelScope.launch {
-
-                if (_queue.size < queueSize) {
+                val userQSize = _userQueue.size
+                if (_queue.size + userQSize < queueSize) {
 
                     var songSize = repository.getNumberOfSong().first()
-
-                    if (_queue.size >= songSize - 1 && songSize != 1) {
-                        return@launch
-                    }
 
                     var allSongs = repository.allSongs.first()
 
@@ -397,7 +458,54 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
                     Log.d("QUEUE NEXT SONG", song.title)
 
-                    _queue_list.value = _queue.toList()
+                    _queue_list.value = _userQueue.toList() + _queue.toList()
+                }
+            }
+
+            return nextSong.id
+        }
+
+        if (_queue.isNotEmpty()) {
+            val nextSong = _queue.removeFirst()
+            var lastSong = nextSong
+
+            if (_queue.isNotEmpty()) {
+                lastSong = _queue.last()
+            }
+
+            playSong(nextSong)
+
+            viewModelScope.launch {
+                val userQSize = _userQueue.size
+                if (_queue.size + userQSize < queueSize) {
+
+                    var songSize = repository.getNumberOfSong().first()
+
+                    var allSongs = repository.allSongs.first()
+
+                    var lastIndex = -1
+                    var iterator = 0
+
+                    for (song in allSongs) {
+                        if (song.id == lastSong.id) {
+                            lastIndex = iterator
+                        }
+                        iterator++
+                    }
+
+                    if (lastIndex == -1) {
+                        Log.e("GLOBAL VIEW MODEL", "CURRENT SONG NOT FOUND IN QUEUE")
+                        return@launch
+                    }
+
+                    var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
+//                        repository.getSongById((lastSong.id).mod(songSize).toLong() + 1).first()
+//                            ?.toSong()
+                    song.let { _queue.add(it.toSong()) }
+
+                    Log.d("QUEUE NEXT SONG", song.title)
+
+                    _queue_list.value = _userQueue.toList() + _queue.toList()
                 }
             }
 

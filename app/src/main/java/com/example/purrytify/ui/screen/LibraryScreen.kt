@@ -319,7 +319,10 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                     showEditDialog = true
                 },
                 onDelete = {},
-                sheetState = songOptionSheetState
+                sheetState = songOptionSheetState,
+                onAddToQueue = {
+                    globalViewModel.addToQueue(showSong!!)
+                }
             )
         }
 

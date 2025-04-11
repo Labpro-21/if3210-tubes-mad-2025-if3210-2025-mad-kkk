@@ -157,7 +157,10 @@ fun HomeScreen(
                 showUploadDialog = true
             },
             onDelete = {},
-            sheetState = showSongSheetState
+            sheetState = showSongSheetState,
+            onAddToQueue = {
+                globalViewModel.addToQueue(showSong!!)
+            }
         )
     }
 
