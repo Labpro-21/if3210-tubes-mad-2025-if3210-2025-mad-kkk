@@ -101,7 +101,6 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Main content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,7 +109,7 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                         focusManager.clearFocus()
                     })
                 }
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Column(modifier = Modifier.padding(top = 32.dp).zIndex(10f).background(MaterialTheme.colorScheme.background)) {
                 Row(
@@ -135,14 +134,13 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, modi
                             .size(24.dp)
                             .clickable { showUploadDialog = true }
                     )
-
                 }
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 5.dp),
+                        .padding(vertical = 12.dp),
                     placeholder = { Text("Search songs or artists") },
                     leadingIcon = {
                         Icon(

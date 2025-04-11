@@ -43,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.example.purrytify.ui.component.CurrentSongPlayerCard
 import com.example.purrytify.ui.component.SongDetailSheet
+import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.GlobalViewModel
 import kotlinx.coroutines.launch
 
@@ -90,6 +91,11 @@ fun PurrytifyApp(
     val detailSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
+    var showSongOptionSheet by remember { mutableStateOf(false) }
+    val showSongOptionSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
     Box(modifier = modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
             AnimatedVisibility(visible = (navigationType == PurrytifyNavigationType.NAVIGATION_RAIL && hasNavbar)) {
@@ -132,7 +138,6 @@ fun PurrytifyApp(
                     }
                 }
 
-                // Player card - visible on all screens except splash and login
                 if (showPlayer && currentSong != null) {
                     Box(
                         modifier = Modifier
@@ -153,7 +158,6 @@ fun PurrytifyApp(
                     }
                 }
 
-                // Bottom navigation bar at the very bottom
                 AnimatedVisibility(visible = navigationType == PurrytifyNavigationType.BOTTOM_NAVIGATION && hasNavbar) {
                     BottomNavigationBar(
                         navController,
@@ -174,9 +178,27 @@ fun PurrytifyApp(
                     },
                     globalViewModel = globalViewModel,
                     sheetState = detailSheetState,
+                    onOpenOption = {
+                        showSongOptionSheet = true
+                    }
                 )
             }
 
+            if (showSongOptionSheet && currentSong != null) {
+                SongOptionsSheet(
+                    song = currentSong!!,
+                    onDismiss = {
+                        scope.launch {
+                            showSongOptionSheetState.hide()
+                            showSongOptionSheet = false
+                        }
+                    },
+                    onEdit = {},
+                    onDelete = {},
+                    sheetState = showSongOptionSheetState,
+                    detail = true
+                )
+            }
         }
     }
 }

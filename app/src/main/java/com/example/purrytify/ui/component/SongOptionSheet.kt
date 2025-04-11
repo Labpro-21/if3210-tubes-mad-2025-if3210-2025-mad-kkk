@@ -39,7 +39,7 @@ import com.example.purrytify.ui.model.ImageLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit, sheetState: SheetState) {
+fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit, sheetState: SheetState, detail: Boolean = false) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             modifier = Modifier
@@ -63,8 +63,10 @@ fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDe
 
             SheetOption(icon = Icons.Default.QueueMusic, text = "Add to Queue") { onDismiss() } // TODO: change later
             SheetOption(icon = Icons.Default.Favorite, text = "Add to Like") { onDismiss() } //  TODO: change later
-            SheetOption(icon = Icons.Default.Delete, text = "Delete Song") { onDelete() }
-            SheetOption(icon = Icons.Default.Edit, text = "Edit Song") { onEdit() }
+            if (!detail) {
+                SheetOption(icon = Icons.Default.Delete, text = "Delete Song") { onDelete() }
+                SheetOption(icon = Icons.Default.Edit, text = "Edit Song") { onEdit() }
+            }
         }
     }
 }

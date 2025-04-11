@@ -88,7 +88,7 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = modifier
-            .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
+            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
     ) {
         item {
             Text(

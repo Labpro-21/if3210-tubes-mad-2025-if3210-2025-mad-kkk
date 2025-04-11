@@ -75,15 +75,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.palette.graphics.Palette
-import coil.compose.rememberAsyncImagePainter
-import com.example.purrytify.R
-import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.ui.theme.Poppins
-import java.io.File
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 private fun formatTime(seconds: Double): String {
@@ -94,7 +88,7 @@ private fun formatTime(seconds: Double): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier) {
+fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier, onOpenOption: () -> Unit) {
     val song by globalViewModel.currentSong.collectAsState()
     val isPlaying by globalViewModel.isPlaying.collectAsState()
     val sliderPosition by globalViewModel.currentPosition.collectAsState()
@@ -152,7 +146,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             )
                         }
 
-                        IconButton(onClick = { /* More options menu */ }) {
+                        IconButton(onClick = onOpenOption) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "More options",
@@ -161,7 +155,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     Box(
                         modifier = Modifier
@@ -177,7 +171,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -208,10 +202,6 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Spacer(modifier = Modifier.weight(1f))
 
                     Column(
                         modifier = Modifier
@@ -257,12 +247,10 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp),
+                            .padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -309,8 +297,6 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
 
                     Spacer(modifier = Modifier.weight(1f))
                 }
