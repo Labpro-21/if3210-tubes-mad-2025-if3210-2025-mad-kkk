@@ -659,6 +659,33 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playPreviousSong() : Long {
+        if (_isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
+            _isRepeat.value = REPEAT.NO_REPEAT.ordinal
+        }
+        if (_currentSong.value == null) {
+            return 0
+        }
+        if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
+            if (_queue.isEmpty()) {
+                if (_userQueue.isEmpty()) {
+                    return 0
+                }
+                val prevSong = _userQueue.removeLast()
+                _queue.addFirst(_currentSong.value!!)
+                play(prevSong)
+                _currentSong.value = prevSong
+                refreshQueueAndHistoryUI()
+                return prevSong.id
+            } else {
+                val prevSong = _queue.removeLast()
+                _queue.addFirst(_currentSong.value!!)
+                play(prevSong)
+                _currentSong.value = prevSong
+                refreshQueueAndHistoryUI()
+                return prevSong.id
+            }
+        }
+
         if (_history.isNotEmpty()) {
             val prevSong = _history.removeFirst()
             currentSong.value?.let { _queue.addFirst(it) }
