@@ -349,6 +349,39 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             _userQueue.clear()
             _userQueue.addAll(filteredUserQ)
 
+            val userQSize = _userQueue.size
+            var systemQSize = _queue.size
+            val allSongs = repository.allSongs(user_id.value!!).first()
+            val songSize = allSongs.size
+
+            var lastIndex = -1
+            var iterator = 0
+
+            var lastSong = 1L
+
+            if (_queue.isNotEmpty()) {
+                lastSong = _queue.last().id
+            } else {
+                if (_userQueue.isEmpty()) {
+                    return@launch
+                }
+                lastSong = _userQueue.last().id
+            }
+
+            for (song in allSongs) {
+                if (song.id == lastSong) {
+                    lastIndex = iterator
+                }
+                iterator++
+            }
+
+            while (userQSize + systemQSize < queueSize) {
+                lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
+                val song = allSongs[lastSong.toInt()]
+                _queue.add(song.toSong())
+                systemQSize++
+            }
+
             refreshQueueAndHistoryUI()
         }
     }

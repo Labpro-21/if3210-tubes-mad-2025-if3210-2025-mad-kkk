@@ -115,7 +115,10 @@ fun SongOptionsSheet(
             SheetOption(
                 icon = Icons.Default.Favorite,
                 text = if (song.isLiked) "Remove from like" else "Add to like",
-                onClick = onLiked,
+                onClick = {
+                    onLiked()
+                    onDismiss()
+                },
                 tint = if (song.isLiked) Color(0xFFFF4081) else Color.White
             )
             if (!detail) {
