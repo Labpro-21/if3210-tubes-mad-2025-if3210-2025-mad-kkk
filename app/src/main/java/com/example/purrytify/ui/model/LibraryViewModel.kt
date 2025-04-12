@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -51,12 +52,16 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         val database = SongDatabase.getDatabase(application)
         repository = SongRepository(database.songDao(), application)
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-        songs = combine(_filterType, _searchQuery) { filterType, query ->
-            filterType to query.trim()
-        }.flatMapLatest { (filterType, query) ->
+        songs = combine(
+            globalViewModel.user_id.filterNotNull(),
+            _filterType,
+            _searchQuery
+        ) { userId, filterType, query ->
+            Triple(userId, filterType, query.trim())
+        }.flatMapLatest { (userId, filterType, query) ->
             val flow = when (filterType) {
-                FilterType.ALL -> repository.searchAllSongs(query)
-                FilterType.LIKED -> repository.searchLikedSongs(query)
+                FilterType.ALL -> repository.searchAllSongs(query, userId)
+                FilterType.LIKED -> repository.searchLikedSongs(query, userId)
             }
             flow.map { entities -> entities.map { it.toSong() } }
         }
@@ -80,6 +85,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
     fun uploadSong(title: String, artist: String) {
         viewModelScope.launch {
+            val userId = globalViewModel.user_id.filterNotNull().first()
             val context = getApplication<Application>().applicationContext
 
             withContext(Dispatchers.IO) {
@@ -93,7 +99,8 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                     imageUri = _selectedImageUri.value!!,
                     audioUri = _selectedAudioUri.value!!,
                     primaryColor = primaryColor,
-                    secondaryColor = secondaryColor
+                    secondaryColor = secondaryColor,
+                    userId = userId
                 )
             }
 
@@ -167,7 +174,8 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
             audioPath = this.audioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
-            secondaryColor = this.secondaryColor
+            secondaryColor = this.secondaryColor,
+            userId = this.userId
         )
     }
 
@@ -181,13 +189,15 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                 audioPath = this.audioPath,
                 isLiked = this.isLiked,
                 primaryColor = this.primaryColor,
-                secondaryColor = this.secondaryColor
+                secondaryColor = this.secondaryColor,
+                userId = this.userId
             )
         } else null
     }
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
         viewModelScope.launch {
+            val userId = globalViewModel.user_id.filterNotNull().first()
             val context = getApplication<Application>().applicationContext
             var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
             var thumbnail = songEntity.imagePath
@@ -197,7 +207,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
             if (uriImage != null) {
                 withContext(Dispatchers.IO) {
-                    val imagePath = repository.saveThumbnail(uriImage)
+                    val imagePath = repository.saveThumbnail(uriImage, userId)
 
                     thumbnail = imagePath
 
@@ -210,7 +220,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
             if (uriAudio != null) {
                 withContext(Dispatchers.IO) {
-                    val audioPath = repository.saveAudio(uriAudio)
+                    val audioPath = repository.saveAudio(uriAudio, userId)
                     audio = audioPath
                 }
             }
@@ -222,7 +232,8 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                 imageUri = thumbnail,
                 audioUri = audio,
                 primaryColor = primaryColor,
-                secondaryColor = secondaryColor
+                secondaryColor = secondaryColor,
+                userId = userId
             )
 
             val updatedSong = Song(
@@ -233,7 +244,8 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                 audioPath = audio,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
-                isLiked = false
+                isLiked = false,
+                userId = userId
             )
 
             globalViewModel.notifyUpdateSong(updatedSong)

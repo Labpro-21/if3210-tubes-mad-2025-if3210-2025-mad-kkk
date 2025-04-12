@@ -6,32 +6,35 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SongDao {
-    @Query("SELECT * FROM songs ORDER BY dateAdded DESC")
-    fun getAllSongs(): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE userId = :userId ORDER BY dateAdded DESC")
+    fun getAllSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE isLiked = 1 ORDER BY dateAdded DESC")
-    fun getLikedSongs(): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE isLiked = 1 AND userId = :userId ORDER BY dateAdded DESC")
+    fun getLikedSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%' ORDER BY dateAdded DESC")
-    fun searchAllSongs(query: String): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE userId = :userId AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY dateAdded DESC")
+    fun searchAllSongs(query: String, userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE isLiked = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY dateAdded DESC")
-    fun searchAllLikedSongs(query: String): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE userId = :userId AND isLiked = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY dateAdded DESC")
+    fun searchAllLikedSongs(query: String, userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 12")
-    fun getRecentlyPlayedSongs(): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE userId = :userId AND lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 12")
+    fun getRecentlyPlayedSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs ORDER BY dateAdded DESC LIMIT 8")
-    fun getRecentlyAddedSongs(): Flow<List<SongEntity>>
+    @Query("SELECT * FROM songs WHERE userId = :userId ORDER BY dateAdded DESC LIMIT 8")
+    fun getRecentlyAddedSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 1")
-    fun getLastPlayedSong(): Flow<SongEntity?>
+    @Query("SELECT * FROM songs WHERE userId = :userId AND lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 1")
+    fun getLastPlayedSong(userId: Int): Flow<SongEntity?>
 
-    @Query("SELECT COUNT(id) FROM songs")
-    fun getNumberOfSong() : Flow<Int>
+    @Query("SELECT COUNT(id) FROM songs WHERE userId = :userId")
+    fun getNumberOfSong(userId: Int) : Flow<Int>
 
-    @Query("SELECT COUNT(id) FROM songs WHERE lastPlayed is NOT NULL")
-    fun getCountOfListenedSong() : Flow<Int>
+    @Query("SELECT COUNT(id) FROM songs WHERE userId = :userId AND lastPlayed is NOT NULL")
+    fun getCountOfListenedSong(userId: Int) : Flow<Int>
+
+    @Query("SELECT * FROM songs where id = :songId")
+    fun getSong(songId: Long): Flow<SongEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity): Long
@@ -50,8 +53,4 @@ interface SongDao {
 
     @Query("UPDATE songs SET lastPlayed = :timestamp WHERE id = :id")
     suspend fun updateLastPlayed(id: Long, timestamp: Long)
-
-    @Query("SELECT * FROM songs where id = :songId")
-    fun getSong(songId: Long): Flow<SongEntity?>
-
 }

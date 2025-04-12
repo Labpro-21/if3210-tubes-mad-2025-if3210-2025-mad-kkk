@@ -79,23 +79,30 @@ fun ProfileScreen(
             popUpTo(0) { inclusive = true }
         }
         globalViewModel.clearUserId()
+        globalViewModel.logout()
     }
 
     LaunchedEffect(isConnected) {
         if (isConnected) {
-            viewModel.loadUserProfile({
-                viewModel.logout(onComplete = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                    globalViewModel.clearUserId()
-                })
-            })
-            viewModel.loadSongStats()
+            viewModel.loadUserProfile(
+                onLogout = {
+                    viewModel.logout(onComplete = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                        globalViewModel.clearUserId()
+                        globalViewModel.logout()
+                    })
+                },
+                onSuccess = {
+                    viewModel.loadSongStats()
+                }
+            )
         } else {
             viewModel.isLoading = false
         }
     }
+
 
     if (viewModel.isLoading) {
         Box(
@@ -166,6 +173,7 @@ fun ProfileScreen(
                                         popUpTo(0) { inclusive = true }
                                     }
                                     globalViewModel.clearUserId()
+                                    globalViewModel.logout()
                                 })
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -201,15 +209,20 @@ fun ProfileScreen(
         } else {
             NoInternetScreen {
                 scope.launch {
-                    viewModel.loadUserProfile({
-                        viewModel.logout(onComplete = {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0) { inclusive = true }
-                            }
-                            globalViewModel.clearUserId()
-                        })
-                    })
-                    viewModel.loadSongStats()
+                    viewModel.loadUserProfile(
+                        onLogout = {
+                            viewModel.logout(onComplete = {
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                                globalViewModel.clearUserId()
+                                globalViewModel.logout()
+                            })
+                        },
+                        onSuccess = {
+                            viewModel.loadSongStats()
+                        }
+                    )
                 }
             }
         }

@@ -20,7 +20,9 @@ import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import java.net.ConnectException
 import java.net.UnknownHostException
@@ -50,7 +52,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
         songRepository = SongRepository(songDao, application)
     }
 
-    fun loadUserProfile(onLogout: () -> Unit) {
+    fun loadUserProfile(onLogout: () -> Unit, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             try {
@@ -99,6 +101,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                 _userState.value = profile
                 success = true
 
+                onSuccess()
+
             } catch (e: Exception) {
                 if (e is ConnectException || e is UnknownHostException) {
                     success = false
@@ -112,11 +116,14 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     }
 
 
+
     fun loadSongStats() {
         viewModelScope.launch {
-            songRepository.getNumberOfSong().collect { totalSongs ->
-                val likedCount = songRepository.likedSongs.first().size
-                val listenedCount = songRepository.getCountOfListenedSong().first()
+            val curr = userState.first()
+            val userId = curr.id
+            songRepository.getNumberOfSong(userId).collect { totalSongs ->
+                val likedCount = songRepository.likedSongs(userId).first().size
+                val listenedCount = songRepository.getCountOfListenedSong(userId).first()
                 _songStats.value = SongStats(
                     totalSongs = totalSongs,
                     likedSongs = likedCount,

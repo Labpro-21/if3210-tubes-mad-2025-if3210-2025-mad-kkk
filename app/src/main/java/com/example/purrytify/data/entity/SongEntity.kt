@@ -17,4 +17,5 @@ data class SongEntity(
     val isLiked: Boolean = false,
     val primaryColor: Int,
     val secondaryColor: Int,
+    val userId: Int
 )
