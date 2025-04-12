@@ -1,12 +1,7 @@
 package com.example.purrytify.ui.screen
 
-import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -15,14 +10,20 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,10 +31,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,36 +55,42 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.palette.graphics.Palette
+import androidx.navigation.NavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.component.UploadSongBottomSheet
-import com.example.purrytify.ui.model.GlobalViewModel
-import com.example.purrytify.ui.model.LibraryViewModel
-import kotlinx.coroutines.launch
-import java.io.File
-import androidx.compose.ui.text.input.ImeAction
-import androidx.navigation.NavController
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.EditSongBottomSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
+import com.example.purrytify.ui.component.UploadSongBottomSheet
+import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.model.LibraryViewModel
 import com.example.purrytify.worker.LogoutListener
-import java.util.concurrent.Executors
+import kotlinx.coroutines.launch
+import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navController: NavController, modifier: Modifier = Modifier) {
+fun LibraryScreen(
+    showDetail: () -> Unit,
+    globalViewModel: GlobalViewModel,
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel(
-        factory = LibraryViewModel.LibraryViewModelFactory(context.applicationContext as android.app.Application, globalViewModel)
+        factory = LibraryViewModel.LibraryViewModelFactory(
+            context.applicationContext as android.app.Application,
+            globalViewModel
+        )
     )
 
     val songs by viewModel.songs.collectAsState(initial = emptyList())
@@ -123,7 +142,12 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                 }
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Column(modifier = Modifier.padding(top = 32.dp).zIndex(10f).background(MaterialTheme.colorScheme.background)) {
+            Column(
+                modifier = Modifier
+                    .padding(top = 32.dp)
+                    .zIndex(10f)
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -192,7 +216,10 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                     )
                 )
 
-                Box(modifier = Modifier.height(8.dp).fillMaxWidth().zIndex(10f))
+                Box(modifier = Modifier
+                    .height(8.dp)
+                    .fillMaxWidth()
+                    .zIndex(10f))
             }
 
             Box(
@@ -306,7 +333,11 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                             showUploadDialog = false
                         }
                     } else {
-                        Toast.makeText(context, "Please fill all fields and select both audio and image", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Please fill all fields and select both audio and image",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 },
                 sheetState = sheetState,
@@ -366,7 +397,11 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                             showEditDialog = false
                         }
                     } else {
-                        Toast.makeText(context, "Please fill all fields and select both audio and image", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Please fill all fields and select both audio and image",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             )
@@ -400,15 +435,17 @@ class SongAdapter(
 
         holder.songTitle.text = song.title
         holder.songArtist.text = song.artist
-        val path = song.imagePath ?: R.drawable.starboy.toString()
+        val path = song.imagePath
         val img = when {
             path.toIntOrNull() != null -> {
                 val resID = path.toIntOrNull() ?: R.drawable.starboy
                 BitmapFactory.decodeResource(context.resources, resID)
             }
+
             File(path).exists() -> {
                 BitmapFactory.decodeFile(path)
             }
+
             else -> {
                 BitmapFactory.decodeResource(context.resources, R.drawable.starboy)
             }

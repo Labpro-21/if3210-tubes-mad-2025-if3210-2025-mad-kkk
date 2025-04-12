@@ -1,6 +1,5 @@
 package com.example.purrytify.ui.model
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.data.TokenManager
 import com.example.purrytify.service.ApiClient
-import com.example.purrytify.service.AuthService
 import com.example.purrytify.service.LoginRequest
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.launch
@@ -35,8 +33,6 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
             } catch (e: Exception) {
                 if (e is ConnectException) {
                     errorMessage = "No internet connection"
-                } else {
-                    errorMessage = e.toString()
                 }
             } finally {
                 isSubmitLoading = false

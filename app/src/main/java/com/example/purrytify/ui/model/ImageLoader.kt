@@ -1,6 +1,5 @@
 package com.example.purrytify.ui.model
 
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

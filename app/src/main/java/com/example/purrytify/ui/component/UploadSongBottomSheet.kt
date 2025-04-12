@@ -236,7 +236,7 @@ fun UploadSongBottomSheet(
                 singleLine = true
             )
 
-            // Artist field
+            // artist field
             Text(
                 text = "Artist",
                 color = Color.White,
@@ -272,7 +272,7 @@ fun UploadSongBottomSheet(
                     .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Cancel button
+                // cancel button
                 OutlinedButton(
                     onClick = onDismiss,
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -287,7 +287,7 @@ fun UploadSongBottomSheet(
                     Text("Cancel")
                 }
 
-                // Save button
+                // save button
                 Button(
                     onClick = { onSave(title, artist) },
                     colors = ButtonDefaults.buttonColors(

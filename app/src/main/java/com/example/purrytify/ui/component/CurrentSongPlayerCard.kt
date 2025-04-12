@@ -48,7 +48,6 @@ fun CurrentSongPlayerCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-//            .padding(horizontal = 8.dp)
             .height(64.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
@@ -60,7 +59,7 @@ fun CurrentSongPlayerCard(
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Album cover
+            // album cover
             ImageLoader.LoadImage(
                 imagePath = song.imagePath,
                 contentDescription = "${song.title} album cover",
@@ -70,7 +69,7 @@ fun CurrentSongPlayerCard(
                 contentScale = ContentScale.Crop
             )
 
-            // Song info
+            // song info
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -94,25 +93,24 @@ fun CurrentSongPlayerCard(
                 )
             }
 
-            // Add to playlist button
+            // like button
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
-                    .clickable { /* Add to playlist action */ },
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 IconButton(onClick = onLikeClick) {
                     Icon(
-                        imageVector = if (song?.isLiked == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        imageVector = if (song.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (song!!.isLiked) Color(0xFFFF4081) else Color.White
+                        tint = if (song.isLiked) Color(0xFFFF4081) else Color.White
                     )
                 }
             }
 
-            // Play/Pause button
+            // play/pause button
             Box(
                 modifier = Modifier
                     .padding(start = 8.dp)

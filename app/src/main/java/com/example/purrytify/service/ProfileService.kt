@@ -1,17 +1,15 @@
 package com.example.purrytify.service
 
-import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
-import retrofit2.http.POST
 
-// ProfileService.kt
 interface ProfileService {
 
     @GET("api/profile")
     suspend fun getProfile(@Header("Authorization") token: String): Profile
 
 }
+
 data class Profile(
     val id: Int = 1,
     val username: String = "13522xxx",

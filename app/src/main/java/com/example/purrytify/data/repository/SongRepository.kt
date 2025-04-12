@@ -1,12 +1,9 @@
 package com.example.purrytify.data.repository
 
 import android.content.Context
-import android.content.UriMatcher
-import android.media.Image
 import android.net.Uri
 import com.example.purrytify.data.dao.SongDao
 import com.example.purrytify.data.entity.SongEntity
-import com.example.purrytify.data.model.Song
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 import java.io.FileOutputStream
@@ -48,11 +45,11 @@ class SongRepository(
         return songDao.getSong(songId)
     }
 
-    fun getNumberOfSong(userId: Int) : Flow<Int> {
+    fun getNumberOfSong(userId: Int): Flow<Int> {
         return songDao.getNumberOfSong(userId)
     }
 
-    fun getCountOfListenedSong(userId: Int) : Flow<Int> {
+    fun getCountOfListenedSong(userId: Int): Flow<Int> {
         return songDao.getCountOfListenedSong(userId)
     }
 
@@ -124,12 +121,12 @@ class SongRepository(
         deleteFile(song.audioPath)
     }
 
-    fun saveThumbnail(uri: Uri, userId: Int) : String {
+    fun saveThumbnail(uri: Uri, userId: Int): String {
         val imagePath = saveFileToInternalStorage(uri, "images/${userId}/")
         return imagePath
     }
 
-    fun saveAudio(uri: Uri, userId: Int) : String {
+    fun saveAudio(uri: Uri, userId: Int): String {
         val audioPath = saveFileToInternalStorage(uri, "audio/${userId}/")
         return audioPath
     }

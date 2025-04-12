@@ -4,9 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,7 +18,11 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
     val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavigationBar(modifier = modifier.background(Color.Transparent), containerColor = Color.Transparent, contentColor = Color.White) {
+    NavigationBar(
+        modifier = modifier.background(Color.Transparent),
+        containerColor = Color.Transparent,
+        contentColor = Color.White
+    ) {
         for (nav in items) {
             NavigationBarItem(
                 selected = currentRoute == nav.route,

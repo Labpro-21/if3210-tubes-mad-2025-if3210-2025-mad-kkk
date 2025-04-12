@@ -2,7 +2,6 @@ package com.example.purrytify.ui.screen
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,36 +22,34 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.purrytify.R
-import com.example.purrytify.ui.model.ProfileViewModel
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.res.painterResource
-
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.purrytify.R
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.service.baseUrl
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.model.ProfileViewModel
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
@@ -125,7 +122,10 @@ fun ProfileScreen(
                         .fillMaxWidth()
                         .background(
                             brush = Brush.verticalGradient(
-                                colors = listOf(secondaryColor, MaterialTheme.colorScheme.background),
+                                colors = listOf(
+                                    secondaryColor,
+                                    MaterialTheme.colorScheme.background
+                                ),
                             )
                         )
                         .padding(top = 96.dp, bottom = 48.dp)

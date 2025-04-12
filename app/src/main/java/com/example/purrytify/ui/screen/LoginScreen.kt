@@ -56,9 +56,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.purrytify.R
-import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.ui.theme.Poppins
 
 fun Activity.lockPortraitOrientation() {
@@ -70,7 +70,11 @@ fun Activity.unlockOrientation() {
 }
 
 @Composable
-fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewModel, viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())) {
+fun LoginScreen(
+    navController: NavHostController,
+    globalViewModel: GlobalViewModel,
+    viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())
+) {
     val context = LocalContext.current
     val activity = LocalActivity.current
     val isConnected by globalViewModel.isConnected.collectAsState()
@@ -127,7 +131,9 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF121212))
-                .verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding(),
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -144,7 +150,9 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                 Image(
                     painter = painterResource(id = R.drawable.logo_3),
                     contentDescription = "Logo",
-                    modifier = Modifier.size(92.dp).background(Color(0xFF121212))
+                    modifier = Modifier
+                        .size(92.dp)
+                        .background(Color(0xFF121212))
                 )
             }
 
@@ -164,7 +172,7 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                     fontSize = 24.sp,
                 )
             )
-            Column (modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
                 Text(
                     "Email",
                     style = TextStyle(
@@ -231,7 +239,10 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                             Icons.Default.VisibilityOff
 
                         IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(imageVector = image, contentDescription = "Toggle password visibility")
+                            Icon(
+                                imageVector = image,
+                                contentDescription = "Toggle password visibility"
+                            )
                         }
                     },
                     singleLine = true
@@ -255,9 +266,15 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 24.dp)
-                        .height(52.dp)
+                        .height(52.dp),
+                    enabled = !viewModel.isSubmitLoading
                 ) {
-                    Text("Log In", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Poppins)
+                    Text(
+                        "Log In",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        fontFamily = Poppins
+                    )
                 }
             }
         }

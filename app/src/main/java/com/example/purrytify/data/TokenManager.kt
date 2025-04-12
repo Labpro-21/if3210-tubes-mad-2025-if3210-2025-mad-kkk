@@ -1,11 +1,11 @@
 package com.example.purrytify.data
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.core.content.edit
 
 class TokenManager private constructor(context: Context) {
     private val masterKey = MasterKey.Builder(context.applicationContext)

@@ -7,48 +7,46 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.purrytify.R
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
-import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.LibraryViewModel.FilterType
+import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.internal.notify
 
-@OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
-class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) :
+    AndroidViewModel(application) {
 
     private val repository: SongRepository
 
     val recentlyPlayedSongs: Flow<List<Song>>
     val recentlyAddedSongs: Flow<List<Song>>
+
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
-        @OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
+        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
         recentlyAddedSongs = globalViewModel.user_id
             .filterNotNull()
             .flatMapLatest { userId ->
-                repository.recentlyAddedSongs(userId).map { entities -> entities.map { it.toSong() } }
+                repository.recentlyAddedSongs(userId)
+                    .map { entities -> entities.map { it.toSong() } }
             }
 
         recentlyPlayedSongs = globalViewModel.user_id
             .filterNotNull()
             .flatMapLatest { userId ->
-                repository.recentlyPlayedSongs(userId).map { entities -> entities.map { it.toSong() } }
+                repository.recentlyPlayedSongs(userId)
+                    .map { entities -> entities.map { it.toSong() } }
             }
     }
 
@@ -164,7 +162,10 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
         }
     }
 
-    class HomeViewModelFactory(private val application: Application, private val globalViewModel: GlobalViewModel) : ViewModelProvider.Factory {
+    class HomeViewModelFactory(
+        private val application: Application,
+        private val globalViewModel: GlobalViewModel
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")

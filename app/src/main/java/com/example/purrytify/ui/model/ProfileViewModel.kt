@@ -9,7 +9,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.data.TokenManager
 import com.example.purrytify.data.database.SongDatabase
@@ -20,9 +19,7 @@ import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import java.net.ConnectException
 import java.net.UnknownHostException
@@ -33,13 +30,14 @@ data class SongStats(
     val listenedSongs: Int = 50
 )
 
-class ProfileViewModel(application: Application, private val tokenManager: TokenManager) : AndroidViewModel(application) {
+class ProfileViewModel(application: Application, private val tokenManager: TokenManager) :
+    AndroidViewModel(application) {
     private val songRepository: SongRepository
 
-    private val _userState = MutableStateFlow<Profile>(Profile())
+    private val _userState = MutableStateFlow(Profile())
     val userState: StateFlow<Profile> = _userState.asStateFlow()
 
-    private val _songStats = MutableStateFlow<SongStats>(SongStats())
+    private val _songStats = MutableStateFlow(SongStats())
     val songStats: StateFlow<SongStats> = _songStats.asStateFlow()
 
     var isLoading by mutableStateOf(true)
@@ -66,7 +64,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                 val isValid = try {
                     ApiClient.authService.validate("Bearer $accessToken").valid
                 } catch (e: Exception) {
-                    Log.d("LOAD_USER_PROFILE", e.message?:"")
+                    Log.d("LOAD_USER_PROFILE", e.message ?: "")
                     if (e is ConnectException || e is UnknownHostException) {
                         success = false
                         return@launch
@@ -83,12 +81,13 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                     }
 
                     try {
-                        val refreshResponse = ApiClient.authService.refresh(RefreshRequest(refreshToken))
+                        val refreshResponse =
+                            ApiClient.authService.refresh(RefreshRequest(refreshToken))
                         accessToken = refreshResponse.accessToken
                         tokenManager.saveAccessToken(refreshResponse.accessToken)
                         tokenManager.saveRefreshToken(refreshResponse.refreshToken)
                     } catch (e: Exception) {
-                        Log.d("LOAD_USER_PROFILE", e.message?:"")
+                        Log.d("LOAD_USER_PROFILE", e.message ?: "")
                         if (e is ConnectException || e is UnknownHostException) {
                             success = false
                             return@launch
@@ -106,7 +105,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                 onSuccess()
 
             } catch (e: Exception) {
-                Log.d("LOAD_USER_PROFILE", e.message?:"")
+                Log.d("LOAD_USER_PROFILE", e.message ?: "")
                 if (e is ConnectException || e is UnknownHostException) {
                     success = false
                 } else {
@@ -117,7 +116,6 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
             }
         }
     }
-
 
 
     fun loadSongStats() {
@@ -145,7 +143,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
         }
     }
 
-    class ProfileViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class ProfileViewModelFactory(private val application: Application) :
+        ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")

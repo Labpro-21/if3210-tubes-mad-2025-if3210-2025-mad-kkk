@@ -12,15 +12,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.HideSource
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,7 +39,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.ImageLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,7 +101,7 @@ fun SongOptionsSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SheetOption(icon = Icons.Default.QueueMusic, text = "Add to Queue") {
+            SheetOption(icon = Icons.AutoMirrored.Filled.QueueMusic, text = "Add to Queue") {
                 onAddToQueue()
                 Toast.makeText(context, "Added To Queue", Toast.LENGTH_SHORT).show()
                 onDismiss()

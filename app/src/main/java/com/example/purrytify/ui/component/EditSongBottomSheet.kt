@@ -1,7 +1,6 @@
 package com.example.purrytify.ui.component
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -14,24 +13,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AudioFile
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,7 +33,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,10 +45,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.LibraryViewModel
-import androidx.core.net.toUri
 import com.example.purrytify.ui.model.ImageLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,11 +61,11 @@ fun EditSongBottomSheet(
     var title by remember { mutableStateOf(song.title) }
     var artist by remember { mutableStateOf(song.artist) }
 
-    var thumbnail = remember { mutableStateOf(song.imagePath) }
-    var audio = remember { mutableStateOf(song.audioPath) }
+    val thumbnail = remember { mutableStateOf(song.imagePath) }
+    val audio = remember { mutableStateOf(song.audioPath) }
 
-    var audioChanged = remember { mutableStateOf(false) }
-    var thumbnailChanged = remember { mutableStateOf(false) }
+    val audioChanged = remember { mutableStateOf(false) }
+    val thumbnailChanged = remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -177,15 +169,15 @@ fun EditSongBottomSheet(
                             .size(120.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.DarkGray)
-                            .clickable { audioPickerLauncher.launch("audio/*") } ,
+                            .clickable { audioPickerLauncher.launch("audio/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                            Icon(
-                                imageVector = Icons.Default.AudioFile,
-                                contentDescription = "Audio Selected",
-                                tint = Color(0xFF1DB954),
-                                modifier = Modifier.size(44.dp)
-                            )
+                        Icon(
+                            imageVector = Icons.Default.AudioFile,
+                            contentDescription = "Audio Selected",
+                            tint = Color(0xFF1DB954),
+                            modifier = Modifier.size(44.dp)
+                        )
                     }
                     Text(
                         text = "Change File",
@@ -283,8 +275,8 @@ fun EditSongBottomSheet(
                         if (audioChanged.value) {
                             newAudio = audio.value.toUri()
                         }
-                        onUpdate(song.id, title, artist, newThumbnail, newAudio )
-                              },
+                        onUpdate(song.id, title, artist, newThumbnail, newAudio)
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1DB954),
                         contentColor = Color.Black

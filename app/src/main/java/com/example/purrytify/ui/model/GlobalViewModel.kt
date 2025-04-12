@@ -2,42 +2,36 @@ package com.example.purrytify.ui.model
 
 import android.app.Application
 import android.net.Uri
+import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.purrytify.data.database.SongDatabase
-import com.example.purrytify.data.entity.SongEntity
-import com.example.purrytify.data.model.Song
-import com.example.purrytify.data.repository.SongRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlin.collections.map
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import com.example.purrytify.data.database.SongDatabase
+import com.example.purrytify.data.entity.SongEntity
+import com.example.purrytify.data.model.Song
+import com.example.purrytify.data.repository.SongRepository
+import com.example.purrytify.network.NetworkMonitor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
-import kotlin.math.roundToInt
-import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.min
-import com.example.purrytify.network.NetworkMonitor
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class GlobalViewModel(application: Application) : AndroidViewModel(application) {
     private var mediaController: MediaController? = null
-    private val _queue: ArrayDeque<Song> = ArrayDeque<Song>()
-    private val _history: ArrayDeque<Song> = ArrayDeque<Song>()
+    private val _queue: ArrayDeque<Song> = ArrayDeque()
+    private val _history: ArrayDeque<Song> = ArrayDeque()
     private val _maxHistorySize = 18
     private val repository: SongRepository
 
@@ -59,9 +53,9 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val _history_list = MutableStateFlow<List<Song>>(emptyList())
     val history: StateFlow<List<Song>> = _history_list
 
-    private val _userQueue: ArrayDeque<Song> = ArrayDeque<Song>()
+    private val _userQueue: ArrayDeque<Song> = ArrayDeque()
 
-    private val _isRepeat = MutableStateFlow<Int>(0)
+    private val _isRepeat = MutableStateFlow(0)
     val isRepeat: StateFlow<Int> = _isRepeat
 
     private val queueSize = 5
@@ -69,7 +63,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val A_queue_picker = 1
     private var B_queue_picker = 1
     private val _user_id = MutableStateFlow<Int?>(null)
-    val user_id: StateFlow<Int?> =_user_id
+    val user_id: StateFlow<Int?> = _user_id
 
     private val networkMonitor = NetworkMonitor(application)
     val isConnected = networkMonitor.isConnected
@@ -345,10 +339,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun getNewPicker(n: Int) {
-        if (_shuffled.value && n > 1) {
-            B_queue_picker = Random.nextInt(1, n - 1)
+        B_queue_picker = if (_shuffled.value && n > 1) {
+            Random.nextInt(1, n - 1)
         } else {
-            B_queue_picker = 1
+            1
         }
     }
 
@@ -371,10 +365,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             val allSongs = repository.allSongs(user_id.value!!).first()
             val songSize = allSongs.size
 
-            var lastIndex = -1
-            var iterator = 0
-
-            var lastSong = 1L
+            var lastSong: Long
 
             if (_queue.isNotEmpty()) {
                 lastSong = _queue.last().id
@@ -385,19 +376,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 lastSong = _userQueue.last().id
             }
 
-            for (song in allSongs) {
-                if (song.id == lastSong) {
-                    lastIndex = iterator
-                }
-                iterator++
-            }
-
             getNewPicker(songSize)
 
             while (userQSize + systemQSize < queueSize) {
                 lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
-                val song = allSongs[lastSong.toInt()]
-                _queue.add(song.toSong())
+                val rndSong = allSongs[lastSong.toInt()]
+                _queue.add(rndSong.toSong())
                 systemQSize++
             }
 
@@ -478,7 +462,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun toggleRepeat() {
-        _isRepeat.value = _isRepeat.value + 1
+        _isRepeat.value += 1
         _isRepeat.value %= 3
     }
 
@@ -491,20 +475,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             val allSongs = repository.allSongs(user_id.value!!).first()
             val songSize = allSongs.size
 
-            var lastIndex = -1
-            var iterator = 0
-
             var lastSong = 1L
 
             if (_queue.isNotEmpty()) {
                 lastSong = _queue.last().id
-            }
-
-            for (song in allSongs) {
-                if (song.id == lastSong) {
-                    lastIndex = iterator
-                }
-                iterator++
             }
 
             getNewPicker(songSize)
@@ -552,7 +526,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         _history_list.value = _history.toList()
     }
 
-    fun playNextSong(auto: Boolean = false) : Long {
+    fun playNextSong(auto: Boolean = false): Long {
         if (auto && _isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
             val currentSong = _currentSong.value ?: return 0
             play(currentSong)
@@ -567,7 +541,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
         if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
             if (_userQueue.isNotEmpty()) {
-                var nextSong = _userQueue.removeFirst()
+                val nextSong = _userQueue.removeFirst()
                 _currentSong.value?.let {
                     _queue.add(it)
                 }
@@ -576,7 +550,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 return nextSong.id
             } else {
                 if (_queue.isNotEmpty()) {
-                    var nextSong = _queue.removeFirst()
+                    val nextSong = _queue.removeFirst()
                     _currentSong.value?.let {
                         _queue.add(it)
                     }
@@ -607,13 +581,11 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                     val allSongs = repository.allSongs(user_id.value!!).first()
 
                     var lastIndex = -1
-                    var iterator = 0
 
-                    for (song in allSongs) {
+                    for ((iterator, song) in allSongs.withIndex()) {
                         if (song.id == lastSong.id) {
                             lastIndex = iterator
                         }
-                        iterator++
                     }
 
                     if (lastIndex == -1) {
@@ -623,7 +595,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
                     getNewPicker(songSize)
 
-                    var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
+                    val song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
                     song.let { _queue.add(it.toSong()) }
 
                     Log.d("QUEUE NEXT SONG", song.title)
@@ -683,7 +655,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun playPreviousSong() : Long {
+    fun playPreviousSong(): Long {
         if (_isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
             _isRepeat.value = REPEAT.NO_REPEAT.ordinal
         }

@@ -2,7 +2,6 @@ package com.example.purrytify.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlin.time.Duration
 
 @Entity(tableName = "songs")
 data class SongEntity(

@@ -1,18 +1,7 @@
 package com.example.purrytify.ui.component
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,11 +13,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AudioFile
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -49,27 +35,21 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.Divider
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,7 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -89,23 +68,30 @@ import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.ui.theme.Poppins
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
 private fun formatTime(seconds: Double): String {
     val minutes = TimeUnit.SECONDS.toMinutes(seconds.toLong())
     val remainingSeconds = seconds.toLong() - TimeUnit.MINUTES.toSeconds(minutes)
-    return String.format("%02d:%02d", minutes, remainingSeconds)
+    return String.format(Locale.getDefault(), "%02d:%02d", minutes, remainingSeconds)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewModel: GlobalViewModel, modifier: Modifier = Modifier, onOpenOption: () -> Unit) {
+fun SongDetailSheet(
+    onDismiss: () -> Unit,
+    sheetState: SheetState,
+    globalViewModel: GlobalViewModel,
+    modifier: Modifier = Modifier,
+    onOpenOption: () -> Unit
+) {
     val song by globalViewModel.currentSong.collectAsState()
     val isPlaying by globalViewModel.isPlaying.collectAsState()
     val sliderPosition by globalViewModel.currentPosition.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
-    var dragPosition by remember { mutableStateOf(0f) }
+    var dragPosition by remember { mutableFloatStateOf(0f) }
 
     val queueList by globalViewModel.queue.collectAsState()
 
@@ -121,14 +107,26 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
         sliderPosition.toFloat().coerceIn(0f, validDuration)
     }
 
-    val gradientColors by remember (song) { mutableStateOf(listOf(Color(song?.primaryColor?:0x0064B5F6), Color( song?.secondaryColor?: 0x000D47A1), Color(0xFF101510))) }
+    val gradientColors by remember(song) {
+        mutableStateOf(
+            listOf(
+                Color(
+                    song?.primaryColor ?: 0x0064B5F6
+                ), Color(song?.secondaryColor ?: 0x000D47A1), Color(0xFF101510)
+            )
+        )
+    }
     val scrollState = rememberScrollState()
 
     val isRepeatEnabled by globalViewModel.isRepeat.collectAsState()
     val isShuffled by globalViewModel.shuffled.collectAsState()
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null, contentWindowInsets = {WindowInsets(0)}
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null,
+        contentWindowInsets = { WindowInsets(0) },
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier
@@ -272,23 +270,23 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             }
                         }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = {
-                            globalViewModel.shuffle()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Shuffle,
-                                contentDescription = "Shuffle",
-                                tint = if (isShuffled) Color(0xFF3DC2AC) else Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = {
+                                globalViewModel.shuffle()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Shuffle,
+                                    contentDescription = "Shuffle",
+                                    tint = if (isShuffled) Color(0xFF3DC2AC) else Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
 
                             IconButton(
                                 onClick = {
@@ -340,7 +338,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                                 }
                             ) {
                                 Icon(
-                                    imageVector = when(isRepeatEnabled) {
+                                    imageVector = when (isRepeatEnabled) {
                                         0, 1 -> Icons.Default.Repeat
                                         else -> Icons.Default.RepeatOne
                                     },
@@ -354,12 +352,15 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             }
                         }
 
-                        Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             IconButton(
                                 onClick = { showQueueSheet = true },
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.QueueMusic,
+                                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = "View Queue",
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
@@ -381,8 +382,8 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                     showQueueSheet = false
                 }
             },
-            onSongClick = { song ->
-                globalViewModel.playSong(song)
+            onSongClick = { songCurr ->
+                globalViewModel.playSong(songCurr)
                 scope.launch {
                     queueSheetState.hide()
                     showQueueSheet = false
@@ -432,7 +433,7 @@ fun QueueSheet(
                 )
             }
 
-            Divider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
             if (queueList.isEmpty()) {
                 Box(

@@ -1,21 +1,17 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
-import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.palette.graphics.Palette
-import com.example.purrytify.R
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
-import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +27,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class LibraryViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
+class LibraryViewModel(application: Application, private val globalViewModel: GlobalViewModel) :
+    AndroidViewModel(application) {
 
     private val repository: SongRepository
 
@@ -139,21 +136,6 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         }
     }
 
-    fun getDurationFromFile(): Int {
-        if (selectedAudioUri.value == null) return 0
-        val retriever = MediaMetadataRetriever()
-        try {
-            retriever.setDataSource(getApplication(), selectedAudioUri.value)
-            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                ?.toLongOrNull() ?: 0L
-            return (durationMs / 1000).toInt()
-        } catch (e: Exception) {
-            return 0
-        } finally {
-            retriever.release()
-        }
-    }
-
     fun toggleLiked(song: Song) {
         val newVal = !song.isLiked
         viewModelScope.launch {
@@ -161,6 +143,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
             globalViewModel.notifyLikeSong(song, newVal)
         }
     }
+
     private fun SongEntity.toSong(): Song {
         return Song(
             id = this.id,
@@ -195,7 +178,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         viewModelScope.launch {
             val userId = globalViewModel.user_id.value!!
             val context = getApplication<Application>().applicationContext
-            var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
+            val songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
             var thumbnail = songEntity.imagePath
             var audio = songEntity.audioPath
             var primaryColor = songEntity.primaryColor
@@ -261,7 +244,10 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         ALL, LIKED
     }
 
-    class LibraryViewModelFactory(private val application: Application, private val globalViewModel: GlobalViewModel) :
+    class LibraryViewModelFactory(
+        private val application: Application,
+        private val globalViewModel: GlobalViewModel
+    ) :
         ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(LibraryViewModel::class.java)) {
