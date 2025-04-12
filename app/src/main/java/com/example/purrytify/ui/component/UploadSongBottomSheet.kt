@@ -101,14 +101,12 @@ fun UploadSongBottomSheet(
                 modifier = Modifier.padding(bottom = 18.dp)
             )
 
-            // Upload buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Upload Photo button
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -147,7 +145,6 @@ fun UploadSongBottomSheet(
                     )
                 }
 
-                // Upload File button
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -207,7 +204,6 @@ fun UploadSongBottomSheet(
                 }
             }
 
-            // Title field
             Text(
                 text = "Title",
                 color = Color.White,

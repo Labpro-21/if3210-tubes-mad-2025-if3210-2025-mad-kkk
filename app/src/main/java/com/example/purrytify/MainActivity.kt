@@ -27,7 +27,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.example.purrytify.data.database.DatabasePrePopulator
 import com.example.purrytify.service.MediaPlaybackService
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.theme.PurrytifyTheme
@@ -50,7 +49,6 @@ class MainActivity : ComponentActivity() {
         val sessionToken = SessionToken(applicationContext, ComponentName(applicationContext, MediaPlaybackService::class.java))
         controllerFuture = MediaController.Builder(applicationContext, sessionToken).buildAsync()
         controllerFuture.addListener({
-            // MediaController is available here with controllerFuture.get()
             val mediaController = controllerFuture.get()
             globalViewModel.bindMediaController(mediaController)
         }, MoreExecutors.directExecutor())

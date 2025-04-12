@@ -223,6 +223,9 @@ fun PurrytifyApp(
                     detail = true,
                     onAddToQueue = {
                         globalViewModel.addToQueue(currentSong!!)
+                    },
+                    onLiked = {
+                        globalViewModel.toggleLikedStatus()
                     }
                 )
             }

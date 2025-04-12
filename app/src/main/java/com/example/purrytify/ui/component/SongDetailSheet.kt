@@ -354,7 +354,11 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             Icon(
                                 imageVector = Icons.Default.Repeat,
                                 contentDescription = "Repeat",
-                                tint = if (isRepeatEnabled) Color(0xFFFF4081) else Color.White,
+                                tint = when (isRepeatEnabled) {
+                                    1 -> Color(0xFFFF4081)
+                                    2 -> Color(0xFF3DC2AC)
+                                    else -> Color.White
+                                },
                                 modifier = Modifier.size(24.dp)
                             )
                         }
