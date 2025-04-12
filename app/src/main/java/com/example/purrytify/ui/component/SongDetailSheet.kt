@@ -104,6 +104,8 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
     val isPlaying by globalViewModel.isPlaying.collectAsState()
     val sliderPosition by globalViewModel.currentPosition.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
+    var isDragging by remember { mutableStateOf(false) }
+    var dragPosition by remember { mutableStateOf(0f) }
 
     val queueList by globalViewModel.queue.collectAsState()
 
@@ -227,18 +229,28 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp)
                     ) {
+                        LaunchedEffect(isDragging) {
+                            if (!isDragging) {
+                                dragPosition = sliderPosition.toFloat()
+                            }
+                        }
                         Slider(
-                            value = sliderPosition.toFloat(),
+                            value = dragPosition,
                             onValueChange = { newPosition ->
-                                globalViewModel.seekTo(newPosition.toInt())
+                                isDragging = true
+                                dragPosition = newPosition
+                                globalViewModel.seekTo(dragPosition.toInt())
                             },
-                            // onValueChange = { sliderPosition = it },
+                            onValueChangeFinished = {
+                                globalViewModel.seekTo(dragPosition.toInt())
+                                isDragging = false
+                            },
                             valueRange = 0f..validDuration,
                             thumb = {
                                 Spacer(
                                     modifier = Modifier
                                         .size(16.dp)
-                                        .background(Color.White, CircleShape),
+                                        .background(Color.White, CircleShape)
                                 )
                             },
                             colors = SliderDefaults.colors(
