@@ -148,7 +148,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(scrollState)
-                        .padding(28.dp),
+                        .padding(start = 28.dp, end = 28.dp, top = 28.dp, bottom = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
@@ -191,178 +191,179 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(36.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = song?.title ?: "",
-                                color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = Poppins
-                            )
-                            Text(
-                                text = song?.artist ?: "",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 16.sp,
-                                fontFamily = Poppins
-                            )
-                        }
-
-                        IconButton(onClick = { globalViewModel.toggleLikedStatus() }) {
-                            Icon(
-                                imageVector = if (song?.isLiked == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Favorite",
-                                tint = if (song!!.isLiked) Color(0xFFFF4081) else Color.White
-                            )
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Slider(
-                            value = sliderPosition.toFloat(),
-                            onValueChange = { newPosition ->
-                                dragPosition = newPosition
-                            },
-                            onValueChangeFinished = {
-                                globalViewModel.seekTo(dragPosition.toInt())
-                            },
-                            valueRange = 0f..validDuration,
-                            thumb = {
-                                Spacer(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .background(Color.White, CircleShape)
-                                )
-                            },
-                            colors = SliderDefaults.colors(
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
+                    Spacer(modifier = Modifier.weight(1f))
+                    Column {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = formatTime(validPosition.toDouble()),
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                fontFamily = Poppins
-                            )
-
-                            Text(
-                                text = formatTime(validDuration.toDouble()),
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                fontFamily = Poppins
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = {
-                            globalViewModel.shuffle()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Shuffle,
-                                contentDescription = "Shuffle",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                globalViewModel.playPreviousSong()
-                                Log.d("PREVCLICKED", "PREVCLICKED")
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song?.title ?: "",
+                                    color = Color.White,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = Poppins
+                                )
+                                Text(
+                                    text = song?.artist ?: "",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 16.sp,
+                                    fontFamily = Poppins
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SkipPrevious,
-                                contentDescription = "Previous",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
+
+                            IconButton(onClick = { globalViewModel.toggleLikedStatus() }) {
+                                Icon(
+                                    imageVector = if (song?.isLiked == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = "Favorite",
+                                    tint = if (song!!.isLiked) Color(0xFFFF4081) else Color.White
+                                )
+                            }
                         }
 
-                        IconButton(
-                            onClick = {
-                                globalViewModel.togglePlayPause()
-                            },
+                        Column(
                             modifier = Modifier
-                                .size(64.dp)
-                                .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                                .padding(8.dp)
+                                .fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                globalViewModel.playNextSong()
-                                Log.d("NEXTCLICKED", "NEXTCLICKED")
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SkipNext,
-                                contentDescription = "Next",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                globalViewModel.toggleRepeat()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Repeat,
-                                contentDescription = "Repeat",
-                                tint = when (isRepeatEnabled) {
-                                    1 -> Color(0xFFFF4081)
-                                    2 -> Color(0xFF3DC2AC)
-                                    else -> Color.White
+                            Slider(
+                                value = sliderPosition.toFloat(),
+                                onValueChange = { newPosition ->
+                                    dragPosition = newPosition
                                 },
-                                modifier = Modifier.size(32.dp)
+                                onValueChangeFinished = {
+                                    globalViewModel.seekTo(dragPosition.toInt())
+                                },
+                                valueRange = 0f..validDuration,
+                                thumb = {
+                                    Spacer(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .background(Color.White, CircleShape)
+                                    )
+                                },
+                                colors = SliderDefaults.colors(
+                                    activeTrackColor = Color.White,
+                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             )
-                        }
-                    }
 
-                    Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        IconButton(
-                            onClick = { showQueueSheet = true },
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = formatTime(validPosition.toDouble()),
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 12.sp,
+                                    fontFamily = Poppins
+                                )
+
+                                Text(
+                                    text = formatTime(validDuration.toDouble()),
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 12.sp,
+                                    fontFamily = Poppins
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.QueueMusic,
-                                contentDescription = "View Queue",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
+                            IconButton(onClick = {
+                                globalViewModel.shuffle()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Shuffle,
+                                    contentDescription = "Shuffle",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.playPreviousSong()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SkipPrevious,
+                                    contentDescription = "Previous",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.togglePlayPause()
+                                },
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .padding(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = if (isPlaying) "Pause" else "Play",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.playNextSong()
+                                    Log.d("NEXTCLICKED", "NEXTCLICKED")
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SkipNext,
+                                    contentDescription = "Next",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.toggleRepeat()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = "Repeat",
+                                    tint = when (isRepeatEnabled) {
+                                        1 -> Color(0xFFFF4081)
+                                        2 -> Color(0xFF3DC2AC)
+                                        else -> Color.White
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+
+                        Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            IconButton(
+                                onClick = { showQueueSheet = true },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QueueMusic,
+                                    contentDescription = "View Queue",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
