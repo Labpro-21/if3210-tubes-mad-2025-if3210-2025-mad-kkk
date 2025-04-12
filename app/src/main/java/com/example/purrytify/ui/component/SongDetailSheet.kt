@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.Image
@@ -274,6 +275,17 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(onClick = {
+                            globalViewModel.shuffle()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Shuffle,
+                                contentDescription = "Shuffle",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
                         IconButton(
                             onClick = {
                                 globalViewModel.playPreviousSong()
@@ -318,21 +330,6 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                                 modifier = Modifier.size(32.dp)
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        IconButton(
-                            onClick = { showQueueSheet = true },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.QueueMusic,
-                                contentDescription = "View Queue",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
 
                         IconButton(
                             onClick = {
@@ -347,7 +344,22 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                                     2 -> Color(0xFF3DC2AC)
                                     else -> Color.White
                                 },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        IconButton(
+                            onClick = { showQueueSheet = true },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QueueMusic,
+                                contentDescription = "View Queue",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }
@@ -407,19 +419,12 @@ fun QueueSheet(
                     fontFamily = Poppins
                 )
 
-                IconButton(
-                    onClick = {
-                        // Toggle the visual state (no functionality yet)
-//                            isRepeatEnabled = !isRepeatEnabled
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Repeat,
-                        contentDescription = "Repeat",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Text(
+                    text = "${queueList.size} songs",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    fontFamily = Poppins
+                )
             }
 
             Divider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))

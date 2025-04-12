@@ -286,7 +286,14 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             if (_queue.size > queueSize) {
                 _queue.removeLast()
             }
+            refreshQueueAndHistoryUI()
         }
+    }
+
+    fun shuffle() {
+        _queue.shuffle()
+        _userQueue.shuffle()
+        refreshQueueAndHistoryUI()
     }
 
     fun notifyUpdateSong(song: Song) {
