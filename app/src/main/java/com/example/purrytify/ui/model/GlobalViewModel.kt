@@ -74,7 +74,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val networkMonitor = NetworkMonitor(application)
     val isConnected = networkMonitor.isConnected
 
-    private var shuffled = false
+    private val _shuffled = MutableStateFlow(false)
+    val shuffled = _shuffled
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -295,10 +296,13 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun shuffle() {
-        _queue.shuffle()
-        _userQueue.shuffle()
-        shuffled = true
-        refreshQueueAndHistoryUI()
+        _shuffled.value = !_shuffled.value
+
+        if (_shuffled.value) {
+            _queue.shuffle()
+            _userQueue.shuffle()
+            refreshQueueAndHistoryUI()
+        }
     }
 
     fun notifyUpdateSong(song: Song) {
@@ -341,8 +345,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun getNewPicker(n: Int) {
-        if (shuffled && n > 1) {
+        if (_shuffled.value && n > 1) {
             B_queue_picker = Random.nextInt(1, n - 1)
+        } else {
+            B_queue_picker = 1
         }
     }
 

@@ -124,6 +124,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
     val scrollState = rememberScrollState()
 
     val isRepeatEnabled by globalViewModel.isRepeat.collectAsState()
+    val isShuffled by globalViewModel.shuffled.collectAsState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null, contentWindowInsets = {WindowInsets(0)}
@@ -283,7 +284,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
-                                tint = Color.White,
+                                tint = if (isShuffled) Color(0xFFFF4081) else Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
