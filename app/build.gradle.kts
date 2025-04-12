@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.purrytify"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.purrytify"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -41,10 +41,12 @@ android {
 }
 
 dependencies {
-    val media3_version = "1.6.0"
-    implementation(libs.androidx.core.ktx)
+    val media3_version = "1.4.1"
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
+    implementation("androidx.activity:activity:1.9.3")
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.activity:activity-ktx:1.9.3")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
@@ -78,13 +80,11 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
     implementation("androidx.media3:media3-exoplayer:$media3_version")
-    implementation("androidx.media3:media3-ui-compose:$media3_version")
     implementation("androidx.media3:media3-ui:$media3_version")
     implementation("androidx.media3:media3-session:$media3_version")
     implementation("androidx.media3:media3-common:$media3_version")
-    implementation("androidx.media3:media3-common-ktx:$media3_version")
     implementation("androidx.media3:media3-datasource:$media3_version")
     implementation("androidx.media3:media3-extractor:$media3_version")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
-    implementation ("androidx.work:work-runtime-ktx:2.10.0")
+    implementation ("androidx.work:work-runtime-ktx:2.9.1")
 }

@@ -2,10 +2,11 @@ package com.example.purrytify.ui.screen
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.util.Patterns
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -42,8 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -76,9 +79,12 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())
 ) {
     val context = LocalContext.current
-    val activity = LocalActivity.current
+    val activity = LocalContext.current as? Activity
     val isConnected by globalViewModel.isConnected.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         activity?.lockPortraitOrientation()
@@ -133,7 +139,12 @@ fun LoginScreen(
                 .background(Color(0xFF121212))
                 .verticalScroll(rememberScrollState())
                 .imePadding()
-                .navigationBarsPadding(),
+                .navigationBarsPadding()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -183,7 +194,10 @@ fun LoginScreen(
                 )
                 OutlinedTextField(
                     value = viewModel.email,
-                    onValueChange = { viewModel.email = it },
+                    onValueChange = {
+                        viewModel.email = it
+                        emailError = null
+                    },
                     placeholder = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -195,6 +209,10 @@ fun LoginScreen(
                         focusedPlaceholderColor = Color.Gray,
                         unfocusedPlaceholderColor = Color.Gray,
                     ),
+                    isError = emailError != null,
+                    supportingText = {
+                        if (emailError != null) Text(emailError!!, color = Color.Red)
+                    },
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -202,8 +220,6 @@ fun LoginScreen(
                     ),
                     singleLine = true
                 )
-                Spacer(Modifier.height(14.dp))
-
                 Text(
                     "Password",
                     style = TextStyle(
@@ -214,7 +230,10 @@ fun LoginScreen(
                 )
                 OutlinedTextField(
                     value = viewModel.password,
-                    onValueChange = { viewModel.password = it },
+                    onValueChange = {
+                        viewModel.password = it
+                        passwordError = null
+                    },
                     placeholder = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -222,6 +241,7 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
+                    isError = passwordError != null,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -231,6 +251,9 @@ fun LoginScreen(
                         focusedPlaceholderColor = Color.Gray,
                         unfocusedPlaceholderColor = Color.Gray,
                     ),
+                    supportingText = {
+                        if (passwordError != null) Text(passwordError!!, color = Color.Red)
+                    },
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         val image = if (showPassword)
@@ -247,9 +270,25 @@ fun LoginScreen(
                     },
                     singleLine = true
                 )
-                Spacer(Modifier.height(18.dp))
                 Button(
                     onClick = {
+                        val emailPattern = Patterns.EMAIL_ADDRESS
+
+                        var valid = true
+                        if (viewModel.email.isBlank()) {
+                            emailError = "Email can't be empty"
+                            valid = false
+                        } else if (!emailPattern.matcher(viewModel.email).matches()) {
+                            emailError = "Invalid email address"
+                            valid = false
+                        }
+
+                        if (viewModel.password.isBlank()) {
+                            passwordError = "Password can't be empty"
+                            valid = false
+                        }
+
+                        if (!valid) return@Button
                         viewModel.login { newId ->
                             globalViewModel.setUserId(newId)
                             globalViewModel.initializeQueue()

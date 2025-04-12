@@ -33,6 +33,8 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
             } catch (e: Exception) {
                 if (e is ConnectException) {
                     errorMessage = "No internet connection"
+                } else {
+                    errorMessage = "Login has failed"
                 }
             } finally {
                 isSubmitLoading = false
