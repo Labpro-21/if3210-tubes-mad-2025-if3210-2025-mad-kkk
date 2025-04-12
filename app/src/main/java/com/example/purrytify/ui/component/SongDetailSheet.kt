@@ -57,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -236,18 +237,31 @@ fun SongDetailSheet(
                                     globalViewModel.seekTo(dragPosition.toInt())
                                 },
                                 valueRange = 0f..validDuration,
-                                thumb = {
-                                    Spacer(
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .background(Color.White, CircleShape)
-                                    )
-                                },
                                 colors = SliderDefaults.colors(
                                     activeTrackColor = Color.White,
                                     inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                                 ),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                thumb = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .background(Color.White, CircleShape)
+                                            .padding(0.dp)
+                                    )
+                                },
+                                track = { sliderState ->
+                                    SliderDefaults.Track(
+                                        sliderState = sliderState,
+                                        colors = SliderDefaults.colors(
+                                            activeTrackColor = Color.White,
+                                            inactiveTrackColor = Color.White.copy(alpha = 0.3f),
+                                        ),
+                                        modifier = Modifier.height(6.dp),
+                                        thumbTrackGapSize = 0.dp
+                                    )
+                                },
                             )
 
                             Row(
