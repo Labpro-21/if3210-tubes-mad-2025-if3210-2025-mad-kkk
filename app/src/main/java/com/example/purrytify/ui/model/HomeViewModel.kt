@@ -19,29 +19,36 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
 class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
 
     private val repository: SongRepository
 
     val recentlyPlayedSongs: Flow<List<Song>>
     val recentlyAddedSongs: Flow<List<Song>>
-
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
         @OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
-        recentlyAddedSongs = repository.recentlyAddedSongs.map {
-            entities -> entities.map { it.toSong() }
-        }
-        recentlyPlayedSongs = repository.recentlyPlayedSongs.map {
-                entities -> entities.map { it.toSong() }
-        }
+
+        recentlyAddedSongs = globalViewModel.user_id
+            .filterNotNull()
+            .flatMapLatest { userId ->
+                repository.recentlyAddedSongs(userId).map { entities -> entities.map { it.toSong() } }
+            }
+
+        recentlyPlayedSongs = globalViewModel.user_id
+            .filterNotNull()
+            .flatMapLatest { userId ->
+                repository.recentlyPlayedSongs(userId).map { entities -> entities.map { it.toSong() } }
+            }
     }
 
     private fun SongEntity.toSong(): Song {
@@ -53,7 +60,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
             audioPath = this.audioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
-            secondaryColor = this.secondaryColor
+            secondaryColor = this.secondaryColor,
+            userId = this.userId
         )
     }
 
@@ -67,15 +75,17 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 audioPath = this.audioPath,
                 isLiked = this.isLiked,
                 primaryColor = this.primaryColor,
-                secondaryColor = this.secondaryColor
+                secondaryColor = this.secondaryColor,
+                userId = this.userId
             )
         } else null
     }
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
         viewModelScope.launch {
+            val userId = globalViewModel.user_id.filterNotNull().first()
             val context = getApplication<Application>().applicationContext
-            var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
+            val songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
             var thumbnail = songEntity.imagePath
             var audio = songEntity.audioPath
             var primaryColor = songEntity.primaryColor
@@ -83,7 +93,7 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
             if (uriImage != null) {
                 withContext(Dispatchers.IO) {
-                    val imagePath = repository.saveThumbnail(uriImage)
+                    val imagePath = repository.saveThumbnail(uriImage, userId = userId)
 
                     thumbnail = imagePath
 
@@ -96,7 +106,7 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
             if (uriAudio != null) {
                 withContext(Dispatchers.IO) {
-                    val audioPath = repository.saveAudio(uriAudio)
+                    val audioPath = repository.saveAudio(uriAudio, userId = userId)
                     audio = audioPath
                 }
             }
@@ -109,7 +119,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 audioUri = audio,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
-                isLiked = false
+                isLiked = false,
+                userId = userId
             )
 
             val updatedSong = Song(
@@ -120,7 +131,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 audioPath = audio,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
-                isLiked = false
+                isLiked = false,
+                userId = userId
             )
 
             globalViewModel.notifyUpdateSong(updatedSong)

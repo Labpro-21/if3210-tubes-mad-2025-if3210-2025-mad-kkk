@@ -99,6 +99,7 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
             viewModel.validateToken(
                 onValid = { newId ->
                     globalViewModel.setUserId(newId)
+                    globalViewModel.initializeQueue()
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -240,6 +241,7 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                     onClick = {
                         viewModel.login { newId ->
                             globalViewModel.setUserId(newId)
+                            globalViewModel.initializeQueue()
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }

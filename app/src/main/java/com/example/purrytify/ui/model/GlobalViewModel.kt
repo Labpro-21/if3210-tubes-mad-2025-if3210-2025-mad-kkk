@@ -1,13 +1,11 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.purrytify.R
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
@@ -20,9 +18,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.collections.map
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -80,14 +75,17 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
         networkMonitor.register()
+    }
 
+    fun initializeQueue() {
         viewModelScope.launch {
-            var songSize = repository.getNumberOfSong().first()
-            var allSongs = repository.allSongs.first()
+            if (user_id.value == null) return@launch
+            val songSize = repository.getNumberOfSong(userId = user_id.value!!).first()
+            val allSongs = repository.allSongs(userId = user_id.value!!).first()
             if (songSize > 0) {
                 Log.d("INIT GLOBAL VIEW MODEL", songSize.toString())
                 for (i in 1..min(songSize, queueSize)) {
-                    var song = allSongs[i - 1].toSong()
+                    val song = allSongs[i - 1].toSong()
                     song.let { _queue.add(song) }
                 }
                 _queue_list.value = _userQueue.toList() + _queue.toList()
@@ -241,6 +239,27 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun logout() {
+        mediaController?.stop()
+        mediaController?.clearMediaItems()
+
+        _currentSong.value = null
+        _isPlaying.value = false
+        _currentPosition.value = 0.0
+        _duration.value = 0.0
+
+        clearUserId()
+
+        _queue.clear()
+        _history.clear()
+        _userQueue.clear()
+        _queue_list.value = emptyList()
+        _history_list.value = emptyList()
+
+        stopProgressUpdate()
+    }
+
+
     fun playSong(song: Song) {
         currentSong.value?.let {
             addToHistory(it)
@@ -251,64 +270,17 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun notifyAddSong() {
-
         viewModelScope.launch {
-            var allSongs = repository.allSongs.first()
-
+            if (user_id.value == null) return@launch
+            val allSongs = repository.allSongs(userId = user_id.value!!).first()
             if (allSongs.isEmpty()) {
                 return@launch
             }
-
-            _queue.addFirst(allSongs[0].toSong()) // force add new song to the front
-
+            _queue.addFirst(allSongs[0].toSong())
             Log.d("GLOBAL VIEW MODEL", "ADDED ${allSongs[0].title}")
-
             if (_queue.size > queueSize) {
                 _queue.removeLast()
             }
-//            var songSize = repository.getNumberOfSong().first()
-
-
-//            var allSongs = repository.allSongs.first()
-
-//            if (_queue.isEmpty()) {
-//                if (allSongs.isEmpty()) {
-//                    Log.e("GLOBAL VIEW MODEL", "FATAL, ADD SONG NOTIFIED BUT SONGS ARE EMPTY")
-//                    return@launch
-//                }
-//                _queue.add(allSongs[0].toSong())
-//                _queue_list.value = _queue.toList()
-//                return@launch
-//            }
-//
-//            if (_queue.size < queueSize) {
-//
-//                val lastSong = _queue.last()
-//
-//                var lastIndex = -1
-//                var iterator = 0
-//
-//                for (song in allSongs) {
-//                    if (song.id == lastSong.id) {
-//                        lastIndex = iterator
-//                    }
-//                    iterator++
-//                }
-//
-//                if (lastIndex == -1) {
-//                    Log.e("GLOBAL VIEW MODEL", "CURRENT SONG NOT FOUND IN QUEUE")
-//                    return@launch
-//                }
-//
-//                var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
-////                        repository.getSongById((lastSong.id).mod(songSize).toLong() + 1).first()
-////                            ?.toSong()
-//                song.let { _queue.add(it.toSong()) }
-//
-//                Log.d("QUEUE NEXT SONG", song.title)
-//
-//                _queue_list.value = _queue.toList()
-//            }
         }
     }
 
@@ -379,11 +351,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     fun clearQueue() {
         viewModelScope.launch {
+            if (user_id.value == null) return@launch
             _userQueue.clear()
             val userQSize = _userQueue.size
             var systemQSize = _queue.size
-            var allSongs = repository.allSongs.first()
-            var songSize = allSongs.size
+            val allSongs = repository.allSongs(user_id.value!!).first()
+            val songSize = allSongs.size
 
             var lastIndex = -1
             var iterator = 0
@@ -403,7 +376,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
             while (userQSize + systemQSize < queueSize) {
                 lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
-                var song = allSongs[lastSong.toInt()]
+                val song = allSongs[lastSong.toInt()]
                 _queue.add(song.toSong())
                 systemQSize++
             }
@@ -445,14 +418,14 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playNextSong(auto: Boolean = false) : Long {
-
         if (auto && _isRepeat.value) {
-            var currentSong = _currentSong.value ?: return 0
+            val currentSong = _currentSong.value ?: return 0
             playSong(currentSong)
             return currentSong.id
         }
 
         _isRepeat.value = false
+        if (user_id.value == null) return 0
 
         if (_userQueue.isNotEmpty()) {
             val nextSong = _userQueue.removeFirst()
@@ -468,9 +441,9 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 val userQSize = _userQueue.size
                 if (_queue.size + userQSize < queueSize) {
 
-                    var songSize = repository.getNumberOfSong().first()
+                    val songSize = repository.getNumberOfSong(user_id.value!!).first()
 
-                    var allSongs = repository.allSongs.first()
+                    val allSongs = repository.allSongs(user_id.value!!).first()
 
                     var lastIndex = -1
                     var iterator = 0
@@ -488,8 +461,6 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                     }
 
                     var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
-//                        repository.getSongById((lastSong.id).mod(songSize).toLong() + 1).first()
-//                            ?.toSong()
                     song.let { _queue.add(it.toSong()) }
 
                     Log.d("QUEUE NEXT SONG", song.title)
@@ -515,18 +486,15 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 val userQSize = _userQueue.size
                 if (_queue.size + userQSize < queueSize) {
 
-                    var songSize = repository.getNumberOfSong().first()
-
-                    var allSongs = repository.allSongs.first()
+                    val songSize = repository.getNumberOfSong(user_id.value!!).first()
+                    val allSongs = repository.allSongs(user_id.value!!).first()
 
                     var lastIndex = -1
-                    var iterator = 0
 
-                    for (song in allSongs) {
+                    for ((iterator, song) in allSongs.withIndex()) {
                         if (song.id == lastSong.id) {
                             lastIndex = iterator
                         }
-                        iterator++
                     }
 
                     if (lastIndex == -1) {
@@ -534,9 +502,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                         return@launch
                     }
 
-                    var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
-//                        repository.getSongById((lastSong.id).mod(songSize).toLong() + 1).first()
-//                            ?.toSong()
+                    val song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
                     song.let { _queue.add(it.toSong()) }
 
                     Log.d("QUEUE NEXT SONG", song.title)
@@ -547,9 +513,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
             return nextSong.id
         } else {
-            // No more songs in queue, stop playback or loop
             mediaController?.pause()
-
             return 0
         }
     }
@@ -557,11 +521,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     fun playPreviousSong() : Long {
         if (_history.isNotEmpty()) {
             val prevSong = _history.removeFirst()
-
-            // Add current song to the front of the queue
             currentSong.value?.let { _queue.addFirst(it) }
-
-            // Play the previous song
             play(prevSong)
             _currentSong.value = prevSong
 
@@ -570,7 +530,6 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             }
 
             refreshQueueAndHistoryUI()
-
             return prevSong.id
         } else {
             return 0
@@ -607,7 +566,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             audioPath = this.audioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
-            secondaryColor = this.secondaryColor
+            secondaryColor = this.secondaryColor,
+            userId = this.userId
         )
     }
 

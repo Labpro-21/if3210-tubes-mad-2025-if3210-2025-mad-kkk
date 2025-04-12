@@ -104,6 +104,7 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
             popUpTo(0) { inclusive = true }
         }
         globalViewModel.clearUserId()
+        globalViewModel.logout()
     }
 
     Box(

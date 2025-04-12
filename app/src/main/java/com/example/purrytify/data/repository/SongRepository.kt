@@ -16,30 +16,44 @@ class SongRepository(
     private val songDao: SongDao,
     private val context: Context
 ) {
-    val allSongs: Flow<List<SongEntity>> = songDao.getAllSongs()
-    val likedSongs: Flow<List<SongEntity>> = songDao.getLikedSongs()
-    val recentlyPlayedSongs: Flow<List<SongEntity>> = songDao.getRecentlyPlayedSongs()
-    val recentlyAddedSongs: Flow<List<SongEntity>> = songDao.getRecentlyAddedSongs()
-    val lastPlayedSong: Flow<SongEntity?> = songDao.getLastPlayedSong()
-
-    fun searchAllSongs(query: String): Flow<List<SongEntity>> {
-        return songDao.searchAllSongs(query)
+    fun allSongs(userId: Int): Flow<List<SongEntity>> {
+        return songDao.getAllSongs(userId)
     }
 
-    fun searchLikedSongs(query: String): Flow<List<SongEntity>> {
-        return songDao.searchAllLikedSongs(query)
+    fun likedSongs(userId: Int): Flow<List<SongEntity>> {
+        return songDao.getLikedSongs(userId)
+    }
+
+    fun recentlyPlayedSongs(userId: Int): Flow<List<SongEntity>> {
+        return songDao.getRecentlyPlayedSongs(userId)
+    }
+
+    fun recentlyAddedSongs(userId: Int): Flow<List<SongEntity>> {
+        return songDao.getRecentlyAddedSongs(userId)
+    }
+
+    fun lastPlayedSong(userId: Int): Flow<SongEntity?> {
+        return songDao.getLastPlayedSong(userId)
+    }
+
+    fun searchAllSongs(query: String, userId: Int): Flow<List<SongEntity>> {
+        return songDao.searchAllSongs(query, userId)
+    }
+
+    fun searchLikedSongs(query: String, userId: Int): Flow<List<SongEntity>> {
+        return songDao.searchAllLikedSongs(query, userId)
     }
 
     fun getSongById(songId: Long): Flow<SongEntity?> {
         return songDao.getSong(songId)
     }
 
-    fun getNumberOfSong() : Flow<Int> {
-        return songDao.getNumberOfSong()
+    fun getNumberOfSong(userId: Int) : Flow<Int> {
+        return songDao.getNumberOfSong(userId)
     }
 
-    fun getCountOfListenedSong() : Flow<Int> {
-        return songDao.getCountOfListenedSong()
+    fun getCountOfListenedSong(userId: Int) : Flow<Int> {
+        return songDao.getCountOfListenedSong(userId)
     }
 
     suspend fun insertSong(
@@ -48,11 +62,11 @@ class SongRepository(
         imageUri: Uri,
         audioUri: Uri,
         primaryColor: Int,
-        secondaryColor: Int
+        secondaryColor: Int,
+        userId: Int
     ): Long {
-        val imagePath = saveFileToInternalStorage(imageUri, "images")
-
-        val audioPath = saveFileToInternalStorage(audioUri, "audio")
+        val imagePath = saveFileToInternalStorage(imageUri, "images/$userId/")
+        val audioPath = saveFileToInternalStorage(audioUri, "audio/$userId/")
 
         val song = SongEntity(
             title = title,
@@ -61,6 +75,7 @@ class SongRepository(
             audioPath = audioPath,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor,
+            userId = userId
         )
 
         return songDao.insertSong(song)
@@ -74,7 +89,8 @@ class SongRepository(
         audioUri: String,
         primaryColor: Int,
         secondaryColor: Int,
-        isLiked: Boolean = false
+        isLiked: Boolean = false,
+        userId: Int
     ) {
         val song = SongEntity(
             id = id,
@@ -84,7 +100,8 @@ class SongRepository(
             audioPath = audioUri,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor,
-            isLiked = isLiked
+            isLiked = isLiked,
+            userId = userId
         )
         songDao.updateSong(song)
     }
@@ -107,13 +124,13 @@ class SongRepository(
         songDao.deleteSong(song)
     }
 
-    fun saveThumbnail(uri: Uri) : String {
-        val imagePath = saveFileToInternalStorage(uri, "images")
+    fun saveThumbnail(uri: Uri, userId: Int) : String {
+        val imagePath = saveFileToInternalStorage(uri, "images/${userId}/")
         return imagePath
     }
 
-    fun saveAudio(uri: Uri) : String {
-        val audioPath = saveFileToInternalStorage(uri, "audio")
+    fun saveAudio(uri: Uri, userId: Int) : String {
+        val audioPath = saveFileToInternalStorage(uri, "audio/${userId}/")
         return audioPath
     }
 
