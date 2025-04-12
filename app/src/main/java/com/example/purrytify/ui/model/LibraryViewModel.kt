@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -55,7 +56,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         songs = combine(
             globalViewModel.user_id.filterNotNull(),
             _filterType,
-            _searchQuery
+            _searchQuery.debounce(300)
         ) { userId, filterType, query ->
             Triple(userId, filterType, query.trim())
         }.flatMapLatest { (userId, filterType, query) ->

@@ -53,7 +53,6 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
         onRefreshFailed: () -> Unit
     ) {
         viewModelScope.launch {
-            isLoading = true
             try {
                 val accessToken = tokenManager.getAccessToken() ?: run {
                     isLoading = false
@@ -72,12 +71,14 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
                 } catch (e: Exception) {
                     if (e is ConnectException) {
                         errorMessage = "No internet connection"
+                        isLoading = false
                     } else {
                         refreshToken(onValid, onRefreshFailed)
                     }
                 }
-            } finally {
+            } catch (e: Exception) {
                 isLoading = false
+                onRefreshFailed()
             }
         }
     }
@@ -87,6 +88,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
         onFailed: () -> Unit
     ) {
         val refreshToken = tokenManager.getRefreshToken() ?: run {
+            isLoading = false
             onFailed()
             return
         }
@@ -101,6 +103,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
             if (e is ConnectException) {
                 errorMessage = "No internet connection"
             }
+            isLoading = false
             onFailed()
         }
     }

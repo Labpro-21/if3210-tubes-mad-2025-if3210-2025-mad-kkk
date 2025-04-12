@@ -49,7 +49,6 @@ class MainActivity : ComponentActivity() {
         val sessionToken = SessionToken(applicationContext, ComponentName(applicationContext, MediaPlaybackService::class.java))
         controllerFuture = MediaController.Builder(applicationContext, sessionToken).buildAsync()
         controllerFuture.addListener({
-            // MediaController is available here with controllerFuture.get()
             val mediaController = controllerFuture.get()
             globalViewModel.bindMediaController(mediaController)
         }, MoreExecutors.directExecutor())
