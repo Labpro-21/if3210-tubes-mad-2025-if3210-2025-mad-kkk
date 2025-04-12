@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.internal.notify
 
 @OptIn(kotlinx. coroutines. ExperimentalCoroutinesApi::class)
 class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) : AndroidViewModel(application) {
@@ -83,13 +84,15 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
         viewModelScope.launch {
-            val userId = globalViewModel.user_id.filterNotNull().first()
+            val userId = globalViewModel.user_id.value!!
             val context = getApplication<Application>().applicationContext
             val songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
             var thumbnail = songEntity.imagePath
             var audio = songEntity.audioPath
             var primaryColor = songEntity.primaryColor
             var secondaryColor = songEntity.secondaryColor
+            val prevThumbnail = songEntity.imagePath
+            val prevAudio = songEntity.audioPath
 
             if (uriImage != null) {
                 withContext(Dispatchers.IO) {
@@ -136,6 +139,28 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
             )
 
             globalViewModel.notifyUpdateSong(updatedSong)
+
+            withContext(Dispatchers.IO) {
+                repository.deleteFile(prevThumbnail)
+                repository.deleteFile(prevAudio)
+            }
+        }
+    }
+
+
+    fun deleteSong(song: Song) {
+        viewModelScope.launch {
+            val songEntity: SongEntity = song.toEntity() ?: return@launch
+            globalViewModel.notifyDeleteSong(song)
+            repository.deleteSong(songEntity)
+        }
+    }
+
+    fun toggleLiked(song: Song) {
+        val newVal = !song.isLiked
+        viewModelScope.launch {
+            repository.updateLikedStatus(song.id, newVal)
+            globalViewModel.notifyLikeSong(song, newVal)
         }
     }
 

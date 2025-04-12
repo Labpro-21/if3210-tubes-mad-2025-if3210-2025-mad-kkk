@@ -28,6 +28,7 @@ import kotlinx.coroutines.isActive
 import java.io.File
 import kotlin.math.roundToInt
 import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.min
 import com.example.purrytify.network.NetworkMonitor
 
@@ -322,6 +323,74 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             refreshQueueAndHistoryUI()
         }
     }
+
+    fun notifyDeleteSong(song: Song) {
+        viewModelScope.launch {
+            val filteredQueue = _queue.filter { it.id != song.id }
+            _queue.clear()
+            _queue.addAll(filteredQueue)
+
+            val filteredHistory = _history.filter { it.id != song.id }
+            _history.clear()
+            _history.addAll(filteredHistory)
+
+            val filteredUserQ = _userQueue.filter { it.id != song.id }
+            _userQueue.clear()
+            _userQueue.addAll(filteredUserQ)
+
+            refreshQueueAndHistoryUI()
+        }
+    }
+
+    fun notifyLikeSong(song: Song, newVal: Boolean) {
+        viewModelScope.launch {
+            // update current song
+            if (_currentSong.value?.id == song.id) {
+                _currentSong.value?.let { currentSong ->
+                    val updatedSong = currentSong.copy(isLiked = newVal)
+                    _currentSong.value = updatedSong
+                }
+            }
+
+            // update queue
+            val updatedQueue = ArrayDeque<Song>()
+            for (s in _queue) {
+                if (s.id == song.id) {
+                    updatedQueue.add(s.copy(isLiked = newVal))
+                } else {
+                    updatedQueue.add(s)
+                }
+            }
+            _queue.clear()
+            _queue.addAll(updatedQueue)
+
+            // update user history
+            val updatedHistory = ArrayDeque<Song>()
+            for (s in _history) {
+                if (s.id == song.id) {
+                    updatedHistory.add(s.copy(isLiked = newVal))
+                } else {
+                    updatedHistory.add(s)
+                }
+            }
+            _history.clear()
+            _history.addAll(updatedHistory)
+
+            // update user queue
+            val updatedUserQ = ArrayDeque<Song>()
+            for (s in _userQueue) {
+                if (s.id == song.id) {
+                    updatedUserQ.add(s.copy(isLiked = newVal))
+                } else {
+                    updatedUserQ.add(s)
+                }
+            }
+            _userQueue.clear()
+            _userQueue.addAll(updatedUserQ)
+            refreshQueueAndHistoryUI()
+        }
+    }
+
 
     fun addToQueue(song: Song) {
         _userQueue.add(song)

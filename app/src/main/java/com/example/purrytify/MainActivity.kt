@@ -27,7 +27,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.example.purrytify.data.database.DatabasePrePopulator
 import com.example.purrytify.service.MediaPlaybackService
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.theme.PurrytifyTheme

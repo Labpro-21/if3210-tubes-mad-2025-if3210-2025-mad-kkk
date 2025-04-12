@@ -32,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.purrytify.ui.model.HomeViewModel
@@ -84,6 +85,8 @@ fun HomeScreen(
     val showSongSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
+
+    val currentSong by globalViewModel.currentSong.collectAsState()
 
     LogoutListener {
         navController.navigate(Screen.Login.route) {
@@ -160,13 +163,23 @@ fun HomeScreen(
                 scope.launch {
                     showSongSheetState.hide()
                     showSongOptionSheet = false
+                    showUploadDialog = true
                 }
-                showUploadDialog = true
             },
-            onDelete = {},
+            onDelete = {
+                viewModel.deleteSong(showSong!!)
+                scope.launch {
+                    showSongSheetState.hide()
+                    showSongOptionSheet = false
+                }
+            },
             sheetState = showSongSheetState,
             onAddToQueue = {
                 globalViewModel.addToQueue(showSong!!)
+            },
+            detail = showSong?.id == currentSong?.id,
+            onLiked = {
+                viewModel.toggleLiked(showSong!!)
             }
         )
     }
