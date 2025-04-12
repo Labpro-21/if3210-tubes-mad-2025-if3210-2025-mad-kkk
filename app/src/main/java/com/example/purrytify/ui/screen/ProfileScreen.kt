@@ -1,6 +1,7 @@
 package com.example.purrytify.ui.screen
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -75,6 +76,7 @@ fun ProfileScreen(
     val isConnected by globalViewModel.isConnected.collectAsState()
 
     LogoutListener {
+        Log.d("LOGOUT", "call log out listener")
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
         }

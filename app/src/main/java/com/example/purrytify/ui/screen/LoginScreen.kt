@@ -105,7 +105,7 @@ fun LoginScreen(navController: NavHostController, globalViewModel: GlobalViewMod
                     }
                 },
                 onRefreshFailed = {
-                    // Stay on login
+                    viewModel.isLoading = false
                 }
             )
         } else {

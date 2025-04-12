@@ -66,6 +66,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                 val isValid = try {
                     ApiClient.authService.validate("Bearer $accessToken").valid
                 } catch (e: Exception) {
+                    Log.d("LOAD_USER_PROFILE", e.message?:"")
                     if (e is ConnectException || e is UnknownHostException) {
                         success = false
                         return@launch
@@ -87,6 +88,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                         tokenManager.saveAccessToken(refreshResponse.accessToken)
                         tokenManager.saveRefreshToken(refreshResponse.refreshToken)
                     } catch (e: Exception) {
+                        Log.d("LOAD_USER_PROFILE", e.message?:"")
                         if (e is ConnectException || e is UnknownHostException) {
                             success = false
                             return@launch
@@ -104,6 +106,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                 onSuccess()
 
             } catch (e: Exception) {
+                Log.d("LOAD_USER_PROFILE", e.message?:"")
                 if (e is ConnectException || e is UnknownHostException) {
                     success = false
                 } else {

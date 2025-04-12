@@ -693,6 +693,9 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     fun seekTo(position: Int) {
         mediaController?.seekTo(position * 1000L)
+        if (!_isPlaying.value) {
+            _currentPosition.value = position.toDouble()
+        }
     }
 
     fun playNext(song: Song) {
