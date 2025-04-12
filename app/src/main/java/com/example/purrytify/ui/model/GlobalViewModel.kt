@@ -580,14 +580,17 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     fun togglePlayPause() {
         if (isPlaying.value) {
             mediaController?.pause()
+            _isPlaying.value = false
         } else {
             if (currentSong == null && _queue.isNotEmpty()) {
                 playNextSong()
             } else {
                 mediaController?.play()
             }
+            _isPlaying.value = true
         }
     }
+
 
     fun seekTo(position: Int) {
         mediaController?.seekTo(position * 1000L)
