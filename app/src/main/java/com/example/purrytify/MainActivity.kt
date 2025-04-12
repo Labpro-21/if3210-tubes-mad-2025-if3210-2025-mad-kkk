@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
                                 .calculateStartPadding(layoutDirection),
                             end = WindowInsets.safeDrawing.asPaddingValues()
                                 .calculateEndPadding(layoutDirection)
-                        )
+                        ).navigationBarsPadding()
                 ) {
                     val windowSize = calculateWindowSizeClass(this)
                     PurrytifyApp(windowSize = windowSize.widthSizeClass, globalViewModel)

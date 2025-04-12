@@ -175,7 +175,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(50.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Box(
                         modifier = Modifier
@@ -191,7 +191,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(96.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -226,7 +226,6 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
                     ) {
                         Slider(
                             value = sliderPosition.toFloat(),
@@ -275,7 +274,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = {
@@ -351,8 +350,6 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
 
                     Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         IconButton(
