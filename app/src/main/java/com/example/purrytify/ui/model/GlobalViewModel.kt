@@ -714,12 +714,19 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun dragTo(position: Int) {
+        if (mediaController?.isPlaying == true) {
+            mediaController?.pause()
+        }
+        _currentPosition.value = position.toDouble()
+    }
 
     fun seekTo(position: Int) {
         mediaController?.seekTo(position * 1000L)
-        if (!_isPlaying.value) {
-            _currentPosition.value = position.toDouble()
+        if (_isPlaying.value) {
+            mediaController?.play()
         }
+        _currentPosition.value = position.toDouble()
     }
 
     fun playNext(song: Song) {

@@ -231,6 +231,7 @@ fun SongDetailSheet(
                             Slider(
                                 value = sliderPosition.toFloat(),
                                 onValueChange = { newPosition ->
+                                    globalViewModel.dragTo(newPosition.toInt())
                                     dragPosition = newPosition
                                 },
                                 onValueChangeFinished = {

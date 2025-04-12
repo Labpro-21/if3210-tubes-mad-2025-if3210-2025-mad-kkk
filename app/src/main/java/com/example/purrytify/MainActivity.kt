@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -61,8 +63,7 @@ class MainActivity : ComponentActivity() {
                                 .calculateStartPadding(layoutDirection),
                             end = WindowInsets.safeDrawing.asPaddingValues()
                                 .calculateEndPadding(layoutDirection)
-                        )
-                        .navigationBarsPadding()
+                        ).background(MaterialTheme.colorScheme.background)
                 ) {
                     val windowSize = calculateWindowSizeClass(this)
                     PurrytifyApp(windowSize = windowSize.widthSizeClass, globalViewModel)
