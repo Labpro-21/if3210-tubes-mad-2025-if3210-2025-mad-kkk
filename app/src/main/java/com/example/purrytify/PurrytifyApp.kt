@@ -169,7 +169,12 @@ fun PurrytifyApp(
                             onCardClick = {
                                 showDetailSheet = true
                             },
-                            onPlayPauseClick = { /* Toggle playback */ },
+                            onLikeClick={
+                              globalViewModel.toggleLikedStatus()
+                            },
+                            onPlayPauseClick = {
+                                globalViewModel.togglePlayPause()
+                            },
                             isPlaying = isPlaying,
                             currProgress = currPosition,
                             duration = duration
@@ -218,6 +223,9 @@ fun PurrytifyApp(
                     detail = true,
                     onAddToQueue = {
                         globalViewModel.addToQueue(currentSong!!)
+                    },
+                    onLiked = {
+                        globalViewModel.toggleLikedStatus()
                     }
                 )
             }

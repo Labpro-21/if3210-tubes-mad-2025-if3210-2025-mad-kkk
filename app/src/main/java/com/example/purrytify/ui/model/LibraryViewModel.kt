@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -55,7 +56,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
         songs = combine(
             globalViewModel.user_id.filterNotNull(),
             _filterType,
-            _searchQuery
+            _searchQuery.debounce(300)
         ) { userId, filterType, query ->
             Triple(userId, filterType, query.trim())
         }.flatMapLatest { (userId, filterType, query) ->
@@ -85,7 +86,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
     fun uploadSong(title: String, artist: String) {
         viewModelScope.launch {
-            val userId = globalViewModel.user_id.filterNotNull().first()
+            val userId = globalViewModel.user_id.value!!
             val context = getApplication<Application>().applicationContext
 
             withContext(Dispatchers.IO) {
@@ -154,17 +155,12 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
     }
 
     fun toggleLiked(song: Song) {
+        val newVal = !song.isLiked
         viewModelScope.launch {
-            repository.updateLikedStatus(song.id, !song.isLiked)
+            repository.updateLikedStatus(song.id, newVal)
+            globalViewModel.notifyLikeSong(song, newVal)
         }
     }
-
-    fun deleteSong(song: Song) {
-        viewModelScope.launch {
-            song.toEntity()?.let { repository.deleteSong(it) }
-        }
-    }
-
     private fun SongEntity.toSong(): Song {
         return Song(
             id = this.id,
@@ -197,7 +193,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
         viewModelScope.launch {
-            val userId = globalViewModel.user_id.filterNotNull().first()
+            val userId = globalViewModel.user_id.value!!
             val context = getApplication<Application>().applicationContext
             var songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
             var thumbnail = songEntity.imagePath
@@ -250,6 +246,14 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
 
             globalViewModel.notifyUpdateSong(updatedSong)
 
+        }
+    }
+
+    fun deleteSong(song: Song) {
+        viewModelScope.launch {
+            val songEntity: SongEntity = song.toEntity() ?: return@launch
+            globalViewModel.notifyDeleteSong(song)
+            repository.deleteSong(songEntity)
         }
     }
 

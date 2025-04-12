@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +38,7 @@ import com.example.purrytify.ui.model.ImageLoader
 fun CurrentSongPlayerCard(
     song: Song,
     onCardClick: () -> Unit,
+    onLikeClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     isPlaying: Boolean,
     duration: Double,
@@ -97,12 +103,13 @@ fun CurrentSongPlayerCard(
                     .clickable { /* Add to playlist action */ },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
-                    contentDescription = "Add to playlist",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
+                IconButton(onClick = onLikeClick) {
+                    Icon(
+                        imageVector = if (song?.isLiked == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (song!!.isLiked) Color(0xFFFF4081) else Color.White
+                    )
+                }
             }
 
             // Play/Pause button
@@ -121,7 +128,9 @@ fun CurrentSongPlayerCard(
                     ),
                     contentDescription = if (isPlaying) "Pause" else "Play",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { onPlayPauseClick() }
                 )
             }
         }

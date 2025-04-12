@@ -99,6 +99,8 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
         skipPartiallyExpanded = true
     )
 
+    val currentSong by globalViewModel.currentSong.collectAsState()
+
     LogoutListener {
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
@@ -325,13 +327,23 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                     scope.launch {
                         songOptionSheetState.hide()
                         showSongOptionSheet = false
+                        showEditDialog = true
                     }
-                    showEditDialog = true
                 },
-                onDelete = {},
+                onDelete = {
+                    viewModel.deleteSong(showSong!!)
+                    scope.launch {
+                        songOptionSheetState.hide()
+                        showSongOptionSheet = false
+                    }
+                },
                 sheetState = songOptionSheetState,
                 onAddToQueue = {
                     globalViewModel.addToQueue(showSong!!)
+                },
+                detail = showSong?.id == currentSong?.id,
+                onLiked = {
+                    viewModel.toggleLiked(showSong!!)
                 }
             )
         }

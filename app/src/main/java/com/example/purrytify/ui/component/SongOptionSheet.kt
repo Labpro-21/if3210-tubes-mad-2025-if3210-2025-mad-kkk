@@ -21,16 +21,24 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -41,9 +49,42 @@ import com.example.purrytify.ui.model.ImageLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit, sheetState: SheetState, detail: Boolean = false, onAddToQueue: () -> Unit) {
+fun SongOptionsSheet(
+    song: Song,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    sheetState: SheetState,
+    detail: Boolean = false,
+    onAddToQueue: () -> Unit,
+    onLiked: () -> Unit
+) {
+    val context = LocalContext.current
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete Song") },
+            text = { Text("Are you sure you want to delete \"${song.title}\"? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirmation = false
+                    onDelete()
+                    onDismiss()
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        var context = LocalContext.current
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,7 +94,9 @@ fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDe
                 ImageLoader.LoadImage(
                     imagePath = song.imagePath,
                     contentDescription = "${song.title} album cover",
-                    Modifier.size(48.dp).clip(RoundedCornerShape(4.dp))
+                    Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(4.dp))
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
@@ -68,18 +111,30 @@ fun SongOptionsSheet(song: Song, onDismiss: () -> Unit, onEdit: () -> Unit, onDe
                 onAddToQueue()
                 Toast.makeText(context, "Added To Queue", Toast.LENGTH_SHORT).show()
                 onDismiss()
-            } // TODO: change later
-            SheetOption(icon = Icons.Default.Favorite, text = "Add to Like") { onDismiss() } //  TODO: change later
+            }
+            SheetOption(
+                icon = Icons.Default.Favorite,
+                text = if (song.isLiked) "Remove from like" else "Add to like",
+                onClick = onLiked,
+                tint = if (song.isLiked) Color(0xFFFF4081) else Color.White
+            )
             if (!detail) {
-                SheetOption(icon = Icons.Default.Delete, text = "Delete Song") { onDelete() }
-                SheetOption(icon = Icons.Default.Edit, text = "Edit Song") { onEdit() }
+                SheetOption(icon = Icons.Default.Delete, text = "Delete Song") {
+                    showDeleteConfirmation = true
+                }
+                SheetOption(icon = Icons.Default.Edit, text = "Edit Song", onClick = onEdit)
             }
         }
     }
 }
 
 @Composable
-fun SheetOption(icon: ImageVector, text: String, onClick: () -> Unit) {
+fun SheetOption(
+    icon: ImageVector,
+    text: String,
+    tint: Color = LocalContentColor.current,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -87,7 +142,7 @@ fun SheetOption(icon: ImageVector, text: String, onClick: () -> Unit) {
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = tint)
         Spacer(modifier = Modifier.width(16.dp))
         Text(text)
     }

@@ -119,9 +119,9 @@ class SongRepository(
     }
 
     suspend fun deleteSong(song: SongEntity) {
+        songDao.deleteSong(song)
         deleteFile(song.imagePath)
         deleteFile(song.audioPath)
-        songDao.deleteSong(song)
     }
 
     fun saveThumbnail(uri: Uri, userId: Int) : String {
@@ -166,7 +166,7 @@ class SongRepository(
         }
     }
 
-    private fun deleteFile(path: String) {
+    fun deleteFile(path: String) {
         try {
             File(path).delete()
         } catch (e: Exception) {

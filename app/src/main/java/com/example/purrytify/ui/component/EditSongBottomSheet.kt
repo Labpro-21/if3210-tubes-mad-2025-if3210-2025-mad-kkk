@@ -120,28 +120,14 @@ fun EditSongBottomSheet(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
-
-                IconButton(
-                    onClick = {},
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Song",
-                        tint = Color.Red,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
             }
 
-            // Upload buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Upload Photo button
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -180,7 +166,6 @@ fun EditSongBottomSheet(
                     )
                 }
 
-                // Upload File button
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -195,41 +180,12 @@ fun EditSongBottomSheet(
                             .clickable { audioPickerLauncher.launch("audio/*") } ,
                         contentAlignment = Alignment.Center
                     ) {
-//                        if (selectedAudioUri != null) {
                             Icon(
                                 imageVector = Icons.Default.AudioFile,
                                 contentDescription = "Audio Selected",
                                 tint = Color(0xFF1DB954),
                                 modifier = Modifier.size(44.dp)
                             )
-//                        } else {
-//                            Row(
-//                                modifier = Modifier.fillMaxWidth(),
-//                                horizontalArrangement = Arrangement.SpaceEvenly,
-//                                verticalAlignment = Alignment.CenterVertically
-//                            ) {
-//                                for (i in 1..3) {
-//                                    Box(
-//                                        modifier = Modifier
-//                                            .width(6.dp)
-//                                            .height((10 + i * 10).dp)
-//                                            .background(Color.Gray)
-//                                    )
-//                                }
-//                                Box(
-//                                    modifier = Modifier
-//                                        .width(6.dp)
-//                                        .height((10 + 2 * 10).dp)
-//                                        .background(Color.Gray)
-//                                )
-//                                Box(
-//                                    modifier = Modifier
-//                                        .width(6.dp)
-//                                        .height((10 + 1 * 10).dp)
-//                                        .background(Color.Gray)
-//                                )
-//                            }
-//                        }
                     }
                     Text(
                         text = "Change File",
@@ -268,7 +224,6 @@ fun EditSongBottomSheet(
                 singleLine = true
             )
 
-            // Artist field
             Text(
                 text = "Artist",
                 color = Color.White,
@@ -297,7 +252,6 @@ fun EditSongBottomSheet(
                 singleLine = true
             )
 
-            // Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -319,7 +273,6 @@ fun EditSongBottomSheet(
                     Text("Cancel")
                 }
 
-                // Update button
                 Button(
                     onClick = {
                         var newThumbnail: Uri? = null

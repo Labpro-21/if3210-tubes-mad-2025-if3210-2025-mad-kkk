@@ -227,8 +227,10 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             .padding(horizontal = 8.dp)
                     ) {
                         Slider(
-                            value = validPosition,
-                            onValueChange = { },
+                            value = sliderPosition.toFloat(),
+                            onValueChange = { newPosition ->
+                                globalViewModel.seekTo(newPosition.toInt())
+                            },
                             // onValueChange = { sliderPosition = it },
                             valueRange = 0f..validDuration,
                             thumb = {
@@ -287,7 +289,9 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                         }
 
                         IconButton(
-                            onClick = { /* isPlaying = !isPlaying */  },
+                            onClick = {
+                                globalViewModel.togglePlayPause()
+                            },
                             modifier = Modifier
                                 .size(64.dp)
                                 .background(Color.White.copy(alpha = 0.2f), CircleShape)
