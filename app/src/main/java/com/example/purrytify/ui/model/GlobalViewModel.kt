@@ -58,8 +58,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _userQueue: ArrayDeque<Song> = ArrayDeque<Song>()
 
-    private val _isRepeat = MutableStateFlow<Boolean>(false)
-    val isRepeat: StateFlow<Boolean> = _isRepeat
+    private val _isRepeat = MutableStateFlow<Int>(0)
+    val isRepeat: StateFlow<Int> = _isRepeat
 
     private val queueSize = 5
 
@@ -75,6 +75,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
         networkMonitor.register()
+    }
+
+    enum class REPEAT {
+        NO_REPEAT, QUEUE_REPEAT, SELF_REPEAT
     }
 
     fun initializeQueue() {
@@ -346,7 +350,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun toggleRepeat() {
-        _isRepeat.value = !_isRepeat.value
+        _isRepeat.value = _isRepeat.value + 1
+        _isRepeat.value %= 3
     }
 
     fun clearQueue() {
@@ -418,14 +423,40 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playNextSong(auto: Boolean = false) : Long {
-        if (auto && _isRepeat.value) {
+        if (auto && _isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
             val currentSong = _currentSong.value ?: return 0
-            playSong(currentSong)
+            play(currentSong)
             return currentSong.id
         }
 
-        _isRepeat.value = false
         if (user_id.value == null) return 0
+
+        if (!auto && _isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
+            _isRepeat.value = REPEAT.NO_REPEAT.ordinal
+        }
+
+        if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
+            if (_userQueue.isNotEmpty()) {
+                var nextSong = _userQueue.removeFirst()
+                _currentSong.value?.let {
+                    _queue.add(it)
+                }
+                playSong(nextSong)
+                refreshQueueAndHistoryUI()
+                return nextSong.id
+            } else {
+                if (_queue.isNotEmpty()) {
+                    var nextSong = _queue.removeFirst()
+                    _currentSong.value?.let {
+                        _queue.add(it)
+                    }
+                    playSong(nextSong)
+                    refreshQueueAndHistoryUI()
+                    return nextSong.id
+                }
+            }
+            return 0
+        }
 
         if (_userQueue.isNotEmpty()) {
             val nextSong = _userQueue.removeFirst()
