@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -284,7 +285,7 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
-                                tint = if (isShuffled) Color(0xFFFF4081) else Color.White,
+                                tint = if (isShuffled) Color(0xFF3DC2AC) else Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -339,11 +340,13 @@ fun SongDetailSheet(onDismiss: () -> Unit, sheetState: SheetState, globalViewMod
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Repeat,
+                                    imageVector = when(isRepeatEnabled) {
+                                        0, 1 -> Icons.Default.Repeat
+                                        else -> Icons.Default.RepeatOne
+                                    },
                                     contentDescription = "Repeat",
                                     tint = when (isRepeatEnabled) {
-                                        1 -> Color(0xFFFF4081)
-                                        2 -> Color(0xFF3DC2AC)
+                                        1, 2 -> Color(0xFF3DC2AC)
                                         else -> Color.White
                                     },
                                     modifier = Modifier.size(32.dp)

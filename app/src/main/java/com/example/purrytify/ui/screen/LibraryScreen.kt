@@ -359,10 +359,14 @@ fun LibraryScreen(showDetail: () -> Unit, globalViewModel: GlobalViewModel, navC
                 },
                 sheetState = editSheetState,
                 onUpdate = { id, title, artist, image, audio ->
-                    viewModel.updateSong(id, title, artist, image, audio)
-                    scope.launch {
-                        editSheetState.hide()
-                        showEditDialog = false
+                    if (title.isNotEmpty() && artist.isNotEmpty() && image != null && audio != null) {
+                        viewModel.updateSong(id, title, artist, image, audio)
+                        scope.launch {
+                            editSheetState.hide()
+                            showEditDialog = false
+                        }
+                    } else {
+                        Toast.makeText(context, "Please fill all fields and select both audio and image", Toast.LENGTH_SHORT).show()
                     }
                 }
             )

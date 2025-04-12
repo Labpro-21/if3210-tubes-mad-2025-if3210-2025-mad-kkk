@@ -75,8 +75,12 @@ fun UploadSongBottomSheet(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { viewModel.setSelectedAudioUri(it) }
-        title = viewModel.getTitleFromFile()?:""
-        artist = viewModel.getArtistFromFile()?:""
+        viewModel.getTitleFromFile()?.let {
+            title = it
+        }
+        viewModel.getArtistFromFile()?.let {
+            artist = it
+        }
     }
 
     ModalBottomSheet(
