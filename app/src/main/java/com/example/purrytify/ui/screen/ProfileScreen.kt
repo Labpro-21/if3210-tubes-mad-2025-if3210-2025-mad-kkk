@@ -65,7 +65,6 @@ fun ProfileScreen(
 ) {
 
     val context = LocalContext.current
-    val backgroundColor = Color(0xFF121212)
     val secondaryColor = Color(0xFF01667A)
     val viewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModel.ProfileViewModelFactory(context.applicationContext as Application)
@@ -109,8 +108,7 @@ fun ProfileScreen(
     if (viewModel.isLoading) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black),
+                .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
@@ -120,14 +118,14 @@ fun ProfileScreen(
             Column(
                 modifier = modifier
                     .fillMaxSize()
-                    .background(backgroundColor)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
                             brush = Brush.verticalGradient(
-                                colors = listOf(secondaryColor, backgroundColor),
+                                colors = listOf(secondaryColor, MaterialTheme.colorScheme.background),
                             )
                         )
                         .padding(top = 96.dp, bottom = 48.dp)
