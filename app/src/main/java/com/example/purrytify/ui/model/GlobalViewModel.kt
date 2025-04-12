@@ -31,6 +31,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.min
 import com.example.purrytify.network.NetworkMonitor
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 class GlobalViewModel(application: Application) : AndroidViewModel(application) {
     private var mediaController: MediaController? = null
@@ -65,12 +67,14 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private val queueSize = 5
 
     private val A_queue_picker = 1
-    private val B_queue_picker = 1
+    private var B_queue_picker = 1
     private val _user_id = MutableStateFlow<Int?>(null)
     val user_id: StateFlow<Int?> =_user_id
 
     private val networkMonitor = NetworkMonitor(application)
     val isConnected = networkMonitor.isConnected
+
+    private var shuffled = false
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -293,6 +297,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     fun shuffle() {
         _queue.shuffle()
         _userQueue.shuffle()
+        shuffled = true
         refreshQueueAndHistoryUI()
     }
 
@@ -335,6 +340,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    private fun getNewPicker(n: Int) {
+        if (shuffled && n > 1) {
+            B_queue_picker = Random.nextInt(1, n - 1)
+        }
+    }
+
     fun notifyDeleteSong(song: Song) {
         viewModelScope.launch {
             val filteredQueue = _queue.filter { it.id != song.id }
@@ -374,6 +385,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 iterator++
             }
+
+            getNewPicker(songSize)
 
             while (userQSize + systemQSize < queueSize) {
                 lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
@@ -488,6 +501,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 iterator++
             }
 
+            getNewPicker(songSize)
+
             while (userQSize + systemQSize < queueSize) {
                 lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
                 val song = allSongs[lastSong.toInt()]
@@ -600,6 +615,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                         return@launch
                     }
 
+                    getNewPicker(songSize)
+
                     var song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
                     song.let { _queue.add(it.toSong()) }
 
@@ -642,6 +659,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                         return@launch
                     }
 
+                    getNewPicker(songSize)
+
                     val song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
                     song.let { _queue.add(it.toSong()) }
 
@@ -659,6 +678,33 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playPreviousSong() : Long {
+        if (_isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
+            _isRepeat.value = REPEAT.NO_REPEAT.ordinal
+        }
+        if (_currentSong.value == null) {
+            return 0
+        }
+        if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
+            if (_queue.isEmpty()) {
+                if (_userQueue.isEmpty()) {
+                    return 0
+                }
+                val prevSong = _userQueue.removeLast()
+                _queue.addFirst(_currentSong.value!!)
+                play(prevSong)
+                _currentSong.value = prevSong
+                refreshQueueAndHistoryUI()
+                return prevSong.id
+            } else {
+                val prevSong = _queue.removeLast()
+                _queue.addFirst(_currentSong.value!!)
+                play(prevSong)
+                _currentSong.value = prevSong
+                refreshQueueAndHistoryUI()
+                return prevSong.id
+            }
+        }
+
         if (_history.isNotEmpty()) {
             val prevSong = _history.removeFirst()
             currentSong.value?.let { _queue.addFirst(it) }
