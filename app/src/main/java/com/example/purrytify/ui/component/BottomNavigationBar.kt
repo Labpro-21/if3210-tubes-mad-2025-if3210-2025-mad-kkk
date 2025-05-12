@@ -24,8 +24,7 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     NavigationBar(
-        modifier = modifier.background(Color.Transparent),
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFF121212),
         contentColor = Color.White
     ) {
         for (nav in items) {

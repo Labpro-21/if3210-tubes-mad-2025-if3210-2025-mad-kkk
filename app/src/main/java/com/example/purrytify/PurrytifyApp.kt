@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +50,8 @@ import com.example.purrytify.ui.screen.LibraryScreen
 import com.example.purrytify.ui.screen.LoginScreen
 import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.SplashScreen
+import com.example.purrytify.ui.screen.TopFiftyCountryScreen
+import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,7 +82,7 @@ fun PurrytifyApp(
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route -> true
+        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.TopFiftyGlobal.route, Screen.TopFiftyCountry.route -> true
         else -> false
     }
 
@@ -115,9 +116,11 @@ fun PurrytifyApp(
         }
     }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .navigationBarsPadding()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ) {
         Row(Modifier.fillMaxSize()) {
             AnimatedVisibility(visible = (navigationType == PurrytifyNavigationType.NAVIGATION_RAIL && hasNavbar)) {
                 NavigationRailBar(navController)
@@ -158,6 +161,12 @@ fun PurrytifyApp(
                     }
                     composable(Screen.Profile.route) {
                         ProfileScreen(globalViewModel, navController)
+                    }
+                    composable(Screen.TopFiftyGlobal.route) {
+                        TopFiftyGlobalScreen(globalViewModel, navController)
+                    }
+                    composable(Screen.TopFiftyCountry.route) {
+                        TopFiftyCountryScreen(globalViewModel, navController)
                     }
                 }
 

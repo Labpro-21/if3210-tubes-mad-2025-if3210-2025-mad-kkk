@@ -3,6 +3,8 @@ package com.example.purrytify.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.LocalSee
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -12,4 +14,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Home : Screen("home", "Home", Icons.Default.Home)
     data object Library : Screen("library", "Your Library", Icons.Default.LibraryMusic)
     data object Profile : Screen("profile", "Profile", Icons.Default.Person)
+    data object TopFiftyGlobal: Screen("topFiftyGlobal", "Top 50 Global", Icons.Default.LocationOn)
+    data object TopFiftyCountry: Screen("topFiftyCountry", "Top 50 Country", Icons.Default.LocalSee)
 }
