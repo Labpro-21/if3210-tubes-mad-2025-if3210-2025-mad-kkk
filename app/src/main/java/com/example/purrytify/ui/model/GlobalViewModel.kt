@@ -27,6 +27,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.UUID
 import kotlin.math.min
 
 class GlobalViewModel(application: Application) : AndroidViewModel(application) {
@@ -159,6 +160,13 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
             checkAndUpdateProgress()
+        }
+
+        override fun onEvents(player: Player, events: Player.Events) {
+            super.onEvents(player, events)
+            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+                Log.d("MEDIA TRANSITION", "onEvents fallback called")
+            }
         }
     }
 
@@ -451,7 +459,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         val uri: Uri = getUriFromPath(audioPath)
         val imageUri: Uri = getUriFromPath(imagePath)
         val mediaItem = MediaItem.Builder()
-            .setMediaId(id.toString())
+            .setMediaId("${id}_${UUID.randomUUID()}")
             .setUri(uri)
             .setMediaMetadata(
                 MediaMetadata.Builder()
