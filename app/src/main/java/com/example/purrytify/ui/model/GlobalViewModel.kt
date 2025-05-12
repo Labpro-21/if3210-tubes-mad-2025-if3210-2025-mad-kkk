@@ -446,7 +446,9 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
             userId = this.userId,
-            lastPlayed = this.lastPlayed
+            lastPlayed = this.lastPlayed,
+            serverId = this.serverId,
+            isDownloaded = this.isDownloaded
         )
     }
 

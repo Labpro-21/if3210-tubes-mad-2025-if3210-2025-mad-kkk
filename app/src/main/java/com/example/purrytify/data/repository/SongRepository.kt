@@ -60,7 +60,9 @@ class SongRepository(
         audioUri: Uri,
         primaryColor: Int,
         secondaryColor: Int,
-        userId: Int
+        userId: Int,
+        serverId: Int? = null,
+        isDownloaded: Boolean = false,
     ): Long {
         val imagePath = saveFileToInternalStorage(imageUri, "images/$userId/")
         val audioPath = saveFileToInternalStorage(audioUri, "audio/$userId/")
@@ -72,7 +74,9 @@ class SongRepository(
             audioPath = audioPath,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor,
-            userId = userId
+            userId = userId,
+            serverId = serverId,
+            isDownloaded = isDownloaded
         )
 
         return songDao.insertSong(song)
@@ -86,9 +90,11 @@ class SongRepository(
         audioUri: String,
         primaryColor: Int,
         secondaryColor: Int,
-        isLiked: Boolean = false,
         userId: Int,
-        lastPlayed: Long? = null
+        isLiked: Boolean = false,
+        lastPlayed: Long? = null,
+        serverId: Int? = null,
+        isDownloaded: Boolean = false,
     ) {
         val song = SongEntity(
             id = id,
@@ -100,7 +106,9 @@ class SongRepository(
             secondaryColor = secondaryColor,
             isLiked = isLiked,
             userId = userId,
-            lastPlayed = lastPlayed
+            lastPlayed = lastPlayed,
+            serverId = serverId,
+            isDownloaded = isDownloaded
         )
         songDao.updateSong(song)
     }
