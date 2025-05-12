@@ -156,17 +156,11 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                     _currentIdx.value = currentMediaItemIndex
                     if (_currentIdx.value < _queue.value.size) {
                         _currentSong.value = _queue.value[_currentIdx.value]
+                        setLastPlayed(_queue.value[_currentIdx.value])
                     }
                 }
             }
             checkAndUpdateProgress()
-        }
-
-        override fun onEvents(player: Player, events: Player.Events) {
-            super.onEvents(player, events)
-            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
-                Log.d("MEDIA TRANSITION", "onEvents fallback called")
-            }
         }
     }
 
