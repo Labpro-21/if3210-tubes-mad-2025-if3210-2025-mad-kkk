@@ -8,6 +8,9 @@ interface OnlineSongService {
 
     @GET("api/top-songs/:country")
     suspend fun topCountrySongs(country: String): List<OnlineSongResponse>
+
+    @GET("api/song/:songId")
+    suspend fun songById(songInt: Int): OnlineSongResponse
 }
 
 data class OnlineSongResponse (
