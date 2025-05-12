@@ -65,7 +65,9 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
             userId = this.userId,
-            lastPlayed = this.lastPlayed
+            lastPlayed = this.lastPlayed,
+            isDownloaded = this.isDownloaded,
+            serverId = this.serverId
         )
     }
 
@@ -80,7 +82,9 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 isLiked = this.isLiked,
                 primaryColor = this.primaryColor,
                 secondaryColor = this.secondaryColor,
-                userId = this.userId
+                userId = this.userId,
+                isDownloaded = this.isDownloaded,
+                serverId = this.serverId
             )
         } else null
     }
@@ -125,9 +129,11 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 audioUri = audio,
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
-                isLiked = false,
+                isLiked = songEntity.isLiked,
                 userId = userId,
-                lastPlayed = songEntity.lastPlayed
+                lastPlayed = songEntity.lastPlayed,
+                serverId = songEntity.serverId,
+                isDownloaded = songEntity.isDownloaded
             )
 
             globalViewModel.notifyUpdateSong(
@@ -139,9 +145,11 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                     audioPath = audio,
                     primaryColor = primaryColor,
                     secondaryColor = secondaryColor,
-                    isLiked = false,
+                    isLiked = songEntity.isLiked,
                     userId = userId,
-                    lastPlayed = songEntity.lastPlayed
+                    lastPlayed = songEntity.lastPlayed,
+                    serverId = songEntity.serverId,
+                    isDownloaded = songEntity.isDownloaded
                 )
             )
 

@@ -158,7 +158,9 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
             userId = this.userId,
-            lastPlayed = this.lastPlayed
+            lastPlayed = this.lastPlayed,
+            isDownloaded = this.isDownloaded,
+            serverId = this.serverId
         )
     }
 
@@ -173,7 +175,9 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                 isLiked = this.isLiked,
                 primaryColor = this.primaryColor,
                 secondaryColor = this.secondaryColor,
-                userId = this.userId
+                userId = this.userId,
+                isDownloaded = this.isDownloaded,
+                serverId = this.serverId
             )
         } else null
     }
@@ -220,7 +224,9 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                 secondaryColor = secondaryColor,
                 isLiked = false,
                 userId = userId,
-                lastPlayed = songEntity.lastPlayed
+                lastPlayed = songEntity.lastPlayed,
+                serverId = songEntity.serverId,
+                isDownloaded = songEntity.isDownloaded
             )
 
             globalViewModel.notifyUpdateSong(
@@ -234,7 +240,9 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
                     secondaryColor = secondaryColor,
                     isLiked = false,
                     userId = userId,
-                    lastPlayed = songEntity.lastPlayed
+                    lastPlayed = songEntity.lastPlayed,
+                    serverId = songEntity.serverId,
+                    isDownloaded = songEntity.isDownloaded
                 )
             )
 

@@ -6,16 +6,16 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SongDao {
-    @Query("SELECT * FROM songs WHERE userId = :userId ORDER BY dateAdded DESC")
+    @Query("SELECT * FROM songs WHERE userId = :userId ORDER BY id DESC")
     fun getAllSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE isLiked = 1 AND userId = :userId ORDER BY dateAdded DESC")
+    @Query("SELECT * FROM songs WHERE isLiked = 1 AND userId = :userId ORDER BY id DESC")
     fun getLikedSongs(userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE userId = :userId AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY dateAdded DESC")
+    @Query("SELECT * FROM songs WHERE userId = :userId AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY id DESC")
     fun searchAllSongs(query: String, userId: Int): Flow<List<SongEntity>>
 
-    @Query("SELECT * FROM songs WHERE userId = :userId AND isLiked = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY dateAdded DESC")
+    @Query("SELECT * FROM songs WHERE userId = :userId AND isLiked = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY id DESC")
     fun searchAllLikedSongs(query: String, userId: Int): Flow<List<SongEntity>>
 
     @Query("SELECT * FROM songs WHERE userId = :userId AND lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 12")
