@@ -12,15 +12,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.data.TokenManager
 import com.example.purrytify.data.database.SongDatabase
+import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.Profile
 import com.example.purrytify.service.RefreshRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.ConnectException
 import java.net.UnknownHostException
 
@@ -34,11 +39,11 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     AndroidViewModel(application) {
     private val songRepository: SongRepository
 
-    private val _userState = MutableStateFlow(Profile())
-    val userState: StateFlow<Profile> = _userState.asStateFlow()
+    private val _userState: MutableStateFlow<Profile?> = MutableStateFlow(null)
+    val userState: StateFlow<Profile?> = _userState.asStateFlow()
 
-    private val _songStats = MutableStateFlow(SongStats())
-    val songStats: StateFlow<SongStats> = _songStats.asStateFlow()
+    private val _songStats: MutableStateFlow<SongStats?> = MutableStateFlow(null)
+    val songStats: StateFlow<SongStats?> = _songStats.asStateFlow()
 
     var isLoading by mutableStateOf(true)
     var success by mutableStateOf(true)
@@ -61,47 +66,31 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
                     return@launch
                 }
 
-                val isValid = try {
-                    ApiClient.authService.validate("Bearer $accessToken").valid
-                } catch (e: Exception) {
-                    Log.d("LOAD_USER_PROFILE", e.message ?: "")
-                    if (e is ConnectException || e is UnknownHostException) {
-                        success = false
-                        return@launch
-                    } else {
-                        false
+                val isValid = withContext(Dispatchers.IO) {
+                    runCatching {
+                        ApiClient.authService.validate("Bearer $accessToken").valid
+                    }.getOrElse {
+                        if (it is ConnectException || it is UnknownHostException) {
+                            success = false
+                            return@withContext true // assume valid for now to avoid logout
+                        } else false
                     }
                 }
 
                 if (!isValid) {
-                    val refreshToken = tokenManager.getRefreshToken()
-                    if (refreshToken == null) {
+                    val refreshed = refreshAccessToken() ?: run {
                         onLogout()
                         return@launch
                     }
-
-                    try {
-                        val refreshResponse =
-                            ApiClient.authService.refresh(RefreshRequest(refreshToken))
-                        accessToken = refreshResponse.accessToken
-                        tokenManager.saveAccessToken(refreshResponse.accessToken)
-                        tokenManager.saveRefreshToken(refreshResponse.refreshToken)
-                    } catch (e: Exception) {
-                        Log.d("LOAD_USER_PROFILE", e.message ?: "")
-                        if (e is ConnectException || e is UnknownHostException) {
-                            success = false
-                            return@launch
-                        } else {
-                            onLogout()
-                            return@launch
-                        }
-                    }
+                    accessToken = refreshed
                 }
 
-                val profile = ApiClient.profileService.getProfile("Bearer $accessToken")
+                val profile = withContext(Dispatchers.IO) {
+                    ApiClient.profileService.getProfile("Bearer $accessToken")
+                }
+
                 _userState.value = profile
                 success = true
-
                 onSuccess()
 
             } catch (e: Exception) {
@@ -117,18 +106,35 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
         }
     }
 
+    private suspend fun refreshAccessToken(): String? = withContext(Dispatchers.IO) {
+        val refreshToken = tokenManager.getRefreshToken() ?: return@withContext null
+        return@withContext runCatching {
+            val refreshResponse = ApiClient.authService.refresh(RefreshRequest(refreshToken))
+            tokenManager.saveAccessToken(refreshResponse.accessToken)
+            tokenManager.saveRefreshToken(refreshResponse.refreshToken)
+            refreshResponse.accessToken
+        }.getOrElse {
+            Log.d("REFRESH_TOKEN", it.message ?: "")
+            null
+        }
+    }
+
 
     fun loadSongStats() {
         viewModelScope.launch {
-            val curr = userState.first()
-            val userId = curr.id
-            songRepository.getNumberOfSong(userId).collect { totalSongs ->
-                val likedCount = songRepository.likedSongs(userId).first().size
-                val listenedCount = songRepository.getCountOfListenedSong(userId).first()
+            val userId = userState.firstOrNull()?.id ?: return@launch
+
+            val totalSongsFlow = songRepository.getNumberOfSong(userId)
+            val likedSongsDeferred = async { songRepository.likedSongs(userId).first().size }
+            val listenedCountDeferred = async { songRepository.getCountOfListenedSong(userId).first() }
+
+            totalSongsFlow.collect { total ->
+                val liked = likedSongsDeferred.await()
+                val listened = listenedCountDeferred.await()
                 _songStats.value = SongStats(
-                    totalSongs = totalSongs,
-                    likedSongs = likedCount,
-                    listenedSongs = listenedCount
+                    totalSongs = total,
+                    likedSongs = liked,
+                    listenedSongs = listened
                 )
             }
         }

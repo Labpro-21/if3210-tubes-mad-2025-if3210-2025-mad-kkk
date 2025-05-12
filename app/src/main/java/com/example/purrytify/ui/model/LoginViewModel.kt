@@ -11,7 +11,9 @@ import com.example.purrytify.data.TokenManager
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.LoginRequest
 import com.example.purrytify.service.RefreshRequest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.ConnectException
 
 class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
@@ -21,15 +23,20 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     var isSubmitLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    fun login(onSuccess: (Int) -> Unit) {
+    fun login(onSuccess: (Int, String) -> Unit) {
         viewModelScope.launch {
             isSubmitLoading = true
             try {
-                val response = ApiClient.authService.login(LoginRequest(email, password))
-                val user = ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.authService.login(LoginRequest(email, password))
+                }
+
+                val user = withContext(Dispatchers.IO) {
+                    ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
+                }
                 tokenManager.saveAccessToken(response.accessToken)
                 tokenManager.saveRefreshToken(response.refreshToken)
-                onSuccess(user.id)
+                onSuccess(user.id, user.location)
             } catch (e: Exception) {
                 if (e is ConnectException) {
                     errorMessage = "No internet connection"
@@ -43,11 +50,11 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     }
 
     suspend fun checkIsTokenExist(): Boolean {
-        return tokenManager.getAccessToken() != null
+        return tokenManager.getRefreshToken() != null
     }
 
     fun validateToken(
-        onValid: (Int) -> Unit,
+        onValid: (Int, String) -> Unit,
         onRefreshFailed: () -> Unit
     ) {
         viewModelScope.launch {
@@ -59,10 +66,14 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
                 }
 
                 try {
-                    val response = ApiClient.authService.validate("Bearer $accessToken")
+                    val response = withContext(Dispatchers.IO) {
+                        ApiClient.authService.validate("Bearer $accessToken")
+                    }
                     if (response.valid) {
-                        val user = ApiClient.profileService.getProfile("Bearer $accessToken")
-                        onValid(user.id)
+                        val user = withContext(Dispatchers.IO) {
+                            ApiClient.profileService.getProfile("Bearer $accessToken")
+                        }
+                        onValid(user.id, user.location)
                     } else {
                         refreshToken(onValid, onRefreshFailed)
                     }
@@ -82,7 +93,7 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
     }
 
     private suspend fun refreshToken(
-        onSuccess: (Int) -> Unit,
+        onSuccess: (Int, String) -> Unit,
         onFailed: () -> Unit
     ) {
         val refreshToken = tokenManager.getRefreshToken() ?: run {
@@ -92,11 +103,15 @@ class LoginViewModel(private val tokenManager: TokenManager) : ViewModel() {
         }
 
         try {
-            val response = ApiClient.authService.refresh(RefreshRequest(refreshToken))
-            val user = ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.authService.refresh(RefreshRequest(refreshToken))
+            }
+            val user = withContext(Dispatchers.IO) {
+                ApiClient.profileService.getProfile("Bearer ${response.accessToken}")
+            }
             tokenManager.saveAccessToken(response.accessToken)
             tokenManager.saveRefreshToken(response.refreshToken)
-            onSuccess(user.id)
+            onSuccess(user.id, user.location)
         } catch (e: Exception) {
             if (e is ConnectException) {
                 errorMessage = "No internet connection"

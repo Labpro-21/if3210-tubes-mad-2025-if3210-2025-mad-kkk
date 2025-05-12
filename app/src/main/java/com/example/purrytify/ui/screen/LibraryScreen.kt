@@ -93,8 +93,8 @@ fun LibraryScreen(
         )
     )
 
-    val songs by viewModel.songs.collectAsState(initial = emptyList())
-    val filterType by viewModel.filterType.collectAsState(initial = LibraryViewModel.FilterType.ALL)
+    val songs by viewModel.songs.collectAsState()
+    val filterType by viewModel.filterType.collectAsState()
 
     var showUploadDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -237,7 +237,7 @@ fun LibraryScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(if (filterType == LibraryViewModel.FilterType.ALL) accentGreen else Color.DarkGray)
-                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                            .padding(horizontal = 20.dp, vertical = 4.dp)
                             .clickable {
                                 viewModel.setFilter(
                                     LibraryViewModel.FilterType.ALL
@@ -247,7 +247,8 @@ fun LibraryScreen(
                         Text(
                             text = "All",
                             color = if (filterType == LibraryViewModel.FilterType.ALL) Color.Black else Color.White,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp
                         )
                     }
 
@@ -257,7 +258,7 @@ fun LibraryScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(if (filterType == LibraryViewModel.FilterType.LIKED) accentGreen else Color.DarkGray)
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                             .clickable {
                                 viewModel.setFilter(
                                     LibraryViewModel.FilterType.LIKED
@@ -267,7 +268,8 @@ fun LibraryScreen(
                         Text(
                             text = "Liked",
                             color = if (filterType == LibraryViewModel.FilterType.LIKED) Color.Black else Color.White,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp
                         )
                     }
                 }
@@ -375,6 +377,12 @@ fun LibraryScreen(
                 detail = showSong?.id == currentSong?.id,
                 onLiked = {
                     viewModel.toggleLiked(showSong!!)
+                },
+                onStartNewRadio = {
+                    globalViewModel.playSongs(showSong!!)
+                },
+                onAddToNext = {
+                    globalViewModel.addToNext(showSong!!)
                 }
             )
         }
@@ -390,7 +398,7 @@ fun LibraryScreen(
                 },
                 sheetState = editSheetState,
                 onUpdate = { id, title, artist, image, audio ->
-                    if (title.isNotEmpty() && artist.isNotEmpty() && image != null && audio != null) {
+                    if (title.isNotEmpty() && artist.isNotEmpty()) {
                         viewModel.updateSong(id, title, artist, image, audio)
                         scope.launch {
                             editSheetState.hide()

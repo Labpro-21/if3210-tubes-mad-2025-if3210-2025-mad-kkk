@@ -87,7 +87,8 @@ class SongRepository(
         primaryColor: Int,
         secondaryColor: Int,
         isLiked: Boolean = false,
-        userId: Int
+        userId: Int,
+        lastPlayed: Long? = null
     ) {
         val song = SongEntity(
             id = id,
@@ -98,7 +99,8 @@ class SongRepository(
             primaryColor = primaryColor,
             secondaryColor = secondaryColor,
             isLiked = isLiked,
-            userId = userId
+            userId = userId,
+            lastPlayed = lastPlayed
         )
         songDao.updateSong(song)
     }

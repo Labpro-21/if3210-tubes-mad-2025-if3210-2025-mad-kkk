@@ -16,6 +16,9 @@ import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,7 +54,9 @@ fun SongOptionsSheet(
     sheetState: SheetState,
     detail: Boolean = false,
     onAddToQueue: () -> Unit,
-    onLiked: () -> Unit
+    onLiked: () -> Unit,
+    onStartNewRadio: () -> Unit,
+    onAddToNext: () -> Unit
 ) {
     val context = LocalContext.current
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -94,7 +99,7 @@ fun SongOptionsSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text(song.title, fontWeight = FontWeight.Bold)
+                    Text(song.title)
                     Text(song.artist, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -104,6 +109,16 @@ fun SongOptionsSheet(
             SheetOption(icon = Icons.AutoMirrored.Filled.QueueMusic, text = "Add to Queue") {
                 onAddToQueue()
                 Toast.makeText(context, "Added To Queue", Toast.LENGTH_SHORT).show()
+                onDismiss()
+            }
+            SheetOption(icon = Icons.Default.LibraryMusic, text = "Add to Next") {
+                onAddToNext()
+                Toast.makeText(context, "Added To Next", Toast.LENGTH_SHORT).show()
+                onDismiss()
+            }
+            SheetOption(icon = Icons.Default.Radio, text = "Start New Radio") {
+                onStartNewRadio()
+                Toast.makeText(context, "Starting new radio", Toast.LENGTH_SHORT).show()
                 onDismiss()
             }
             SheetOption(

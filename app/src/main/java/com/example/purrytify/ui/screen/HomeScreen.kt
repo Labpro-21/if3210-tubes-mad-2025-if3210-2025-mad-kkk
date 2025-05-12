@@ -45,6 +45,8 @@ import androidx.navigation.NavController
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.EditSongBottomSheet
+import com.example.purrytify.ui.component.NewSongCard
+import com.example.purrytify.ui.component.SongCard
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.HomeViewModel
@@ -70,8 +72,8 @@ fun HomeScreen(
         )
     )
 
-    val songs by viewModel.recentlyAddedSongs.collectAsState(emptyList())
-    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState(emptyList())
+    val songs by viewModel.recentlyAddedSongs.collectAsState()
+    val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var showSongOptionSheet by remember { mutableStateOf(false) }
@@ -117,7 +119,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(songs) { song ->
-                    NewSongItem(song = song, onClick = {
+                    NewSongCard (song = song, onClick = {
                         globalViewModel.playSong(song)
                         showDetail()
                     })
@@ -137,7 +139,7 @@ fun HomeScreen(
         }
 
         items(recentlyPlayedSongs) { song ->
-            RecentlyPlayedItem(
+            SongCard (
                 song = song, onClick = {
                     globalViewModel.playSong(song)
                     showDetail()
@@ -149,7 +151,7 @@ fun HomeScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(70.dp))
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
     if (showSongOptionSheet && showSong != null) {
@@ -182,6 +184,12 @@ fun HomeScreen(
             detail = showSong?.id == currentSong?.id,
             onLiked = {
                 viewModel.toggleLiked(showSong!!)
+            },
+            onStartNewRadio = {
+                globalViewModel.playSongs(showSong!!)
+            },
+            onAddToNext = {
+                globalViewModel.addToNext(showSong!!)
             }
         )
     }
@@ -197,7 +205,7 @@ fun HomeScreen(
             },
             sheetState = uploadSheetState,
             onUpdate = { id, title, artist, image, audio ->
-                if (title.isNotEmpty() && artist.isNotEmpty() && image != null && audio != null) {
+                if (title.isNotEmpty() && artist.isNotEmpty()) {
                     viewModel.updateSong(id, title, artist, image, audio)
                     scope.launch {
                         uploadSheetState.hide()
@@ -214,98 +222,4 @@ fun HomeScreen(
         )
     }
 
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun RecentlyPlayedItem(song: Song, onClick: () -> Unit, onLongClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .padding(vertical = 8.dp)
-    ) {
-        ImageLoader.LoadImage(
-            imagePath = song.imagePath,
-            contentDescription = "${song.title} album cover",
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 12.dp)
-        ) {
-            Text(
-                text = song.title,
-                color = Color.White,
-                fontSize = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontFamily = Poppins,
-            )
-
-            Text(
-                text = song.artist,
-                color = Color.Gray,
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontFamily = Poppins
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = onLongClick) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "More options",
-                tint = Color.LightGray,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun NewSongItem(song: Song, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .width(120.dp)
-            .clickable(onClick = onClick)
-    ) {
-        ImageLoader.LoadImage(
-            imagePath = song.imagePath,
-            contentDescription = "${song.title} album cover",
-            modifier = Modifier
-                .size(120.dp)
-                .clip(RoundedCornerShape(8.dp))
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = song.title,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            fontFamily = Poppins
-        )
-
-        Text(
-            text = song.artist,
-            color = Color.Gray,
-            fontSize = 12.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            fontFamily = Poppins
-        )
-    }
 }

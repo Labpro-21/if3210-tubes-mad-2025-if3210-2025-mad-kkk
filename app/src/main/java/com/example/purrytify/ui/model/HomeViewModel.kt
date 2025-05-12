@@ -13,11 +13,15 @@ import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -27,27 +31,27 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
     private val repository: SongRepository
 
-    val recentlyPlayedSongs: Flow<List<Song>>
-    val recentlyAddedSongs: Flow<List<Song>>
+    val recentlyPlayedSongs: StateFlow<List<Song>>
+    val recentlyAddedSongs: StateFlow<List<Song>>
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
-        recentlyAddedSongs = globalViewModel.user_id
+        recentlyAddedSongs = globalViewModel.userId
             .filterNotNull()
             .flatMapLatest { userId ->
                 repository.recentlyAddedSongs(userId)
                     .map { entities -> entities.map { it.toSong() } }
-            }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        recentlyPlayedSongs = globalViewModel.user_id
+        recentlyPlayedSongs = globalViewModel.userId
             .filterNotNull()
             .flatMapLatest { userId ->
                 repository.recentlyPlayedSongs(userId)
                     .map { entities -> entities.map { it.toSong() } }
-            }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     }
 
     private fun SongEntity.toSong(): Song {
@@ -60,7 +64,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
-            userId = this.userId
+            userId = this.userId,
+            lastPlayed = this.lastPlayed
         )
     }
 
@@ -82,35 +87,35 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {
         viewModelScope.launch {
-            val userId = globalViewModel.user_id.value!!
+            val userId = globalViewModel.userId.value ?: return@launch
             val context = getApplication<Application>().applicationContext
-            val songEntity: SongEntity = repository.getSongById(id).first() ?: return@launch
+            val songEntity = repository.getSongById(id).first() ?: return@launch
+
             var thumbnail = songEntity.imagePath
             var audio = songEntity.audioPath
             var primaryColor = songEntity.primaryColor
             var secondaryColor = songEntity.secondaryColor
-            val prevThumbnail = songEntity.imagePath
-            val prevAudio = songEntity.audioPath
 
-            if (uriImage != null) {
-                withContext(Dispatchers.IO) {
-                    val imagePath = repository.saveThumbnail(uriImage, userId = userId)
+            val prevThumbnail = thumbnail
+            val prevAudio = audio
 
+            val imageJob = async(Dispatchers.IO) {
+                uriImage?.let {
+                    val imagePath = repository.saveThumbnail(it, userId)
+                    val colors = extractColorsFromImage(context, it)
                     thumbnail = imagePath
-
-                    val colors = extractColorsFromImage(context, uriImage)
                     primaryColor = colors[0].toArgb()
                     secondaryColor = colors[1].toArgb()
-
                 }
             }
 
-            if (uriAudio != null) {
-                withContext(Dispatchers.IO) {
-                    val audioPath = repository.saveAudio(uriAudio, userId = userId)
-                    audio = audioPath
+            val audioJob = async(Dispatchers.IO) {
+                uriAudio?.let {
+                    audio = repository.saveAudio(it, userId)
                 }
             }
+            imageJob.await()
+            audioJob.await()
 
             repository.updateSongById(
                 id = id,
@@ -121,43 +126,48 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 primaryColor = primaryColor,
                 secondaryColor = secondaryColor,
                 isLiked = false,
-                userId = userId
+                userId = userId,
+                lastPlayed = songEntity.lastPlayed
             )
 
-            val updatedSong = Song(
-                id = id,
-                title = title,
-                artist = artist,
-                imagePath = thumbnail,
-                audioPath = audio,
-                primaryColor = primaryColor,
-                secondaryColor = secondaryColor,
-                isLiked = false,
-                userId = userId
+            globalViewModel.notifyUpdateSong(
+                Song(
+                    id = id,
+                    title = title,
+                    artist = artist,
+                    imagePath = thumbnail,
+                    audioPath = audio,
+                    primaryColor = primaryColor,
+                    secondaryColor = secondaryColor,
+                    isLiked = false,
+                    userId = userId,
+                    lastPlayed = songEntity.lastPlayed
+                )
             )
-
-            globalViewModel.notifyUpdateSong(updatedSong)
 
             withContext(Dispatchers.IO) {
-                repository.deleteFile(prevThumbnail)
-                repository.deleteFile(prevAudio)
+                if (prevThumbnail != thumbnail) repository.deleteFile(prevThumbnail)
+                if (prevAudio != audio) repository.deleteFile(prevAudio)
             }
         }
     }
 
-
     fun deleteSong(song: Song) {
         viewModelScope.launch {
             val songEntity: SongEntity = song.toEntity() ?: return@launch
+            withContext(Dispatchers.IO) {
+                repository.deleteSong(songEntity)
+            }
             globalViewModel.notifyDeleteSong(song)
-            repository.deleteSong(songEntity)
         }
     }
 
     fun toggleLiked(song: Song) {
         val newVal = !song.isLiked
         viewModelScope.launch {
-            repository.updateLikedStatus(song.id, newVal)
+            withContext(Dispatchers.IO) {
+                repository.updateLikedStatus(song.id, newVal)
+            }
             globalViewModel.notifyLikeSong(song, newVal)
         }
     }

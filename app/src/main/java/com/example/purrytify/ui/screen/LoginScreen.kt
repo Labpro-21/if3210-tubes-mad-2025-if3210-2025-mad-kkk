@@ -64,13 +64,13 @@ import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.ui.theme.Poppins
 
-fun Activity.lockPortraitOrientation() {
-    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-}
-
-fun Activity.unlockOrientation() {
-    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-}
+//fun Activity.lockPortraitOrientation() {
+//    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+//}
+//
+//fun Activity.unlockOrientation() {
+//    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+//}
 
 @Composable
 fun LoginScreen(
@@ -86,15 +86,15 @@ fun LoginScreen(
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        activity?.lockPortraitOrientation()
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            activity?.unlockOrientation()
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        activity?.lockPortraitOrientation()
+//    }
+//
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            activity?.unlockOrientation()
+//        }
+//    }
 
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { message ->
@@ -107,9 +107,9 @@ fun LoginScreen(
         val exists = viewModel.checkIsTokenExist()
         if (exists) {
             viewModel.validateToken(
-                onValid = { newId ->
+                onValid = { newId, newLocation ->
                     globalViewModel.setUserId(newId)
-                    globalViewModel.initializeQueue()
+                    globalViewModel.setUserLocation(newLocation)
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -289,9 +289,9 @@ fun LoginScreen(
                         }
 
                         if (!valid) return@Button
-                        viewModel.login { newId ->
+                        viewModel.login { newId, newLocation ->
                             globalViewModel.setUserId(newId)
-                            globalViewModel.initializeQueue()
+                            globalViewModel.setUserLocation(newLocation)
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }

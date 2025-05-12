@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
@@ -25,7 +26,7 @@ fun NavigationRailBar(navController: NavHostController, modifier: Modifier = Mod
     val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavigationRail(modifier = modifier) {
+    NavigationRail(modifier = modifier.statusBarsPadding()) {
         items.forEach { screen ->
             val selected = currentRoute == screen.route
             NavigationRailItem(
@@ -49,7 +50,11 @@ fun NavigationRailBar(navController: NavHostController, modifier: Modifier = Mod
                 },
                 alwaysShowLabel = false,
                 colors = NavigationRailItemDefaults.colors(
-                    indicatorColor = Color.Transparent
+                    indicatorColor = Color.Transparent,
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    unselectedIconColor = Color.Gray,
+                    unselectedTextColor = Color.Gray
                 )
             )
         }

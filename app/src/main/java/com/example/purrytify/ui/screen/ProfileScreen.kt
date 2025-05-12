@@ -74,7 +74,6 @@ fun ProfileScreen(
     val isConnected by globalViewModel.isConnected.collectAsState()
 
     LogoutListener {
-        Log.d("LOGOUT", "call log out listener")
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
         }
@@ -104,7 +103,7 @@ fun ProfileScreen(
     }
 
 
-    if (viewModel.isLoading) {
+    if (viewModel.isLoading || userState == null || songStats == null) {
         Box(
             modifier = Modifier
                 .fillMaxSize(),
@@ -140,7 +139,7 @@ fun ProfileScreen(
                         Box(contentAlignment = Alignment.BottomEnd) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data("${baseUrl}uploads/profile-picture/${userState.profilePhoto}")
+                                    .data("${baseUrl}uploads/profile-picture/${userState!!.profilePhoto}")
                                     .crossfade(true)
                                     .build(),
                                 placeholder = painterResource(R.drawable.starboy),
@@ -155,14 +154,14 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = userState.username,
+                            text = userState!!.username,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
 
                         Text(
-                            text = userState.location,
+                            text = userState!!.location,
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -202,9 +201,9 @@ fun ProfileScreen(
                         .padding(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    StatItem(value = songStats.totalSongs.toString(), label = "SONGS")
-                    StatItem(value = songStats.likedSongs.toString(), label = "LIKED")
-                    StatItem(value = songStats.listenedSongs.toString(), label = "LISTENED")
+                    StatItem(value = songStats!!.totalSongs.toString(), label = "SONGS")
+                    StatItem(value = songStats!!.likedSongs.toString(), label = "LIKED")
+                    StatItem(value = songStats!!.listenedSongs.toString(), label = "LISTENED")
                 }
 
                 Spacer(modifier = Modifier.weight(1f))

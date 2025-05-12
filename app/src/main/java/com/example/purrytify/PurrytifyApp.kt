@@ -179,6 +179,12 @@ fun PurrytifyApp(
                             onPlayPauseClick = {
                                 globalViewModel.togglePlayPause()
                             },
+                            onSwipeNext = {
+                                globalViewModel.playNextSong()
+                            },
+                            onSwipePrev = {
+                                globalViewModel.playPreviousSong()
+                            },
                             isPlaying = isPlaying,
                             currProgress = currPosition,
                             duration = duration
@@ -190,8 +196,7 @@ fun PurrytifyApp(
                     BottomNavigationBar(
                         navController,
                         modifier = Modifier
-                            .height(92.dp)
-                            .offset(y = 5.dp)
+                            .height(72.dp)
                     )
                 }
             }
@@ -230,6 +235,12 @@ fun PurrytifyApp(
                     },
                     onLiked = {
                         globalViewModel.toggleLikedStatus()
+                    },
+                    onStartNewRadio = {
+                        globalViewModel.playSongs(currentSong!!)
+                    },
+                    onAddToNext = {
+                        globalViewModel.addToNext(currentSong!!)
                     }
                 )
             }

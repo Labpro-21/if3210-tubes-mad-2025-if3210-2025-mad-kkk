@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +42,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
@@ -89,6 +92,7 @@ fun SongDetailSheet(
     onOpenOption: () -> Unit
 ) {
     val song by globalViewModel.currentSong.collectAsState()
+    val currIdx by globalViewModel.currIdx.collectAsState()
     val isPlaying by globalViewModel.isPlaying.collectAsState()
     val sliderPosition by globalViewModel.currentPosition.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
@@ -176,8 +180,7 @@ fun SongDetailSheet(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                    Spacer(modifier = Modifier.height(32.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -203,15 +206,17 @@ fun SongDetailSheet(
                                 Text(
                                     text = song?.title ?: "",
                                     color = Color.White,
-                                    fontSize = 24.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    fontFamily = Poppins
+                                    fontFamily = Poppins,
+                                    letterSpacing = 0.3.sp
                                 )
                                 Text(
                                     text = song?.artist ?: "",
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 16.sp,
-                                    fontFamily = Poppins
+                                    fontFamily = Poppins,
+                                    letterSpacing = 0.3.sp
                                 )
                             }
 
@@ -247,7 +252,8 @@ fun SongDetailSheet(
                                 thumb = {
                                     Box(
                                         modifier = Modifier
-                                            .size(16.dp)
+                                            .size(10.dp)
+                                            .offset(y = (3).dp)
                                             .background(Color.White, CircleShape)
                                             .padding(0.dp)
                                     )
@@ -259,7 +265,7 @@ fun SongDetailSheet(
                                             activeTrackColor = Color.White,
                                             inactiveTrackColor = Color.White.copy(alpha = 0.3f),
                                         ),
-                                        modifier = Modifier.height(6.dp),
+                                        modifier = Modifier.height(3.dp),
                                         thumbTrackGapSize = 0.dp
                                     )
                                 },
@@ -349,12 +355,12 @@ fun SongDetailSheet(
 
                             IconButton(
                                 onClick = {
-                                    globalViewModel.toggleRepeat()
+                                    globalViewModel.repeat()
                                 }
                             ) {
                                 Icon(
                                     imageVector = when (isRepeatEnabled) {
-                                        0, 1 -> Icons.Default.Repeat
+                                        0, 2 -> Icons.Default.Repeat
                                         else -> Icons.Default.RepeatOne
                                     },
                                     contentDescription = "Repeat",
@@ -398,145 +404,15 @@ fun SongDetailSheet(
                 }
             },
             onSongClick = { songCurr ->
-                globalViewModel.playSong(songCurr)
                 scope.launch {
-                    queueSheetState.hide()
-                    showQueueSheet = false
+                    globalViewModel.playSongIndex(songCurr)
                 }
             },
-            sheetState = queueSheetState
+            sheetState = queueSheetState,
+            currIdx = currIdx,
+            onMove = { from, to ->
+                globalViewModel.moveQueue(from, to)
+            }
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun QueueSheet(
-    queueList: List<com.example.purrytify.data.model.Song>,
-    onDismiss: () -> Unit,
-    onSongClick: (com.example.purrytify.data.model.Song) -> Unit,
-    sheetState: SheetState
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Queue",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = Poppins
-                )
-
-                Text(
-                    text = "${queueList.size} songs",
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    fontFamily = Poppins
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-
-            if (queueList.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Queue is empty",
-                        color = Color.Gray,
-                        fontFamily = Poppins
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    items(queueList) { song ->
-                        QueueItem(
-                            song = song,
-                            onClick = { onSongClick(song) }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun QueueItem(
-    song: com.example.purrytify.data.model.Song,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(4.dp))
-        ) {
-            ImageLoader.LoadImage(
-                imagePath = song.imagePath,
-                contentDescription = "${song.title} Album Cover",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = song.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = Poppins,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Text(
-                text = song.artist,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                fontFamily = Poppins,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        if (song.isLiked) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Liked",
-                tint = Color(0xFFFF4081),
-                modifier = Modifier.size(20.dp)
-            )
-        }
     }
 }

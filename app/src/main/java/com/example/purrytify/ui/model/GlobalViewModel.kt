@@ -17,6 +17,7 @@ import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.network.NetworkMonitor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,113 +25,144 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.min
-import kotlin.random.Random
 
 class GlobalViewModel(application: Application) : AndroidViewModel(application) {
-    private var mediaController: MediaController? = null
-    private val _queue: ArrayDeque<Song> = ArrayDeque()
-    private val _history: ArrayDeque<Song> = ArrayDeque()
-    private val _maxHistorySize = 18
-    private val repository: SongRepository
+    // current user
+    private val _userId = MutableStateFlow<Int?>(null)
+    val userId: StateFlow<Int?> = _userId
+    private val _userLocation = MutableStateFlow<String>("");
+    val userLocation: StateFlow<String> = _userLocation
 
+    // media player related variables
+    private var mediaController: MediaController? = null
+    private var _queue = MutableStateFlow<ArrayList<Song>>(ArrayList())
+    val queue: StateFlow<ArrayList<Song>> = _queue
+    private val repository: SongRepository;
+    private val randomQueueSize = 10;
+    private var progressUpdateJob: Job? = null
+
+    // current song
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong
+    private val _currentIdx = MutableStateFlow<Int>(0)
+    val currIdx: StateFlow<Int> = _currentIdx
 
+    // is song playing
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying
 
+    // current song duration
     private val _currentPosition = MutableStateFlow(0.0)
     val currentPosition: StateFlow<Double> = _currentPosition
 
+    // max duration
     private val _duration = MutableStateFlow(0.0)
     val duration: StateFlow<Double> = _duration
 
-    private val _queue_list = MutableStateFlow<List<Song>>(emptyList())
-    val queue: StateFlow<List<Song>> = _queue_list
-
-    private val _history_list = MutableStateFlow<List<Song>>(emptyList())
-    val history: StateFlow<List<Song>> = _history_list
-
-    private val _userQueue: ArrayDeque<Song> = ArrayDeque()
-
-    private val _isRepeat = MutableStateFlow(0)
-    val isRepeat: StateFlow<Int> = _isRepeat
-
-    private val queueSize = 5
-
-    private val A_queue_picker = 1
-    private var B_queue_picker = 1
-    private val _user_id = MutableStateFlow<Int?>(null)
-    val user_id: StateFlow<Int?> = _user_id
-
+    // network monitor
     private val networkMonitor = NetworkMonitor(application)
     val isConnected = networkMonitor.isConnected
 
+    // repeat
+    private val _isRepeat = MutableStateFlow(0)
+    val isRepeat: StateFlow<Int> = _isRepeat
+
+    // shuffle
     private val _shuffled = MutableStateFlow(false)
     val shuffled = _shuffled
 
+    // constructor
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         repository = SongRepository(songDao, application)
         networkMonitor.register()
     }
 
-    enum class REPEAT {
-        NO_REPEAT, QUEUE_REPEAT, SELF_REPEAT
-    }
-
-    fun initializeQueue() {
-        viewModelScope.launch {
-            if (user_id.value == null) return@launch
-            val songSize = repository.getNumberOfSong(userId = user_id.value!!).first()
-            val allSongs = repository.allSongs(userId = user_id.value!!).first()
-            if (songSize > 0) {
-                Log.d("INIT GLOBAL VIEW MODEL", songSize.toString())
-                for (i in 1..min(songSize, queueSize)) {
-                    val song = allSongs[i - 1].toSong()
-                    song.let { _queue.add(song) }
-                }
-                _queue_list.value = _userQueue.toList() + _queue.toList()
-            }
-        }
-    }
-
+    // destructor onCleared
     override fun onCleared() {
         super.onCleared()
         networkMonitor.unregister()
     }
 
+    // user related functions
     fun setUserId(newId: Int) {
-        _user_id.value = newId
+        _userId.value = newId
     }
 
     fun clearUserId() {
-        _user_id.value = null
+        _userId.value = null
     }
 
+    fun setUserLocation(newLocation: String) {
+        _userLocation.value = newLocation;
+    }
+
+    fun clearUserLocation() {
+        _userLocation.value = "";
+    }
+
+    fun logout() {
+        mediaController?.stop()
+        mediaController?.clearMediaItems()
+
+        _currentIdx.value = 0
+        _currentSong.value = null
+        _isPlaying.value = false
+        _currentPosition.value = 0.0
+        _duration.value = 0.0
+        _isRepeat.value = 0
+        _shuffled.value = false
+        mediaController?.apply {
+            shuffleModeEnabled = false
+            repeatMode = Player.REPEAT_MODE_OFF
+        }
+
+        clearUserId()
+        clearUserLocation()
+        _queue.value = ArrayList()
+        stopProgressUpdate()
+    }
+
+    // media controller functions
     fun bindMediaController(controller: MediaController) {
         mediaController = controller
         controller.addListener(mediaListener)
-    }
-
-
-    private fun resumeProgressUpdate() {
-        if (progressUpdateJob?.isActive == true) return
-        progressUpdateJob = viewModelScope.launch {
-            while (isActive) {
-                updatePlaybackState()
-                delay(500)
-            }
+        mediaController?.apply {
+            shuffleModeEnabled = false
+            repeatMode = Player.REPEAT_MODE_OFF
         }
     }
 
-    private fun stopProgressUpdate() {
-        progressUpdateJob?.cancel()
-        progressUpdateJob = null
+    private val mediaListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+            checkAndUpdateProgress()
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            super.onPlaybackStateChanged(playbackState)
+            checkAndUpdateProgress()
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            super.onMediaItemTransition(mediaItem, reason)
+            Log.d("MEDIA TRANSITION", "This is called")
+            if (mediaItem != null) {
+                mediaController?.apply {
+                    _currentIdx.value = currentMediaItemIndex
+                    if (_currentIdx.value < _queue.value.size) {
+                        _currentSong.value = _queue.value[_currentIdx.value]
+                    }
+                }
+            }
+            checkAndUpdateProgress()
+        }
     }
 
+    // media player indicator job
     private fun checkAndUpdateProgress() {
         val isPlaying = mediaController?.isPlaying == true
         val isReady = mediaController?.playbackState == Player.STATE_READY
@@ -142,21 +174,21 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    private fun stopProgressUpdate() {
+        progressUpdateJob?.cancel()
+        progressUpdateJob = null
+        _isPlaying.value = false
+    }
 
-    private val mediaListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            checkAndUpdateProgress()
-        }
-
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            checkAndUpdateProgress()
-            if (playbackState == Player.STATE_ENDED) {
-                playNextSong(true)
+    private fun resumeProgressUpdate() {
+        if (progressUpdateJob?.isActive == true) return
+        progressUpdateJob = viewModelScope.launch {
+            while (isActive) {
+                updatePlaybackState()
+                delay(1000)
             }
         }
     }
-
-    private var progressUpdateJob: Job? = null
 
     private fun updatePlaybackState() {
         mediaController?.let { service ->
@@ -166,550 +198,98 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun play(song: Song) {
-        val uri: Uri = getUriFromPath(song.audioPath)
-        val imageUri: Uri = getUriFromPath(song.imagePath)
-        val mediaItem = MediaItem.Builder()
-            .setUri(uri)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(song.title)
-                    .setArtist(song.artist)
-                    .setDisplayTitle(song.title)
-                    .setArtworkUri(imageUri)
-                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                    .build()
-            )
-            .build()
-
-        viewModelScope.launch {
+    // song playing functions
+    private fun setLastPlayed(song: Song) {
+        viewModelScope.launch(Dispatchers.IO) {
             repository.setLastPlayed(song.id)
         }
+    }
+
+    fun playSong(song: Song) {
+        if (userId.value == null) return
+        mediaController?.clearMediaItems()
+
+        val newQueue = arrayListOf(song)
+        _queue.value = newQueue
 
         mediaController?.apply {
-            setMediaItem(mediaItem)
+            setMediaItem(song.toMediaItem())
             prepare()
             play()
         }
+        setLastPlayed(song)
     }
 
-    fun toggleLikedStatus() {
-        val songId = _currentSong.value?.id ?: return
-        val isLiked = _currentSong.value?.isLiked ?: return
+    fun playSongs(song: Song) {
+        if (userId.value == null) return
 
-        viewModelScope.launch {
-            repository.updateLikedStatus(songId, !isLiked)
-            _currentSong.value?.let { currentSong ->
-                // update current song
-                val updatedSong = currentSong.copy(isLiked = !isLiked)
-                _currentSong.value = updatedSong
-
-                // update queue
-                val updatedQueue = ArrayDeque<Song>()
-                for (s in _queue) {
-                    if (s.id == songId) {
-                        updatedQueue.add(s.copy(isLiked = !isLiked))
-                    } else {
-                        updatedQueue.add(s)
-                    }
-                }
-                _queue.clear()
-                _queue.addAll(updatedQueue)
-
-                // update history
-                val updatedHistory = ArrayDeque<Song>()
-                for (s in _history) {
-                    if (s.id == songId) {
-                        updatedHistory.add(s.copy(isLiked = !isLiked))
-                    } else {
-                        updatedHistory.add(s)
-                    }
-                }
-                _history.clear()
-                _history.addAll(updatedHistory)
-
-                val updatedUserQ = ArrayDeque<Song>()
-                for (s in _userQueue) {
-                    if (s.id == songId) {
-                        updatedUserQ.add(s.copy(isLiked = !isLiked))
-                    } else {
-                        updatedUserQ.add(s)
-                    }
-                }
-                _userQueue.clear()
-                _userQueue.addAll(updatedUserQ)
-                refreshQueueAndHistoryUI()
-            }
-        }
-    }
-
-    fun logout() {
-        mediaController?.stop()
+        // clear media items
         mediaController?.clearMediaItems()
 
-        _currentSong.value = null
-        _isPlaying.value = false
-        _currentPosition.value = 0.0
-        _duration.value = 0.0
-
-        clearUserId()
-
-        _queue.clear()
-        _history.clear()
-        _userQueue.clear()
-        _queue_list.value = emptyList()
-        _history_list.value = emptyList()
-
-        stopProgressUpdate()
-    }
-
-
-    fun playSong(song: Song) {
-        currentSong.value?.let {
-            addToHistory(it)
-        }
-        play(song)
-        _currentSong.value = song
-        refreshQueueAndHistoryUI()
-    }
-
-    fun notifyAddSong() {
+        // add multiple song, starting from current song
         viewModelScope.launch {
-            if (user_id.value == null) return@launch
-            val allSongs = repository.allSongs(userId = user_id.value!!).first()
-            if (allSongs.isEmpty()) {
-                return@launch
+            val allSongs = withContext(Dispatchers.IO) {
+                repository.allSongs(userId = userId.value!!).first()
             }
-            _queue.addFirst(allSongs[0].toSong())
-            Log.d("GLOBAL VIEW MODEL", "ADDED ${allSongs[0].title}")
-            if (_queue.size > queueSize) {
-                _queue.removeLast()
-            }
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    fun shuffle() {
-        _shuffled.value = !_shuffled.value
-
-        if (_shuffled.value) {
-            _queue.shuffle()
-            _userQueue.shuffle()
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    fun notifyUpdateSong(song: Song) {
-        viewModelScope.launch {
-            val updatedQueue = ArrayDeque<Song>()
-            for (s in _queue) {
-                if (s.id == song.id) {
-                    updatedQueue.add(song)
-                } else {
-                    updatedQueue.add(s)
-                }
-            }
-            _queue.clear()
-            _queue.addAll(updatedQueue)
-
-            // update history
-            val updatedHistory = ArrayDeque<Song>()
-            for (s in _history) {
-                if (s.id == song.id) {
-                    continue
-                } else {
-                    updatedHistory.add(s)
-                }
-            }
-            _history.clear()
-            _history.addAll(updatedHistory)
-
-            val updatedUserQ = ArrayDeque<Song>()
-            for (s in _userQueue) {
-                if (s.id == song.id) {
-                    updatedUserQ.add(song)
-                } else {
-                    updatedUserQ.add(s)
-                }
-            }
-            _userQueue.clear()
-            _userQueue.addAll(updatedUserQ)
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    private fun getNewPicker(n: Int) {
-        B_queue_picker = if (_shuffled.value && n > 1) {
-            Random.nextInt(1, n - 1)
-        } else {
-            1
-        }
-    }
-
-    fun notifyDeleteSong(song: Song) {
-        viewModelScope.launch {
-            val filteredQueue = _queue.filter { it.id != song.id }
-            _queue.clear()
-            _queue.addAll(filteredQueue)
-
-            val filteredHistory = _history.filter { it.id != song.id }
-            _history.clear()
-            _history.addAll(filteredHistory)
-
-            val filteredUserQ = _userQueue.filter { it.id != song.id }
-            _userQueue.clear()
-            _userQueue.addAll(filteredUserQ)
-
-            val userQSize = _userQueue.size
-            var systemQSize = _queue.size
-            val allSongs = repository.allSongs(user_id.value!!).first()
             val songSize = allSongs.size
 
-            var lastSong: Long
-
-            if (_queue.isNotEmpty()) {
-                lastSong = _queue.last().id
-            } else {
-                if (_userQueue.isEmpty()) {
-                    return@launch
-                }
-                lastSong = _userQueue.last().id
+            var idx = 0
+            while (idx < songSize) {
+                if (allSongs[idx].id == song.id) break
+                idx += 1
             }
 
-            getNewPicker(songSize)
+            // initialize list of mediaItems
+            val newQueue = arrayListOf(song)
+            val newMediaItems = mutableListOf(song.toMediaItem());
 
-            while (userQSize + systemQSize < queueSize) {
-                lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
-                val rndSong = allSongs[lastSong.toInt()]
-                _queue.add(rndSong.toSong())
-                systemQSize++
-            }
-
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    fun notifyLikeSong(song: Song, newVal: Boolean) {
-        viewModelScope.launch {
-            // update current song
-            if (_currentSong.value?.id == song.id) {
-                _currentSong.value?.let { currentSong ->
-                    val updatedSong = currentSong.copy(isLiked = newVal)
-                    _currentSong.value = updatedSong
+            for (i in 1..min(songSize, randomQueueSize)) {
+                val song2 = allSongs[(i + idx).mod(songSize)].toSong()
+                song2.let {
+                    newQueue.add(song2)
+                    newMediaItems.add(song2.toMediaItem())
                 }
             }
-
-            // update queue
-            val updatedQueue = ArrayDeque<Song>()
-            for (s in _queue) {
-                if (s.id == song.id) {
-                    updatedQueue.add(s.copy(isLiked = newVal))
-                } else {
-                    updatedQueue.add(s)
-                }
+            _queue.value = newQueue
+            mediaController?.apply {
+                addMediaItems(newMediaItems)
+                prepare()
+                play()
             }
-            _queue.clear()
-            _queue.addAll(updatedQueue)
 
-            // update user history
-            val updatedHistory = ArrayDeque<Song>()
-            for (s in _history) {
-                if (s.id == song.id) {
-                    updatedHistory.add(s.copy(isLiked = newVal))
-                } else {
-                    updatedHistory.add(s)
-                }
+            withContext(Dispatchers.IO) {
+                repository.setLastPlayed(song.id)
             }
-            _history.clear()
-            _history.addAll(updatedHistory)
-
-            // update user queue
-            val updatedUserQ = ArrayDeque<Song>()
-            for (s in _userQueue) {
-                if (s.id == song.id) {
-                    updatedUserQ.add(s.copy(isLiked = newVal))
-                } else {
-                    updatedUserQ.add(s)
-                }
-            }
-            _userQueue.clear()
-            _userQueue.addAll(updatedUserQ)
-            refreshQueueAndHistoryUI()
         }
     }
 
-
-    fun addToQueue(song: Song) {
-        _userQueue.add(song)
-        val userQSize = _userQueue.size
-        var systemQSize = _queue.size
-        while (userQSize + systemQSize > queueSize && systemQSize > 0) {
-            _queue.removeLast()
-            systemQSize--
-        }
-        refreshQueueAndHistoryUI()
+    fun playNextSong() {
+        if (userId.value == null) return
+        mediaController?.seekToNextMediaItem()
     }
 
-    fun addAllToQueue(songs: List<Song>) {
-        _userQueue.addAll(songs)
-        val userQSize = _userQueue.size
-        var systemQSize = _queue.size
-        while (userQSize + systemQSize > queueSize && systemQSize > 0) {
-            _queue.removeLast()
-            systemQSize--
-        }
-        refreshQueueAndHistoryUI()
-    }
-
-    fun toggleRepeat() {
-        _isRepeat.value += 1
-        _isRepeat.value %= 3
-    }
-
-    fun clearQueue() {
-        viewModelScope.launch {
-            if (user_id.value == null) return@launch
-            _userQueue.clear()
-            val userQSize = _userQueue.size
-            var systemQSize = _queue.size
-            val allSongs = repository.allSongs(user_id.value!!).first()
-            val songSize = allSongs.size
-
-            var lastSong = 1L
-
-            if (_queue.isNotEmpty()) {
-                lastSong = _queue.last().id
-            }
-
-            getNewPicker(songSize)
-
-            while (userQSize + systemQSize < queueSize) {
-                lastSong = (A_queue_picker * lastSong + B_queue_picker).mod(songSize).toLong()
-                val song = allSongs[lastSong.toInt()]
-                _queue.add(song.toSong())
-                systemQSize++
-            }
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    fun removeFromQueue(song: Song) {
-        _queue.remove(song)
-        refreshQueueAndHistoryUI()
-    }
-
-    fun moveQueueItem(fromIndex: Int, toIndex: Int) {
-        if (fromIndex in 0 until _queue.size && toIndex in 0 until _queue.size && fromIndex != toIndex) {
-            val song = _queue.removeAt(fromIndex)
-            _queue.add(toIndex, song)
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    private fun addToHistory(song: Song) {
-        if (_history.isEmpty() || _history.first() != song) {
-            _history.addFirst(song)
-            while (_history.size > _maxHistorySize) {
-                _history.removeLast()
-            }
-            refreshQueueAndHistoryUI()
-        }
-    }
-
-    fun clearHistory() {
-        _history.clear()
-        refreshQueueAndHistoryUI()
-    }
-
-    private fun refreshQueueAndHistoryUI() {
-        _queue_list.value = _userQueue.toList() + _queue.toList()
-        _history_list.value = _history.toList()
-    }
-
-    fun playNextSong(auto: Boolean = false): Long {
-        if (auto && _isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
-            val currentSong = _currentSong.value ?: return 0
-            play(currentSong)
-            return currentSong.id
-        }
-
-        if (user_id.value == null) return 0
-
-        if (!auto && _isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
-            _isRepeat.value = REPEAT.NO_REPEAT.ordinal
-        }
-
-        if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
-            if (_userQueue.isNotEmpty()) {
-                val nextSong = _userQueue.removeFirst()
-                _currentSong.value?.let {
-                    _queue.add(it)
-                }
-                playSong(nextSong)
-                refreshQueueAndHistoryUI()
-                return nextSong.id
-            } else {
-                if (_queue.isNotEmpty()) {
-                    val nextSong = _queue.removeFirst()
-                    _currentSong.value?.let {
-                        _queue.add(it)
-                    }
-                    playSong(nextSong)
-                    refreshQueueAndHistoryUI()
-                    return nextSong.id
-                }
-            }
-            return 0
-        }
-
-        if (_userQueue.isNotEmpty()) {
-            val nextSong = _userQueue.removeFirst()
-            var lastSong = nextSong
-
-            if (_queue.isNotEmpty()) {
-                lastSong = _queue.last()
-            }
-
-            playSong(nextSong)
-
-            viewModelScope.launch {
-                val userQSize = _userQueue.size
-                if (_queue.size + userQSize < queueSize) {
-
-                    val songSize = repository.getNumberOfSong(user_id.value!!).first()
-
-                    val allSongs = repository.allSongs(user_id.value!!).first()
-
-                    var lastIndex = -1
-
-                    for ((iterator, song) in allSongs.withIndex()) {
-                        if (song.id == lastSong.id) {
-                            lastIndex = iterator
-                        }
-                    }
-
-                    if (lastIndex == -1) {
-                        Log.e("GLOBAL VIEW MODEL", "CURRENT SONG NOT FOUND IN QUEUE")
-                        return@launch
-                    }
-
-                    getNewPicker(songSize)
-
-                    val song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
-                    song.let { _queue.add(it.toSong()) }
-
-                    Log.d("QUEUE NEXT SONG", song.title)
-
-                    _queue_list.value = _userQueue.toList() + _queue.toList()
-                }
-            }
-
-            return nextSong.id
-        }
-
-        if (_queue.isNotEmpty()) {
-            val nextSong = _queue.removeFirst()
-            var lastSong = nextSong
-
-            if (_queue.isNotEmpty()) {
-                lastSong = _queue.last()
-            }
-
-            playSong(nextSong)
-
-            viewModelScope.launch {
-                val userQSize = _userQueue.size
-                if (_queue.size + userQSize < queueSize) {
-
-                    val songSize = repository.getNumberOfSong(user_id.value!!).first()
-                    val allSongs = repository.allSongs(user_id.value!!).first()
-
-                    var lastIndex = -1
-
-                    for ((iterator, song) in allSongs.withIndex()) {
-                        if (song.id == lastSong.id) {
-                            lastIndex = iterator
-                        }
-                    }
-
-                    if (lastIndex == -1) {
-                        Log.e("GLOBAL VIEW MODEL", "CURRENT SONG NOT FOUND IN QUEUE")
-                        return@launch
-                    }
-
-                    getNewPicker(songSize)
-
-                    val song = allSongs[(A_queue_picker * lastIndex + B_queue_picker).mod(songSize)]
-                    song.let { _queue.add(it.toSong()) }
-
-                    Log.d("QUEUE NEXT SONG", song.title)
-
-                    _queue_list.value = _userQueue.toList() + _queue.toList()
-                }
-            }
-
-            return nextSong.id
+    fun playPreviousSong() {
+        if (userId.value == null) return
+        if (_currentSong.value != null && _currentPosition.value <= 1) {
+            mediaController?.seekToPreviousMediaItem()
         } else {
-            mediaController?.pause()
-            return 0
+            mediaController?.seekTo(0)
+            _currentPosition.value = 0.0
         }
     }
 
-    fun playPreviousSong(): Long {
-        if (_isRepeat.value == REPEAT.SELF_REPEAT.ordinal) {
-            _isRepeat.value = REPEAT.NO_REPEAT.ordinal
-        }
-        if (_currentSong.value == null) {
-            return 0
-        }
-        if (_isRepeat.value == REPEAT.QUEUE_REPEAT.ordinal) {
-            if (_queue.isEmpty()) {
-                if (_userQueue.isEmpty()) {
-                    return 0
-                }
-                val prevSong = _userQueue.removeLast()
-                _queue.addFirst(_currentSong.value!!)
-                play(prevSong)
-                _currentSong.value = prevSong
-                refreshQueueAndHistoryUI()
-                return prevSong.id
-            } else {
-                val prevSong = _queue.removeLast()
-                _queue.addFirst(_currentSong.value!!)
-                play(prevSong)
-                _currentSong.value = prevSong
-                refreshQueueAndHistoryUI()
-                return prevSong.id
-            }
-        }
-
-        if (_history.isNotEmpty()) {
-            val prevSong = _history.removeFirst()
-            currentSong.value?.let { _queue.addFirst(it) }
-            play(prevSong)
-            _currentSong.value = prevSong
-
-            if (_queue.size > queueSize) {
-                _queue.removeLast()
-            }
-
-            refreshQueueAndHistoryUI()
-            return prevSong.id
-        } else {
-            return 0
-        }
+    fun playSongIndex(idx: Int) {
+        if (userId.value == null) return
+        mediaController?.seekTo(idx, 0)
     }
 
+    // play pause seek drag
     fun togglePlayPause() {
         if (isPlaying.value) {
             mediaController?.pause()
             _isPlaying.value = false
         } else {
-            if (currentSong == null && _queue.isNotEmpty()) {
-                playNextSong()
-            } else {
-                mediaController?.play()
-            }
+            mediaController?.play()
             _isPlaying.value = true
         }
     }
@@ -723,17 +303,130 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     fun seekTo(position: Int) {
         mediaController?.seekTo(position * 1000L)
-        if (_isPlaying.value) {
-            mediaController?.play()
-        }
+        mediaController?.play()
         _currentPosition.value = position.toDouble()
     }
 
-    fun playNext(song: Song) {
-        _queue.addFirst(song)
-        refreshQueueAndHistoryUI()
+    // shuffle and repeat
+    fun shuffle() {
+        _shuffled.value = !_shuffled.value
+        mediaController?.shuffleModeEnabled = _shuffled.value
     }
 
+    fun repeat() {
+        _isRepeat.value = (isRepeat.value + 1) % 3
+        mediaController?.repeatMode = _isRepeat.value
+        Log.d("REPEAT_MODE", mediaController?.repeatMode.toString())
+    }
+
+    // queue
+    fun addToQueue(song: Song) {
+        val newList = _queue.value.toMutableList()
+        newList.add(song)
+        _queue.value = ArrayList(newList)
+        mediaController?.addMediaItem(song.toMediaItem())
+    }
+
+    fun addToNext(song: Song) {
+        mediaController?.apply {
+            val nextIndex = currentMediaItemIndex + 1
+            addMediaItem(nextIndex, song.toMediaItem())
+        }
+
+        val nextIndex = (mediaController?.currentMediaItemIndex ?: -1) + 1
+        val newList = _queue.value.toMutableList()
+        if (nextIndex in 0..newList.size) {
+            newList.add(nextIndex, song)
+            _queue.value = ArrayList(newList)
+        }
+    }
+
+    fun moveQueue(from: Int, to: Int) {
+        if (from !in _queue.value.indices || to !in _queue.value.indices) return
+
+        val newList = _queue.value.toMutableList()
+        val song = newList.removeAt(from)
+        newList.add(to, song)
+        _queue.value = ArrayList(newList)
+        mediaController?.moveMediaItem(from, to)
+        _currentIdx.value = mediaController?.currentMediaItemIndex ?: 0
+    }
+
+    // like
+    fun toggleLikedStatus() {
+        val songId = _currentSong.value?.id ?: return
+        val isLiked = _currentSong.value?.isLiked ?: return
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.updateLikedStatus(songId, !isLiked)
+            }
+            _currentSong.value?.let { currentSong ->
+                val updatedSong = currentSong.copy(isLiked = !isLiked)
+                _currentSong.value = updatedSong
+
+                val updatedQueue = ArrayList<Song>()
+                for (s in _queue.value) {
+                    if (s.id == songId) {
+                        updatedQueue.add(s.copy(isLiked = !isLiked))
+                    } else {
+                        updatedQueue.add(s)
+                    }
+                }
+                _queue.value = updatedQueue
+            }
+        }
+    }
+
+    fun notifyUpdateSong(updatedSong: Song) {
+        viewModelScope.launch {
+            val oldList = _queue.value
+            val newList = oldList.map { if (it.id == updatedSong.id) updatedSong.copy() else it }
+
+            _queue.value = ArrayList(newList)
+
+            mediaController?.let { controller ->
+                newList.forEachIndexed { index, song ->
+                    if (song.id == updatedSong.id) {
+                        controller.replaceMediaItem(index, song.toMediaItem())
+                    }
+                }
+            }
+        }
+    }
+
+    fun notifyDeleteSong(song: Song) {
+        viewModelScope.launch {
+            val oldList = _queue.value
+            val newList = oldList.toMutableList()
+
+            val indicesToRemove = newList.mapIndexedNotNull { index, s -> if (s.id == song.id) index else null }
+
+            if (indicesToRemove.isEmpty()) return@launch
+
+            for (i in indicesToRemove.reversed()) {
+                newList.removeAt(i)
+                mediaController?.removeMediaItem(i)
+            }
+
+            _queue.value = ArrayList(newList)
+        }
+    }
+
+    fun notifyLikeSong(song: Song, newVal: Boolean) {
+        _currentSong.value?.takeIf { it.id == song.id }?.let {
+            _currentSong.value = it.copy(isLiked = newVal)
+        }
+
+        val updatedQueue = _queue.value.map { s ->
+            if (s.id == song.id) s.copy(isLiked = newVal) else s
+        }
+        _queue.value = ArrayList(updatedQueue)
+    }
+
+
+
+    // util functions
     private fun SongEntity.toSong(): Song {
         return Song(
             id = this.id,
@@ -744,13 +437,33 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
-            userId = this.userId
+            userId = this.userId,
+            lastPlayed = this.lastPlayed
         )
     }
 
     private fun getUriFromPath(path: String): Uri {
         return if (path.startsWith("content://")) path.toUri()
         else Uri.fromFile(File(path))
+    }
+
+    private fun Song.toMediaItem(): MediaItem {
+        val uri: Uri = getUriFromPath(audioPath)
+        val imageUri: Uri = getUriFromPath(imagePath)
+        val mediaItem = MediaItem.Builder()
+            .setMediaId(id.toString())
+            .setUri(uri)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setArtist(artist)
+                    .setDisplayTitle(title)
+                    .setArtworkUri(imageUri)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                    .build()
+            )
+            .build()
+        return mediaItem
     }
 
     class GlobalViewModelFactory(private val application: Application) : ViewModelProvider.Factory {

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
@@ -57,13 +56,13 @@ class MainActivity : ComponentActivity() {
             PurrytifyTheme(darkTheme = true) {
                 val layoutDirection = LocalLayoutDirection.current
                 Surface(
-                    modifier = Modifier
-                        .padding(
-                            start = WindowInsets.safeDrawing.asPaddingValues()
-                                .calculateStartPadding(layoutDirection),
-                            end = WindowInsets.safeDrawing.asPaddingValues()
-                                .calculateEndPadding(layoutDirection)
-                        ).background(MaterialTheme.colorScheme.background)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
+//                        .padding(
+//                            start = WindowInsets.safeDrawing.asPaddingValues()
+//                                .calculateStartPadding(layoutDirection),
+//                            end = WindowInsets.safeDrawing.asPaddingValues()
+//                                .calculateEndPadding(layoutDirection)
+//                        ).background(MaterialTheme.colorScheme.background)
                 ) {
                     val windowSize = calculateWindowSizeClass(this)
                     PurrytifyApp(windowSize = windowSize.widthSizeClass, globalViewModel)

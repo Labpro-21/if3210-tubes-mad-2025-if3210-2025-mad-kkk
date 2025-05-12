@@ -2,9 +2,12 @@ package com.example.purrytify.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,26 +44,26 @@ fun CurrentSongPlayerCard(
     onCardClick: () -> Unit,
     onLikeClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
+    onSwipeNext: () -> Unit,
+    onSwipePrev: () -> Unit,
     isPlaying: Boolean,
     duration: Double,
     currProgress: Double,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column (
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
             .clickable(onClick = onCardClick)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // album cover
             ImageLoader.LoadImage(
                 imagePath = song.imagePath,
                 contentDescription = "${song.title} album cover",
@@ -69,31 +73,31 @@ fun CurrentSongPlayerCard(
                 contentScale = ContentScale.Crop
             )
 
-            // song info
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 12.dp),
             ) {
                 Text(
                     text = song.title,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = song.artist,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
 
-            // like button
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -110,26 +114,25 @@ fun CurrentSongPlayerCard(
                 }
             }
 
-            // play/pause button
             Box(
                 modifier = Modifier
                     .padding(start = 8.dp)
                     .size(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
-                    .clickable(onClick = onPlayPauseClick),
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(
-                        id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-                    ),
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onPlayPauseClick() }
-                )
+                IconButton(onClick = onPlayPauseClick) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                        ),
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(20.dp)
+                    )
+                }
             }
         }
 
@@ -139,9 +142,8 @@ fun CurrentSongPlayerCard(
             progress = { progress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(2.dp)
-                .align(Alignment.BottomCenter),
-            color = MaterialTheme.colorScheme.primary,
+                .height(2.dp),
+            color = Color.White,
             trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
         )
     }
