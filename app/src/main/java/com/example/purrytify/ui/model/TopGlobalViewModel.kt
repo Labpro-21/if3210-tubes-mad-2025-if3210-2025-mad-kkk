@@ -20,6 +20,7 @@ import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.OnlineSongResponse
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +35,7 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
     var isLoading by mutableStateOf(true)
     var success by mutableStateOf(true)
     var songs by mutableStateOf<List<Song>>(emptyList())
+    private var loadJob: Job? = null
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -42,7 +44,8 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
     }
 
     fun loadOnlineSong() {
-        viewModelScope.launch {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             val filesToUndo = mutableListOf<String>()
             val filesToDelete = mutableListOf<String>()
             isLoading = true

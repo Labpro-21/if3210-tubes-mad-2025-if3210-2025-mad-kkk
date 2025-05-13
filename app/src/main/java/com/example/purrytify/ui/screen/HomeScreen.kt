@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -103,8 +104,7 @@ fun HomeScreen(
     }
 
     LazyColumn(
-        modifier = modifier
-            .padding(top = 40.dp, bottom = 6.dp),
+        modifier = modifier.padding(top = 30.dp),
         state = listState
     ) {
         item {
@@ -113,7 +113,7 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp, top = 10.dp),
                 fontFamily = Poppins
             )
 

@@ -18,6 +18,7 @@ import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.Profile
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,6 +50,7 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     var success by mutableStateOf(true)
     var isLoggingOut by mutableStateOf(false)
         private set
+    private var loadJob: Job? = null
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -56,7 +58,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     }
 
     fun loadUserProfile(onLogout: () -> Unit, onSuccess: () -> Unit) {
-        viewModelScope.launch {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             isLoading = true
             try {
                 var accessToken = tokenManager.getAccessToken()

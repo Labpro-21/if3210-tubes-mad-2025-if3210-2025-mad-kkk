@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,203 +93,207 @@ fun TopFiftyGlobalScreen(
     }
 
     LaunchedEffect(isConnected) {
-        if (isConnected && viewModel.songs.isEmpty()) {
-            viewModel.loadOnlineSong()
+        if (isConnected) {
+            if (viewModel.songs.isEmpty()) {
+                viewModel.loadOnlineSong()
+            } else {
+                viewModel.isLoading = false
+                viewModel.success = true
+            }
         } else {
             viewModel.isLoading = false
+            viewModel.success = false
         }
     }
 
-    if (viewModel.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    } else {
-        if (isConnected && viewModel.success) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                LazyColumn {
-                    item {
+    if (isConnected && viewModel.success) {
+        PullToRefreshBox(
+            isRefreshing = viewModel.isLoading,
+            onRefresh = {
+                viewModel.loadOnlineSong()
+            }) {
+            LazyColumn {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.verticalGradient(
+                                    colorStops = arrayOf(
+                                        0.0f to Color(0xFF1C8075),
+                                        0.4f to Color(0xFF1D4569),
+                                        1.0f to Color(0xFF121212)
+                                    ),
+                                )
+                            )
+                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colorStops = arrayOf(
-                                            0.0f to Color(0xFF1C8075),
-                                            0.4f to Color(0xFF1D4569),
-                                            1.0f to Color(0xFF121212)
-                                        ),
-                                    )
+                                .padding(
+                                    top = 40.dp,
+                                    start = 16.dp,
+                                    end = 16.dp,
                                 )
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        top = 40.dp,
-                                        start = 16.dp,
-                                        end = 16.dp,
-                                    )
-                            ) {
-                                Row {
-                                    IconButton(onClick = {
-                                        navController.popBackStack()
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = "Back",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(), horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.top_global_cover),
-                                        contentDescription = "Playlist Cover",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(223.dp)
-                                    )
-                                }
-                                Text(
-                                    text = "Your daily update of most played tracks globally",
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(top = 14.dp),
-                                    lineHeight = 16.sp
-                                )
-                                Row(
-                                    modifier = Modifier.padding(top = 3.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.logo_3),
-                                        tint = Color.White,
-                                        contentDescription = "Purrytify",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Purrytify",
-                                        color = Color.White,
-                                        fontSize = 12.sp,
-                                    )
-                                }
-                                Text(
-                                    text = "May 2025 • 2h 55min",
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(top = 1.dp, bottom = 8.dp),
-                                    fontSize = 12.sp,
-                                )
-                            }
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 2.dp, end = 16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row {
                                 IconButton(onClick = {
-                                    // TODO: download all songs
+                                    navController.navigate(Screen.Home.Main.route) {
+                                        popUpTo(Screen.Home.route) {
+                                            inclusive = false
+                                            saveState = true
+                                        }
+                                    }
                                 }) {
                                     Icon(
-                                        imageVector = ImageVector.vectorResource(R.drawable.download_icon),
-                                        tint = Color.White.copy(0.7f),
-                                        contentDescription = "Download All",
-                                        modifier = Modifier
-                                            .size(20.dp)
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Back",
+                                        tint = Color.White
                                     )
                                 }
-                                Box(
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(), horizontalArrangement = Arrangement.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.top_global_cover),
+                                    contentDescription = "Playlist Cover",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(223.dp)
+                                )
+                            }
+                            Text(
+                                text = "Your daily update of most played tracks globally",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 14.dp),
+                                lineHeight = 16.sp
+                            )
+                            Row(
+                                modifier = Modifier.padding(top = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.logo_3),
+                                    tint = Color.White,
+                                    contentDescription = "Purrytify",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "Purrytify",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                )
+                            }
+                            Text(
+                                text = "May 2025 • 2h 55min",
+                                color = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 1.dp, bottom = 8.dp),
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(start = 2.dp, end = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = {
+                                // TODO: download all songs
+                            }) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.download_icon),
+                                    tint = Color.White.copy(0.7f),
+                                    contentDescription = "Download All",
                                     modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(RoundedCornerShape(50))
-                                        .background(Color(0xFF30B454)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    IconButton(onClick = {
+                                        .size(20.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color(0xFF30B454)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                IconButton(onClick = {
+                                    if (viewModel.songs.isNotEmpty()) {
                                         globalViewModel.playSongs(viewModel.songs)
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = "Play & Pause",
-                                            tint = Color(0xFF121212),
-                                            modifier = Modifier
-                                                .size(30.dp)
-                                        )
                                     }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.PlayArrow,
+                                        contentDescription = "Play & Pause",
+                                        tint = Color(0xFF121212),
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                    )
                                 }
                             }
                         }
                     }
-                    itemsIndexed(viewModel.songs) { index, song ->
-                        TopSongCard (index + 1, song, {
-                            val songs = viewModel.songs
-                            val songSize = songs.size
-                            if (songSize == 0) return@TopSongCard
-
-                            val songsToPlay = List(songSize) { i ->
-                                songs[(i + index) % songSize]
-                            }
-                            globalViewModel.playSongs(songsToPlay)
-                            showDetail()
-                        }, {
-                            showSongOptionSheet = true
-                            showSong = song
-                            showIndex = index
-                        })
-                    }
                 }
-            }
-            if (showSongOptionSheet && showSong != null) {
-                SongOptionsSheet(
-                    song = showSong!!,
-                    onDismiss = {
-                        scope.launch {
-                            showSongSheetState.hide()
-                            showSongOptionSheet = false
-                        }
-                    },
-                    onEdit = {},
-                    onDelete = {},
-                    sheetState = showSongSheetState,
-                    onAddToQueue = {
-                        globalViewModel.addToQueue(showSong!!)
-                    },
-                    onLiked = {
-                        viewModel.toggleLiked(showSong!!)
-                    },
-                    onStartNewRadio = {
-                        val idx = showIndex ?: return@SongOptionsSheet
+                itemsIndexed(viewModel.songs) { index, song ->
+                    TopSongCard(index + 1, song, {
                         val songs = viewModel.songs
                         val songSize = songs.size
-                        if (songSize == 0) return@SongOptionsSheet
+                        if (songSize == 0) return@TopSongCard
 
                         val songsToPlay = List(songSize) { i ->
-                            songs[(i + idx) % songSize]
+                            songs[(i + index) % songSize]
                         }
-
                         globalViewModel.playSongs(songsToPlay)
-                    },
-                    onAddToNext = {
-                        globalViewModel.addToNext(showSong!!)
-                    }
-                )
-            }
-        } else {
-            NoInternetScreen {
-                scope.launch {
-                    viewModel.loadOnlineSong()
+                        showDetail()
+                    }, {
+                        showSongOptionSheet = true
+                        showSong = song
+                        showIndex = index
+                    })
                 }
+            }
+        }
+        if (showSongOptionSheet && showSong != null) {
+            SongOptionsSheet(
+                song = showSong!!,
+                onDismiss = {
+                    scope.launch {
+                        showSongSheetState.hide()
+                        showSongOptionSheet = false
+                    }
+                },
+                onEdit = {},
+                onDelete = {},
+                sheetState = showSongSheetState,
+                onAddToQueue = {
+                    globalViewModel.addToQueue(showSong!!)
+                },
+                onLiked = {
+                    viewModel.toggleLiked(showSong!!)
+                },
+                onStartNewRadio = {
+                    val idx = showIndex ?: return@SongOptionsSheet
+                    val songs = viewModel.songs
+                    val songSize = songs.size
+                    if (songSize == 0) return@SongOptionsSheet
+
+                    val songsToPlay = List(songSize) { i ->
+                        songs[(i + idx) % songSize]
+                    }
+
+                    globalViewModel.playSongs(songsToPlay)
+                },
+                onAddToNext = {
+                    globalViewModel.addToNext(showSong!!)
+                }
+            )
+        }
+    } else {
+        NoInternetScreen {
+            scope.launch {
+                viewModel.loadOnlineSong()
             }
         }
     }
