@@ -1,9 +1,8 @@
 package com.example.purrytify.ui.screen
 
 import android.widget.Toast
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,12 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -31,17 +27,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.EditSongBottomSheet
@@ -50,8 +49,8 @@ import com.example.purrytify.ui.component.SongCard
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.HomeViewModel
-import com.example.purrytify.ui.model.ImageLoader
 import com.example.purrytify.ui.theme.Poppins
+import com.example.purrytify.ui.util.CountryConstant
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
@@ -66,14 +65,17 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
+        key = "home-view-model",
         factory = HomeViewModel.HomeViewModelFactory(
             context.applicationContext as android.app.Application,
             globalViewModel
         )
     )
 
+    val listState = rememberLazyListState()
     val songs by viewModel.recentlyAddedSongs.collectAsState()
     val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
+    val userCountry by globalViewModel.userLocation.collectAsState()
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var showSongOptionSheet by remember { mutableStateOf(false) }
@@ -102,24 +104,100 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = modifier
-            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
+            .padding(top = 40.dp, bottom = 6.dp),
+        state = listState
     ) {
         item {
+            Text(
+                text = "Chart",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
+                fontFamily = Poppins
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.global),
+                        contentDescription = "Top Global Cover",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = "Your daily update of most played tracks globally",
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        maxLines = 2,
+                        lineHeight = 16.sp,
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Poppins,
+                        style = TextStyle(
+                            letterSpacing = 0.1.sp
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
+
+                ) {
+                    Image(
+                        painter = painterResource(
+                            CountryConstant.CountryImage[userCountry]
+                                ?: R.drawable.id
+                        ),
+                        contentDescription = "Top Country Cover",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        maxLines = 2,
+                        lineHeight = 16.sp,
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Poppins,
+                        style = TextStyle(
+                            letterSpacing = 0.1.sp
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = "New songs",
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                 fontFamily = Poppins
             )
 
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp)
             ) {
                 items(songs) { song ->
-                    NewSongCard (song = song, onClick = {
+                    NewSongCard(song = song, onClick = {
                         globalViewModel.playSong(song)
                         showDetail()
                     })
@@ -133,13 +211,13 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                 fontFamily = Poppins
             )
         }
 
         items(recentlyPlayedSongs) { song ->
-            SongCard (
+            SongCard(
                 song = song, onClick = {
                     globalViewModel.playSong(song)
                     showDetail()

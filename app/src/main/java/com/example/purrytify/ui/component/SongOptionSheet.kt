@@ -14,10 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,10 +39,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.ui.model.LoadImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +89,7 @@ fun SongOptionsSheet(
                 .padding(horizontal = 16.dp, vertical = 0.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ImageLoader.LoadImage(
+                LoadImage(
                     imagePath = song.imagePath,
                     contentDescription = "${song.title} album cover",
                     Modifier
@@ -130,11 +129,14 @@ fun SongOptionsSheet(
                 },
                 tint = if (song.isLiked) Color(0xFFFF4081) else Color.White
             )
-            if (!detail) {
+            if (!detail && song.serverId == null) {
                 SheetOption(icon = Icons.Default.Delete, text = "Delete Song") {
                     showDeleteConfirmation = true
                 }
                 SheetOption(icon = Icons.Default.Edit, text = "Edit Song", onClick = onEdit)
+            }
+            if (song.serverId != null && !song.isDownloaded) {
+                SheetOption(icon = Icons.Default.Download, text = "Download Song") { }
             }
         }
     }

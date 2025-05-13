@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.ui.model.LoadImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,7 +142,7 @@ fun EditSongBottomSheet(
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            ImageLoader.LoadImage(
+                            LoadImage(
                                 imagePath = thumbnail.value,
                                 contentDescription = "Selected Image",
                                 modifier = Modifier.fillMaxSize(),
