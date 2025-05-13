@@ -55,7 +55,7 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
                         }
                     } else if (currentRoute != nav.route) {
                         navController.navigate(nav.route) {
-                            popUpTo(0) {
+                            popUpTo(Screen.Home.Main.route) {
                                 inclusive = false
                                 saveState = true
                             }

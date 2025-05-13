@@ -138,11 +138,11 @@ fun LibraryScreen(
                         focusManager.clearFocus()
                     })
                 }
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(vertical = 8.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(top = 32.dp)
+                    .padding(top = 32.dp, start = 16.dp, end = 16.dp)
                     .zIndex(10f)
                     .background(MaterialTheme.colorScheme.background)
             ) {
@@ -225,6 +225,7 @@ fun LibraryScreen(
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
                     .zIndex(10f)
+                    .padding(start = 16.dp, end = 16.dp)
             ) {
                 Row(
                     modifier = Modifier

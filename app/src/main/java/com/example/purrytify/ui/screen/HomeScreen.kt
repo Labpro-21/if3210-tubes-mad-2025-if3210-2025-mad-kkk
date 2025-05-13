@@ -104,7 +104,7 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = modifier
-            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 6.dp),
+            .padding(top = 40.dp, bottom = 6.dp),
         state = listState
     ) {
         item {
@@ -113,12 +113,13 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                 fontFamily = Poppins
             )
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -187,13 +188,13 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                 fontFamily = Poppins
             )
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp)
             ) {
                 items(songs) { song ->
                     NewSongCard(song = song, onClick = {
@@ -210,7 +211,7 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                 fontFamily = Poppins
             )
         }

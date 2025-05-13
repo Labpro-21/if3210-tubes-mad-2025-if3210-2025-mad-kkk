@@ -39,7 +39,7 @@ fun SongCard(song: Song, onClick: () -> Unit, onLongClick: () -> Unit) {
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(vertical = 8.dp)
+            .padding(top = 8.dp, bottom = 8.dp, start = 16.dp, end = 4.dp)
     ) {
         LoadImage(
             imagePath = song.imagePath,
