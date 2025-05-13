@@ -163,10 +163,16 @@ fun PurrytifyApp(
                         ProfileScreen(globalViewModel, navController)
                     }
                     composable(Screen.TopFiftyGlobal.route) {
-                        TopFiftyGlobalScreen(globalViewModel, navController)
+                        TopFiftyGlobalScreen(
+                            globalViewModel, navController,
+                        ) {
+                            showDetailSheet = true
+                        }
                     }
                     composable(Screen.TopFiftyCountry.route) {
-                        TopFiftyCountryScreen(globalViewModel, navController)
+                        TopFiftyCountryScreen(globalViewModel, navController) {
+                            showDetailSheet = true
+                        }
                     }
                 }
 

@@ -1,7 +1,5 @@
 package com.example.purrytify.ui.screen
 
-import android.content.Context
-import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -304,7 +302,6 @@ fun LibraryScreen(
                 update = { recyclerView ->
                     val adapter = SongAdapter(
                         songs,
-                        context,
                         { song ->
                             globalViewModel.playSong(song)
                             showDetail()
@@ -420,7 +417,6 @@ fun LibraryScreen(
 
 class SongAdapter(
     private val songs: List<Song>,
-    val context: Context,
     private val onItemClick: (Song) -> Unit,
     private val onSongOptionClick: (Song) -> Unit
 ) : RecyclerView.Adapter<SongAdapter.SongViewHolder>() {
@@ -443,30 +439,40 @@ class SongAdapter(
 
         holder.songTitle.text = song.title
         holder.songArtist.text = song.artist
+
         val path = song.imagePath
-        val img = when {
+
+        when {
             path.toIntOrNull() != null -> {
-                val resID = path.toIntOrNull() ?: R.drawable.starboy
-                BitmapFactory.decodeResource(context.resources, resID)
+                val resId = path.toIntOrNull() ?: R.drawable.placeholder
+                holder.songImage.load(resId) {
+                    crossfade(true)
+                    placeholder(R.drawable.placeholder)
+                    error(R.drawable.placeholder)
+                }
             }
 
             File(path).exists() -> {
-                BitmapFactory.decodeFile(path)
+                holder.songImage.load(File(path)) {
+                    crossfade(true)
+                    placeholder(R.drawable.placeholder)
+                    error(R.drawable.placeholder)
+                }
+            }
+
+            path.startsWith("http", ignoreCase = true) -> {
+                holder.songImage.load(path) {
+                    crossfade(true)
+                    placeholder(R.drawable.placeholder)
+                    error(R.drawable.placeholder)
+                }
             }
 
             else -> {
-                BitmapFactory.decodeResource(context.resources, R.drawable.starboy)
+                holder.songImage.load(R.drawable.placeholder)
             }
         }
 
-        // Load image using Coil
-        holder.songImage.load(img) {
-            crossfade(true)
-//            placeholder(R.drawable.placeholder_image)
-//            error(R.drawable.error_image)
-        }
-
-        // Set click listener
         holder.itemView.setOnClickListener {
             onItemClick(song)
         }

@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.ui.model.LoadImage
 import com.example.purrytify.ui.theme.Poppins
 
 @Composable
@@ -52,7 +52,7 @@ fun QueueItem(
                 .size(48.dp)
                 .clip(RoundedCornerShape(4.dp))
         ) {
-            ImageLoader.LoadImage(
+            LoadImage(
                 imagePath = song.imagePath,
                 contentDescription = "${song.title} Album Cover",
                 contentScale = ContentScale.Crop,

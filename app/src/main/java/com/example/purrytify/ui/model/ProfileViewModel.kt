@@ -126,7 +126,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
 
             val totalSongsFlow = songRepository.getNumberOfSong(userId)
             val likedSongsDeferred = async { songRepository.likedSongs(userId).first().size }
-            val listenedCountDeferred = async { songRepository.getCountOfListenedSong(userId).first() }
+            val listenedCountDeferred =
+                async { songRepository.getCountOfListenedSong(userId).first() }
 
             totalSongsFlow.collect { total ->
                 val liked = likedSongsDeferred.await()

@@ -2,7 +2,6 @@ package com.example.purrytify.ui.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -30,7 +30,7 @@ import com.example.purrytify.ui.theme.Poppins
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SongCard(song: Song, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun TopSongCard(rank: Int, song: Song, onClick: () -> Unit, onLongClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -39,8 +39,17 @@ fun SongCard(song: Song, onClick: () -> Unit, onLongClick: () -> Unit) {
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(vertical = 8.dp)
+            .padding(top = 8.dp, bottom = 8.dp, start = 16.dp, end = 4.dp)
     ) {
+
+        Text(
+            text = rank.toString(),
+            color = Color.White,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .width(34.dp)
+                .padding(start = 6.dp)
+        )
         LoadImage(
             imagePath = song.imagePath,
             contentDescription = "${song.title} album cover",

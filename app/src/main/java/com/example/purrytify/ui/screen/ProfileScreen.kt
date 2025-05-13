@@ -1,7 +1,6 @@
 package com.example.purrytify.ui.screen
 
 import android.app.Application
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,14 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,19 +33,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.example.purrytify.R
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.service.baseUrl
+import com.example.purrytify.ui.component.NoInternetScreen
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.model.LoadImage
 import com.example.purrytify.ui.model.ProfileViewModel
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
@@ -82,7 +75,7 @@ fun ProfileScreen(
     }
 
     LaunchedEffect(isConnected) {
-        if (isConnected) {
+        if (isConnected && (userState == null || songStats == null)) {
             viewModel.loadUserProfile(
                 onLogout = {
                     viewModel.logout(onComplete = {
@@ -137,12 +130,8 @@ fun ProfileScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(contentAlignment = Alignment.BottomEnd) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data("${baseUrl}uploads/profile-picture/${userState!!.profilePhoto}")
-                                    .crossfade(true)
-                                    .build(),
-                                placeholder = painterResource(R.drawable.starboy),
+                            LoadImage(
+                                "${baseUrl}uploads/profile-picture/${userState!!.profilePhoto}",
                                 contentDescription = "Profile Picture",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -249,42 +238,3 @@ fun StatItem(value: String, label: String) {
     }
 }
 
-@Composable
-fun NoInternetScreen(onRetry: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.WifiOff,
-                contentDescription = "No internet",
-                tint = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(72.dp)
-            )
-            Text(
-                text = "No Internet Connection",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Failed to load your profile. Please check your connection.",
-                color = Color.Gray,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-            Button(
-                onClick = onRetry,
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-            ) {
-                Text(text = "Retry", color = Color.White)
-            }
-        }
-    }
-}

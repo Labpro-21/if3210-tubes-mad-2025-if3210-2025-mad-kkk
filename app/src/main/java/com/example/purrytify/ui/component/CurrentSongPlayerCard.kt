@@ -2,13 +2,10 @@ package com.example.purrytify.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.ui.model.LoadImage
 
 @Composable
 fun CurrentSongPlayerCard(
@@ -51,7 +47,7 @@ fun CurrentSongPlayerCard(
     currProgress: Double,
     modifier: Modifier = Modifier
 ) {
-    Column (
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
@@ -64,7 +60,7 @@ fun CurrentSongPlayerCard(
                 .padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ImageLoader.LoadImage(
+            LoadImage(
                 imagePath = song.imagePath,
                 contentDescription = "${song.title} album cover",
                 modifier = Modifier

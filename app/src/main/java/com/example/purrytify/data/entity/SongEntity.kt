@@ -20,5 +20,5 @@ data class SongEntity(
     val primaryColor: Int,
     val secondaryColor: Int,
     val userId: Int,
-    val isDownloaded: Boolean = false,
+    val isDownloaded: Boolean = true,
 )

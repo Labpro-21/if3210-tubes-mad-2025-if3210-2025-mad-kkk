@@ -1,7 +1,5 @@
 package com.example.purrytify.ui.screen
 
-import android.app.Activity
-import android.content.pm.ActivityInfo
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -9,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,7 +30,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -64,14 +60,6 @@ import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LoginViewModel
 import com.example.purrytify.ui.theme.Poppins
 
-//fun Activity.lockPortraitOrientation() {
-//    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-//}
-//
-//fun Activity.unlockOrientation() {
-//    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-//}
-
 @Composable
 fun LoginScreen(
     navController: NavHostController,
@@ -79,22 +67,11 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.provideFactory())
 ) {
     val context = LocalContext.current
-    val activity = LocalContext.current as? Activity
     val isConnected by globalViewModel.isConnected.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
-
-//    LaunchedEffect(Unit) {
-//        activity?.lockPortraitOrientation()
-//    }
-//
-//    DisposableEffect(Unit) {
-//        onDispose {
-//            activity?.unlockOrientation()
-//        }
-//    }
 
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { message ->

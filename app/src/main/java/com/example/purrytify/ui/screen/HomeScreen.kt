@@ -49,6 +49,7 @@ import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.HomeViewModel
 import com.example.purrytify.ui.theme.Poppins
+import com.example.purrytify.ui.util.CountryConstant
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
@@ -71,6 +72,7 @@ fun HomeScreen(
 
     val songs by viewModel.recentlyAddedSongs.collectAsState()
     val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
+    val userCountry by globalViewModel.userLocation.collectAsState()
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var showSongOptionSheet by remember { mutableStateOf(false) }
@@ -120,10 +122,10 @@ fun HomeScreen(
                         .clickable(onClick = { navController.navigate(Screen.TopFiftyGlobal.route) })
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.top_global_cover),
+                        painter = painterResource(R.drawable.global),
                         contentDescription = "Top Global Cover",
                         modifier = Modifier
-                            .size(132.dp)
+                            .size(120.dp)
                             .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop
                     )
@@ -137,7 +139,8 @@ fun HomeScreen(
                         fontFamily = Poppins,
                         style = TextStyle(
                             letterSpacing = 0.1.sp
-                        )
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
                 Column(
@@ -147,15 +150,18 @@ fun HomeScreen(
 
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.top_global_cover),
+                        painter = painterResource(
+                            CountryConstant.CountryImage[userCountry]
+                                ?: R.drawable.id
+                        ),
                         contentDescription = "Top Country Cover",
                         modifier = Modifier
-                            .size(132.dp)
+                            .size(120.dp)
                             .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop
                     )
                     Text(
-                        text = "Your daily update of most played tracks in your country",
+                        text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
                         color = Color.Gray,
                         fontSize = 12.sp,
                         maxLines = 2,
@@ -164,7 +170,8 @@ fun HomeScreen(
                         fontFamily = Poppins,
                         style = TextStyle(
                             letterSpacing = 0.1.sp
-                        )
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }

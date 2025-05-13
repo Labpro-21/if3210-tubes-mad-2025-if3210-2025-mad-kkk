@@ -4,9 +4,12 @@ import android.content.Context
 import android.net.Uri
 import com.example.purrytify.data.dao.SongDao
 import com.example.purrytify.data.entity.SongEntity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URL
 import java.util.UUID
 
 class SongRepository(
@@ -53,6 +56,10 @@ class SongRepository(
         return songDao.getCountOfListenedSong(userId)
     }
 
+    suspend fun getSongsByServerId(serverIds: List<Int>, userId: Int): List<SongEntity> {
+        return songDao.getSongsByServerId(serverIds, userId)
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,
@@ -62,7 +69,7 @@ class SongRepository(
         secondaryColor: Int,
         userId: Int,
         serverId: Int? = null,
-        isDownloaded: Boolean = false,
+        isDownloaded: Boolean = true,
     ): Long {
         val imagePath = saveFileToInternalStorage(imageUri, "images/$userId/")
         val audioPath = saveFileToInternalStorage(audioUri, "audio/$userId/")
@@ -80,6 +87,23 @@ class SongRepository(
         )
 
         return songDao.insertSong(song)
+    }
+
+    suspend fun insertSongs(songs: List<SongEntity>) {
+        songDao.insertSongs(songs)
+    }
+
+    suspend fun updateSongs(songs: List<SongEntity>) {
+        songDao.updateSongs(songs)
+    }
+
+    suspend fun insertAndUpdate(
+        toInsert: List<SongEntity>,
+        toUpdate: List<SongEntity>,
+        serverIds: List<Int>,
+        userId: Int
+    ): List<SongEntity> {
+        return songDao.insertAndUpdate(toInsert, toUpdate, serverIds, userId)
     }
 
     suspend fun updateSongById(
@@ -142,7 +166,6 @@ class SongRepository(
     }
 
     private fun saveFileToInternalStorage(uri: Uri, folderName: String): String {
-        val inputStream = context.contentResolver.openInputStream(uri)
         val fileName = "${UUID.randomUUID()}.${getFileExtension(uri)}"
         val directory = File(context.filesDir, folderName)
 
@@ -151,15 +174,27 @@ class SongRepository(
         }
 
         val file = File(directory, fileName)
+
         val outputStream = FileOutputStream(file)
 
-        inputStream?.use { input ->
-            outputStream.use { output ->
-                input.copyTo(output)
+        try {
+            val inputStream = when (uri.scheme) {
+                "http", "https" -> URL(uri.toString()).openStream()
+                "content", "file" -> context.contentResolver.openInputStream(uri)
+                else -> null
             }
-        }
 
-        return file.absolutePath
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            } ?: throw IllegalArgumentException("Unsupported URI scheme: ${uri.scheme}")
+
+            return file.absolutePath
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
     }
 
     private fun getFileExtension(uri: Uri): String {

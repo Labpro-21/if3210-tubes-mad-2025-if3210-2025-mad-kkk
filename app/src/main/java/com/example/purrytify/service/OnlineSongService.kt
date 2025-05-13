@@ -1,16 +1,17 @@
 package com.example.purrytify.service
 
 import retrofit2.http.GET
+import retrofit2.http.Path
 
 interface OnlineSongService {
     @GET("api/top-songs/global")
     suspend fun topGlobalSongs(): List<OnlineSongResponse>
 
-    @GET("api/top-songs/:country")
-    suspend fun topCountrySongs(country: String): List<OnlineSongResponse>
+    @GET("api/top-songs/{country}")
+    suspend fun topCountrySongs(@Path("country") country: String): List<OnlineSongResponse>
 
-    @GET("api/song/:songId")
-    suspend fun songById(songInt: Int): OnlineSongResponse
+    @GET("api/song/{songId}")
+    suspend fun songById(@Path("songId") songId: Int): OnlineSongResponse
 }
 
 data class OnlineSongResponse (
