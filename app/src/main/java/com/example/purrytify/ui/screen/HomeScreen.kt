@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -64,12 +65,14 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
+        key = "home-view-model",
         factory = HomeViewModel.HomeViewModelFactory(
             context.applicationContext as android.app.Application,
             globalViewModel
         )
     )
 
+    val listState = rememberLazyListState()
     val songs by viewModel.recentlyAddedSongs.collectAsState()
     val recentlyPlayedSongs by viewModel.recentlyPlayedSongs.collectAsState()
     val userCountry by globalViewModel.userLocation.collectAsState()
@@ -101,7 +104,8 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = modifier
-            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 6.dp)
+            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 6.dp),
+        state = listState
     ) {
         item {
             Text(
@@ -119,7 +123,7 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .width(120.dp)
-                        .clickable(onClick = { navController.navigate(Screen.TopFiftyGlobal.route) })
+                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
                 ) {
                     Image(
                         painter = painterResource(R.drawable.global),
@@ -146,7 +150,7 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .width(120.dp)
-                        .clickable(onClick = { navController.navigate(Screen.TopFiftyCountry.route) })
+                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
 
                 ) {
                     Image(

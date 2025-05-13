@@ -36,6 +36,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.purrytify.navigation.PurrytifyNavigationType
 import com.example.purrytify.navigation.Screen
@@ -80,9 +81,10 @@ fun PurrytifyApp(
         }
     }
 
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     val hasNavbar = when (currentRoute) {
-        Screen.Home.route, Screen.Library.route, Screen.Profile.route, Screen.TopFiftyGlobal.route, Screen.TopFiftyCountry.route -> true
+        Screen.Home.Main.route, Screen.Home.TopFiftyGlobal.route, Screen.Home.TopFiftyCountry.route, Screen.Library.route, Screen.Profile.route -> true
         else -> false
     }
 
@@ -140,15 +142,8 @@ fun PurrytifyApp(
                     composable(Screen.Splash.route) {
                         SplashScreen(navController)
                     }
-                    composable(Screen.Login.route) { LoginScreen(navController, globalViewModel) }
-                    composable(Screen.Home.route) {
-                        HomeScreen(
-                            {
-                                showDetailSheet = true
-                            },
-                            globalViewModel,
-                            navController
-                        )
+                    composable(Screen.Login.route) {
+                        LoginScreen(navController, globalViewModel)
                     }
                     composable(Screen.Library.route) {
                         LibraryScreen(
@@ -162,16 +157,35 @@ fun PurrytifyApp(
                     composable(Screen.Profile.route) {
                         ProfileScreen(globalViewModel, navController)
                     }
-                    composable(Screen.TopFiftyGlobal.route) {
-                        TopFiftyGlobalScreen(
-                            globalViewModel, navController,
-                        ) {
-                            showDetailSheet = true
+
+                    navigation(
+                        startDestination = Screen.Home.Main.route,
+                        route = Screen.Home.route
+                    ) {
+                        composable(Screen.Home.Main.route) {
+                            HomeScreen(
+                                { showDetailSheet = true },
+                                globalViewModel,
+                                navController
+                            )
                         }
-                    }
-                    composable(Screen.TopFiftyCountry.route) {
-                        TopFiftyCountryScreen(globalViewModel, navController) {
-                            showDetailSheet = true
+
+                        composable(Screen.Home.TopFiftyGlobal.route) {
+                            TopFiftyGlobalScreen(
+                                globalViewModel,
+                                navController
+                            ) {
+                                showDetailSheet = true
+                            }
+                        }
+
+                        composable(Screen.Home.TopFiftyCountry.route) {
+                            TopFiftyCountryScreen(
+                                globalViewModel,
+                                navController
+                            ) {
+                                showDetailSheet = true
+                            }
                         }
                     }
                 }

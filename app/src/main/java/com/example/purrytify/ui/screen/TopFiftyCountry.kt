@@ -96,10 +96,11 @@ fun TopFiftyCountryScreen(
     }
 
     LaunchedEffect(isConnected) {
-        if (isConnected && viewModel.songs.isEmpty()) {
+        if (isConnected) {
             viewModel.loadOnlineSong()
         } else {
             viewModel.isLoading = false
+            viewModel.success = false
         }
     }
 
