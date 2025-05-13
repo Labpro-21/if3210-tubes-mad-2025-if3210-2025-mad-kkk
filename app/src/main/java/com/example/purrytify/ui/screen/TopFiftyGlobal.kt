@@ -138,7 +138,12 @@ fun TopFiftyGlobalScreen(
                         ) {
                             Row {
                                 IconButton(onClick = {
-                                    navController.popBackStack()
+                                    navController.navigate(Screen.Home.Main.route) {
+                                        popUpTo(Screen.Home.route) {
+                                            inclusive = false
+                                            saveState = true
+                                        }
+                                    }
                                 }) {
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowDown,
@@ -215,7 +220,9 @@ fun TopFiftyGlobalScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 IconButton(onClick = {
-                                    globalViewModel.playSongs(viewModel.songs)
+                                    if (viewModel.songs.isNotEmpty()) {
+                                        globalViewModel.playSongs(viewModel.songs)
+                                    }
                                 }) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
@@ -229,34 +236,22 @@ fun TopFiftyGlobalScreen(
                         }
                     }
                 }
-                if (viewModel.isLoading) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                } else {
-                    itemsIndexed(viewModel.songs) { index, song ->
-                        TopSongCard(index + 1, song, {
-                            val songs = viewModel.songs
-                            val songSize = songs.size
-                            if (songSize == 0) return@TopSongCard
+                itemsIndexed(viewModel.songs) { index, song ->
+                    TopSongCard(index + 1, song, {
+                        val songs = viewModel.songs
+                        val songSize = songs.size
+                        if (songSize == 0) return@TopSongCard
 
-                            val songsToPlay = List(songSize) { i ->
-                                songs[(i + index) % songSize]
-                            }
-                            globalViewModel.playSongs(songsToPlay)
-                            showDetail()
-                        }, {
-                            showSongOptionSheet = true
-                            showSong = song
-                            showIndex = index
-                        })
-                    }
+                        val songsToPlay = List(songSize) { i ->
+                            songs[(i + index) % songSize]
+                        }
+                        globalViewModel.playSongs(songsToPlay)
+                        showDetail()
+                    }, {
+                        showSongOptionSheet = true
+                        showSong = song
+                        showIndex = index
+                    })
                 }
             }
         }
