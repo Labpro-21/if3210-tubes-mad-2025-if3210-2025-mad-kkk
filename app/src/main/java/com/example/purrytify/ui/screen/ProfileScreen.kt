@@ -75,7 +75,7 @@ fun ProfileScreen(
     }
 
     LaunchedEffect(isConnected) {
-        if (isConnected && (userState == null || songStats == null)) {
+        if (isConnected) {
             viewModel.loadUserProfile(
                 onLogout = {
                     viewModel.logout(onComplete = {
