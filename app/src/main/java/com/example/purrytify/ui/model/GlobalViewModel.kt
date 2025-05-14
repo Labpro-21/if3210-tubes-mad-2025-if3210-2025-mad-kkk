@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
+import androidx.datastore.preferences.protobuf.Api
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -12,11 +13,14 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import com.example.purrytify.data.TokenManager
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.network.NetworkMonitor
+import com.example.purrytify.service.ApiClient
+import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -50,6 +54,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     val currentSong: StateFlow<Song?> = _currentSong
     private val _currentIdx = MutableStateFlow<Int>(0)
     val currIdx: StateFlow<Int> = _currentIdx
+    private val _navigateToSongId = MutableStateFlow<Int?>(null)
+    val navigateToSongId: StateFlow<Int?> = _navigateToSongId
 
     // is song playing
     private val _isPlaying = MutableStateFlow(false)
@@ -98,11 +104,47 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun setUserLocation(newLocation: String) {
-        _userLocation.value = newLocation;
+        _userLocation.value = newLocation
     }
 
     fun clearUserLocation() {
-        _userLocation.value = "";
+        _userLocation.value = ""
+    }
+
+    // deep link
+    fun clearDeepLink() {
+        _navigateToSongId.value = null
+    }
+
+    fun setDeepLinkSongId(id: Int) {
+        _navigateToSongId.value = id
+    }
+
+    suspend fun validateToken(tokenManager: TokenManager): Boolean {
+        try {
+            val accessToken = tokenManager.getAccessToken() ?: return false
+            val response = ApiClient.authService.validate("Bearer $accessToken")
+            if (response.valid) {
+                val user = ApiClient.profileService.getProfile("Bearer $accessToken")
+                setUserId(user.id)
+                setUserLocation(user.location)
+                return true
+            } else {
+                // try to refresh token
+                val refreshToken = tokenManager.getRefreshToken() ?: return false
+                val refreshResponse = ApiClient.authService.refresh(RefreshRequest(refreshToken))
+                tokenManager.saveAccessToken(refreshResponse.accessToken)
+                tokenManager.saveRefreshToken(refreshResponse.refreshToken)
+
+                // set user
+                val user = ApiClient.profileService.getProfile("Bearer ${refreshResponse.accessToken}")
+                setUserId(user.id)
+                setUserLocation(user.location)
+                return true
+            }
+        } catch (e: Exception) {
+            return false
+        }
     }
 
     fun logout() {
@@ -284,7 +326,6 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             setLastPlayed(songs.first())
         }
     }
-
 
     fun playNextSong() {
         if (userId.value == null) return

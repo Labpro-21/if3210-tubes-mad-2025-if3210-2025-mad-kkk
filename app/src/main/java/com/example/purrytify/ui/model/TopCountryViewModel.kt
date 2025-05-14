@@ -21,7 +21,6 @@ import com.example.purrytify.service.OnlineSongResponse
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -57,8 +56,9 @@ class TopCountryViewModel(application: Application, private val globalViewModel:
                 val context = getApplication<Application>().applicationContext
 
                 // fetch online songs
-                val rawOnlineSongs: List<OnlineSongResponse> =
+                val rawOnlineSongs: List<OnlineSongResponse> = withContext(Dispatchers.IO) {
                     ApiClient.onlineSongService.topCountrySongs(userLocation)
+                }
 
                 val sortedRaw = rawOnlineSongs.sortedBy { it.rank }
 
@@ -102,19 +102,20 @@ class TopCountryViewModel(application: Application, private val globalViewModel:
                         var thumbnail = remote.artwork
                         var audio = remote.url
 
-                        if (local.isDownloaded) {
-                            val uriAudio = getUriFromPath(remote.url)
-                            val imageJob = async(Dispatchers.IO) {
-                                thumbnail = songRepository.saveThumbnail(uriImage, userId)
-                            }
-                            val audioJob = async(Dispatchers.IO) {
-                                audio = songRepository.saveAudio(uriAudio, userId)
-                            }
-                            imageJob.await()
-                            audioJob.await()
-                            filesToUndo += listOf(thumbnail, audio)
-                            filesToDelete += listOf(local.imagePath, local.audioPath)
-                        }
+                        // TODO: handle this
+//                        if (local.isDownloaded) {
+//                            val uriAudio = getUriFromPath(remote.url)
+//                            val imageJob = async(Dispatchers.IO) {
+//                                thumbnail = songRepository.saveThumbnail(uriImage, userId)
+//                            }
+//                            val audioJob = async(Dispatchers.IO) {
+//                                audio = songRepository.saveAudio(uriAudio, userId)
+//                            }
+//                            imageJob.await()
+//                            audioJob.await()
+//                            filesToUndo += listOf(thumbnail, audio)
+//                            filesToDelete += listOf(local.imagePath, local.audioPath)
+//                        }
 
                         toUpdate += local.copy(
                             title = remote.title,
@@ -130,15 +131,19 @@ class TopCountryViewModel(application: Application, private val globalViewModel:
                 // transaction
                 songs = if (toInsert.isNotEmpty() || toUpdate.isNotEmpty()) {
                     Log.d("LOAD_ONLINE_SONGS", "Transaction")
-                    songRepository.insertAndUpdate(toInsert, toUpdate, serverIds, userId)
-                        .sortedBy { serverIds.indexOf(it.serverId) }
-                        .map { it.toSong() }
+                    withContext(Dispatchers.IO) {
+                        songRepository.insertAndUpdate(toInsert, toUpdate, serverIds, userId)
+                            .sortedBy { serverIds.indexOf(it.serverId) }
+                            .map { it.toSong() }
+                    }
                 } else {
                     // just fetch existing songs
                     Log.d("LOAD_ONLINE_SONGS", "Fetch existing songs")
-                    songRepository.getSongsByServerId(serverIds, userId)
-                        .sortedBy { serverIds.indexOf(it.serverId) }
-                        .map { it.toSong() }
+                    withContext(Dispatchers.IO) {
+                        songRepository.getSongsByServerId(serverIds, userId)
+                            .sortedBy { serverIds.indexOf(it.serverId) }
+                            .map { it.toSong() }
+                    }
                 }
 
                 // delete old files asynchronously

@@ -1,5 +1,6 @@
 package com.example.purrytify.ui.component
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -56,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,6 +92,7 @@ fun SongDetailSheet(
     val duration by globalViewModel.duration.collectAsState()
     var dragPosition by remember { mutableFloatStateOf(0f) }
 
+    val context = LocalContext.current
     val queueList by globalViewModel.queue.collectAsState()
 
     val scope = rememberCoroutineScope()
@@ -377,6 +381,29 @@ fun SongDetailSheet(
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
                                 )
+                            }
+                            if (song!!.serverId != null) {
+                                IconButton(
+                                    onClick = {
+                                        val shareIntent = Intent().apply {
+                                            action = Intent.ACTION_SEND
+                                            putExtra(
+                                                Intent.EXTRA_TEXT,
+                                                "Check out this song on Purrytify!\n\npurrytify://song/${song!!.serverId}"
+                                            )
+                                            type = "text/plain"
+                                        }
+                                        val chooser = Intent.createChooser(shareIntent, "Share song via...")
+                                        context.startActivity(chooser)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = "Share",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
                             }
                         }
                     }

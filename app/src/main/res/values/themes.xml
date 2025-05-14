@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Purrytify" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Purrytify" parent="Theme.Material3.DayNight.NoActionBar" />
     <style name="roundedImageView" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">4dp</item>
+    </style>
+    <style name="Theme.Purrytify.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="windowSplashScreenBackground">#000000</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo_3</item>
+        <item name="postSplashScreenTheme">@style/Theme.Purrytify</item>
     </style>
 </resources>
