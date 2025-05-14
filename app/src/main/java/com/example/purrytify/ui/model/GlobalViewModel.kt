@@ -15,6 +15,7 @@ import androidx.media3.session.MediaController
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.data.repository.SongLogsRepository
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.network.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private var _queue = MutableStateFlow<ArrayList<Song>>(ArrayList())
     val queue: StateFlow<ArrayList<Song>> = _queue
     private val repository: SongRepository;
+    private val songLogsRepository: SongLogsRepository
     private val randomQueueSize = 10;
     private var progressUpdateJob: Job? = null
 
@@ -74,11 +76,16 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     // shuffle
     private val _shuffled = MutableStateFlow(false)
     val shuffled = _shuffled
+    
+    private var lastTimePlayed: Long
 
     // constructor
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
+        val songLogsDao = SongDatabase.getDatabase(application).songLogsDao()
+        lastTimePlayed = System.currentTimeMillis()
         repository = SongRepository(songDao, application)
+        songLogsRepository = SongLogsRepository(songLogsDao, application)
         networkMonitor.register()
     }
 
@@ -150,15 +157,32 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             super.onMediaItemTransition(mediaItem, reason)
-            Log.d("MEDIA TRANSITION", "This is called")
+            Log.d("MEDIA TRANSITION", "This is called " + reason.toString())
+
             if (mediaItem != null) {
                 mediaController?.apply {
-                    _currentIdx.value = currentMediaItemIndex
-                    if (_currentIdx.value < _queue.value.size) {
-                        _currentSong.value = _queue.value[_currentIdx.value]
+                    viewModelScope.launch {
+                        if (userId.value !== null && _currentSong.value !== null) {
+                            var temp_dur = System.currentTimeMillis() - lastTimePlayed
+                            temp_dur = Math.max(temp_dur, 0)
+                            Log.d("MEDIA TRANSITION", "INSERTED " + _currentSong.value!!.title + " " + temp_dur.toString())
+                            songLogsRepository.insertLog(
+                                _currentSong.value!!.id,
+                                userId.value!!,
+                                temp_dur.div(1000).toInt(),
+                                System.currentTimeMillis()
+                            )
+                            lastTimePlayed = System.currentTimeMillis()
+                        }
+                        _currentIdx.value = currentMediaItemIndex
+                        if (_currentIdx.value < _queue.value.size) {
+                            _currentSong.value = _queue.value[_currentIdx.value]
+                        }
                     }
                 }
             }
+
+
             checkAndUpdateProgress()
         }
 

@@ -5,11 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.purrytify.data.dao.SongDao
+import com.example.purrytify.data.dao.SongLogsDao
 import com.example.purrytify.data.entity.SongEntity
+import com.example.purrytify.data.entity.SongLogsEntity
 
-@Database(entities = [SongEntity::class], version = 5, exportSchema = false)
+@Database(entities = [SongEntity::class, SongLogsEntity::class], version = 8, exportSchema = false)
 abstract class SongDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
+    abstract fun songLogsDao(): SongLogsDao
 
     companion object {
         @Volatile

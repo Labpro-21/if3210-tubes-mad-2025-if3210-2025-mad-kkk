@@ -13,6 +13,7 @@ import com.example.purrytify.PurrytifyApplication
 import com.example.purrytify.data.TokenManager
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.model.Song
+import com.example.purrytify.data.repository.SongLogsRepository
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.Profile
@@ -22,12 +23,17 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.ConnectException
 import java.net.UnknownHostException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class SongStats(
     val totalSongs: Int = 0,
@@ -38,6 +44,7 @@ data class SongStats(
 class ProfileViewModel(application: Application, private val tokenManager: TokenManager) :
     AndroidViewModel(application) {
     private val songRepository: SongRepository
+    private val songLogsRepository: SongLogsRepository
 
     private val _userState: MutableStateFlow<Profile?> = MutableStateFlow(null)
     val userState: StateFlow<Profile?> = _userState.asStateFlow()
@@ -48,11 +55,18 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     var isLoading by mutableStateOf(true)
     var success by mutableStateOf(true)
     var isLoggingOut by mutableStateOf(false)
-        private set
+
+    private val _monthlyCapsules: MutableStateFlow<List<MonthlySoundCapsule>> = MutableStateFlow(emptyList())
+    val monthlyCapsules: StateFlow<List<MonthlySoundCapsule>> = _monthlyCapsules.asStateFlow()
+
+    private val _streaks: MutableStateFlow<List<ListeningStreak?>> = MutableStateFlow(emptyList())
+    val streaks: StateFlow<List<ListeningStreak?>> = _streaks.asStateFlow()
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
+        val songLogsDao = SongDatabase.getDatabase(application).songLogsDao()
         songRepository = SongRepository(songDao, application)
+        songLogsRepository = SongLogsRepository(songLogsDao, application)
     }
 
     fun loadUserProfile(onLogout: () -> Unit, onSuccess: () -> Unit) {
@@ -159,4 +173,126 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
             throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
+
+    fun loadSoundCapsules() {
+        viewModelScope.launch {
+            val userId = userState.firstOrNull()?.id ?: return@launch
+
+            // Get data for last 6 months
+            val capsules = mutableListOf<MonthlySoundCapsule>()
+            val calendar = Calendar.getInstance()
+
+            val streaks = mutableListOf<ListeningStreak?>()
+
+
+            val calendarEarliestLog = Calendar.getInstance()
+            calendarEarliestLog.time = Date(songLogsRepository.getEarliestLog())
+
+            // Process current month and previous months
+            for (i in 0 until 3) {
+                // Set to first day of month
+                if (i > 0) calendar.add(Calendar.MONTH, -1)
+                calendar.set(Calendar.DAY_OF_MONTH, 1)
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+
+                val startOfMonth = calendar.timeInMillis
+
+                // Set to last day of month
+                calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+                calendar.set(Calendar.HOUR_OF_DAY, 23)
+                calendar.set(Calendar.MINUTE, 59)
+                calendar.set(Calendar.SECOND, 59)
+                calendar.set(Calendar.MILLISECOND, 999)
+
+                val endOfMonth = calendar.timeInMillis
+
+                // Month name
+                val monthName = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(calendar.time)
+
+                Log.d("STARTMONTH1", startOfMonth.toString())
+                Log.d("ENDMONTH", endOfMonth.toString())
+
+                // Get data from DAO
+                val totalListeningTime = songLogsRepository.getTotalListeningTimeForMonth(userId, startOfMonth, endOfMonth).firstOrNull() ?: 0
+                val topSong = songLogsRepository.getTopSongForMonth(userId, startOfMonth, endOfMonth).firstOrNull()
+                val topArtist = songLogsRepository.getTopArtistForMonth(userId, startOfMonth, endOfMonth).firstOrNull()
+
+                // Add to list
+                capsules.add(
+                    MonthlySoundCapsule(
+                        month = monthName,
+                        totalListeningMinutes = totalListeningTime.div(60),
+                        topSong = topSong?.let {
+                            SongDetails(it.id, it.title, it.artist, it.imagePath, it.playCount)
+                        },
+                        topArtist = topArtist?.let {
+                            ArtistDetails(it.artist, it.imagePath, it.artistPlayCount)
+                        }
+                    )
+                )
+
+                val currentStreak = songLogsRepository.getTopSongStreakForMonth(userId, startOfMonth, endOfMonth)
+                // Add to list
+
+                if (currentStreak != null) {
+                    Log.d("CURRENT STREAK", currentStreak.title)
+                    streaks.add(
+                        ListeningStreak(
+                            dayCount = currentStreak.streak_length,
+                            startDate = currentStreak.start_date,
+                            endDate = currentStreak.end_date,
+                            trackDetails =
+                                SongDetails(
+                                    id = currentStreak.id,
+                                    title = currentStreak.title,
+                                    artist = currentStreak.artist,
+                                    imagePath = currentStreak.imagePath,
+                                    playCount = 0
+                                )
+                        )
+                    )
+                } else {
+                    Log.d("CURRENT STREAK", "null")
+                    streaks.add(null)
+                }
+                if (calendar.get(Calendar.MONTH) == calendarEarliestLog.get(Calendar.MONTH) &&
+                    calendar.get(Calendar.YEAR) == calendarEarliestLog.get(Calendar.YEAR)) {
+                    break
+                }
+            }
+
+            _monthlyCapsules.value = capsules
+            _streaks.value = streaks
+            // Also load listening streaks
+//            loadListeningStreaks(userId)
+        }
+    }
 }
+
+data class MonthlySoundCapsule(
+    val month: String,
+    val totalListeningMinutes: Int,
+    val topSong: SongDetails? = null,
+    val topArtist: ArtistDetails? = null
+)
+data class SongDetails(
+    val id: Long,
+    val title: String,
+    val artist: String,
+    val imagePath: String,
+    val playCount: Int
+)
+data class ArtistDetails(
+    val name: String,
+    val imagePath: String,
+    val playCount: Int
+)
+data class ListeningStreak(
+    val dayCount: Int,
+    val startDate: Long,
+    val endDate: Long,
+    val trackDetails: SongDetails? = null
+)
