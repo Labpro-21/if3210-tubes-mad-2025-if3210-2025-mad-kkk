@@ -29,6 +29,7 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isInHomeSection = currentRoute?.startsWith("home") == true
+    val isInProfileSection = currentRoute?.startsWith("profile") == true
 
     NavigationBar(
         containerColor = Color(0xFF121212),
@@ -38,6 +39,7 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
         for (nav in items) {
             val isSelected = when (nav) {
                 Screen.Home -> isInHomeSection
+                Screen.Profile -> isInProfileSection
                 else -> currentRoute == nav.route
             }
 
@@ -48,6 +50,15 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
                         if (currentRoute != Screen.Home.Main.route) {
                             navController.navigate(Screen.Home.Main.route) {
                                 popUpTo(Screen.Home.route) {
+                                    inclusive = false
+                                    saveState = true
+                                }
+                            }
+                        }
+                    } else if (nav == Screen.Profile && isInProfileSection) {
+                        if (currentRoute != Screen.Profile.Main.route) {
+                            navController.navigate(Screen.Profile.Main.route) {
+                                popUpTo(Screen.Profile.route) {
                                     inclusive = false
                                     saveState = true
                                 }
