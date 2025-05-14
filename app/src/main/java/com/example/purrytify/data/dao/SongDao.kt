@@ -39,6 +39,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE serverId IN (:serverIds) AND userId = :userId")
     suspend fun getSongsByServerId(serverIds: List<Int>, userId: Int): List<SongEntity>
 
+    @Query("SELECT * FROM songs WHERE serverId = :serverId AND userId = :userId")
+    suspend fun getSongByServerId(serverId: Int, userId: Int): SongEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity): Long
 
@@ -61,6 +64,18 @@ interface SongDao {
         insertSongs(toInsert)
         updateSongs(toUpdate)
         return getSongsByServerId(serverIds, userId)
+    }
+
+    @Transaction
+    suspend fun insertAndGetSong(song: SongEntity, serverId: Int, userId: Int): SongEntity? {
+        insertSong(song)
+        return getSongByServerId(serverId, userId)
+    }
+
+    @Transaction
+    suspend fun updateAndGetSong(song: SongEntity, serverId: Int, userId: Int): SongEntity? {
+        updateSong(song)
+        return getSongByServerId(serverId, userId)
     }
 
     @Delete

@@ -2,7 +2,9 @@ package com.example.purrytify.ui.model
 
 import android.app.Application
 import android.net.Uri
+import android.util.Log
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,8 +13,11 @@ import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
+import com.example.purrytify.service.ApiClient
+import com.example.purrytify.service.OnlineSongResponse
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +29,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.internal.wait
+import java.io.File
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(application: Application, private val globalViewModel: GlobalViewModel) :
@@ -33,6 +40,7 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
 
     val recentlyPlayedSongs: StateFlow<List<Song>>
     val recentlyAddedSongs: StateFlow<List<Song>>
+    private var loadJob: Job? = null
 
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -87,6 +95,115 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 serverId = this.serverId
             )
         } else null
+    }
+
+    private fun getUriFromPath(path: String): Uri {
+        return if (path.startsWith("content://") || path.startsWith("file://") ||
+            path.startsWith("http://") || path.startsWith("https://")
+        ) path.toUri()
+        else Uri.fromFile(File(path))
+    }
+
+    fun playSharedSong(songId: Int, onSuccess: () -> Unit) {
+        if (loadJob?.isActive == true) loadJob?.wait()
+        loadJob = viewModelScope.launch {
+            try {
+                val userId = globalViewModel.userId.value
+                    ?: throw IllegalStateException("User ID is null")
+
+                val context = getApplication<Application>().applicationContext
+                // fetch online song
+                val rawSong: OnlineSongResponse = withContext(Dispatchers.IO) {
+                    ApiClient.onlineSongService.songById(songId)
+                }
+
+                var songToPlay: Song? = null;
+
+                // check online song
+                val song: SongEntity? = repository.getSongByServerId(songId, userId)
+                if (song == null) {
+                    // if song not exist
+                    val uriImage = getUriFromPath(rawSong.artwork)
+                    val colors = extractColorsFromImage(context, uriImage)
+                    val primaryColor = colors[0].toArgb()
+                    val secondaryColor = colors[1].toArgb()
+                    val songInsert = withContext(Dispatchers.IO) {
+                        repository.insertAndGetSong(
+                            song = SongEntity(
+                                serverId = rawSong.id,
+                                title = rawSong.title,
+                                artist = rawSong.artist,
+                                imagePath = rawSong.artwork,
+                                audioPath = rawSong.url,
+                                primaryColor = primaryColor,
+                                secondaryColor = secondaryColor,
+                                userId = userId,
+                                isDownloaded = false
+                            ),
+                            userId = userId,
+                            serverId = songId
+                        )
+                    }
+                    if (songInsert != null) {
+                        songToPlay = songInsert.toSong()
+                    }
+                } else if (
+                    song.title != rawSong.title ||
+                    song.artist != rawSong.artist ||
+                    song.imagePath != rawSong.artwork ||
+                    song.audioPath != rawSong.url
+                ) {
+                    val uriImage = getUriFromPath(rawSong.artwork)
+                    val colors = extractColorsFromImage(context, uriImage)
+                    val primaryColor = colors[0].toArgb()
+                    val secondaryColor = colors[1].toArgb()
+                    val thumbnail = rawSong.artwork
+                    val audio = rawSong.url
+
+                    // TODO: handle this
+//                    if (song.isDownloaded) {
+//                        val uriAudio = getUriFromPath(rawSong.url)
+//                        val imageJob = async(Dispatchers.IO) {
+//                            thumbnail = repository.saveThumbnail(uriImage, userId)
+//                        }
+//                        val audioJob = async(Dispatchers.IO) {
+//                            audio = repository.saveAudio(uriAudio, userId)
+//                        }
+//                        imageJob.await()
+//                        audioJob.await()
+//                        filesToUndo += listOf(thumbnail, audio)
+//                        filesToDelete += listOf(song.imagePath, song.audioPath)
+//                    }
+
+                    val songUpdate = withContext(Dispatchers.IO) {
+                        repository.updateAndGetSong(
+                            song = song.copy(
+                                title = rawSong.title,
+                                artist = rawSong.artist,
+                                imagePath = thumbnail,
+                                audioPath = audio,
+                                primaryColor = primaryColor,
+                                secondaryColor = secondaryColor
+                            ),
+                            userId = userId,
+                            serverId = songId
+                        )
+                    }
+                    if (songUpdate != null) {
+                        songToPlay = songUpdate.toSong()
+                    }
+                } else {
+                    songToPlay = song.toSong()
+                }
+
+                if (songToPlay != null) {
+                    globalViewModel.playSong(songToPlay)
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("LOAD_ONLINE_SONGS", "Error: ${e.message}", e)
+            }
+        }
     }
 
     fun updateSong(id: Long, title: String, artist: String, uriImage: Uri?, uriAudio: Uri?) {

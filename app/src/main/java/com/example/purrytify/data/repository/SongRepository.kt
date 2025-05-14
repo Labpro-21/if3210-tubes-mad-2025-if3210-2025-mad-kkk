@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.purrytify.data.dao.SongDao
 import com.example.purrytify.data.entity.SongEntity
+import com.example.purrytify.data.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -60,6 +61,10 @@ class SongRepository(
         return songDao.getSongsByServerId(serverIds, userId)
     }
 
+    suspend fun getSongByServerId(serverId: Int, userId: Int): SongEntity? {
+        return songDao.getSongByServerId(serverId, userId)
+    }
+
     suspend fun insertSong(
         title: String,
         artist: String,
@@ -104,6 +109,18 @@ class SongRepository(
         userId: Int
     ): List<SongEntity> {
         return songDao.insertAndUpdate(toInsert, toUpdate, serverIds, userId)
+    }
+
+    suspend fun insertAndGetSong(
+        song: SongEntity, serverId: Int, userId: Int
+    ): SongEntity? {
+        return songDao.insertAndGetSong(song, serverId, userId)
+    }
+
+    suspend fun updateAndGetSong(
+        song: SongEntity, serverId: Int, userId: Int
+    ): SongEntity? {
+        return songDao.updateAndGetSong(song, serverId, userId)
     }
 
     suspend fun updateSongById(

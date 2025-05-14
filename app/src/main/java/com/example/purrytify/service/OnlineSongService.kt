@@ -10,7 +10,7 @@ interface OnlineSongService {
     @GET("api/top-songs/{country}")
     suspend fun topCountrySongs(@Path("country") country: String): List<OnlineSongResponse>
 
-    @GET("api/song/{songId}")
+    @GET("api/songs/{songId}")
     suspend fun songById(@Path("songId") songId: Int): OnlineSongResponse
 }
 
