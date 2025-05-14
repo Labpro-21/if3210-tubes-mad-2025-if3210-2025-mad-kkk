@@ -3,6 +3,7 @@ package com.example.purrytify.ui.screen
 import android.app.Application
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -217,7 +218,13 @@ fun ProfileScreen(
                     for (i in 0 until monthlyCapsules.size) {
                         MonthlySoundCapsuleSection(
                             capsule = monthlyCapsules[i],
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            onClickArtist = {
+                                navController.navigate(Screen.Profile.TopArtist.route)
+                            },
+                            onClickSong = {
+                                navController.navigate(Screen.Profile.TopSong.route)
+                            }
                         )
                         if (streaks[i] != null) {
                             ListeningStreakItem(
@@ -286,7 +293,9 @@ fun StatItem(value: String, label: String) {
 @Composable
 fun MonthlySoundCapsuleSection(
     capsule: MonthlySoundCapsule,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClickArtist: () -> Unit,
+    onClickSong: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -353,7 +362,9 @@ fun MonthlySoundCapsuleSection(
                     .padding(vertical = 12.dp, horizontal = 16.dp)
             ) {
                 // Top Artist
-                Column (modifier = Modifier.fillMaxWidth()) {
+                Column (modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClickArtist )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -390,7 +401,7 @@ fun MonthlySoundCapsuleSection(
                         Text(
                             text = capsule.topArtist?.name ?: "No Data",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF2196F3),
+                            color = Color(0xFF4A90E2),
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -405,7 +416,9 @@ fun MonthlySoundCapsuleSection(
                     .background(Color(0xFF1E1E1E))
                     .padding(vertical = 12.dp, horizontal = 16.dp) // Added padding inside box
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClickSong )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

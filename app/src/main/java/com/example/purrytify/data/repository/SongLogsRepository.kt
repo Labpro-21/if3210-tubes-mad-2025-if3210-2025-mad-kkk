@@ -12,7 +12,11 @@ import com.example.purrytify.data.dao.TopArtistResult
 import com.example.purrytify.data.dao.TopSongResult
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.entity.SongLogsEntity
+import com.example.purrytify.ui.model.TopArtistViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.forEach
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
@@ -26,12 +30,34 @@ class SongLogsRepository(
         return songLogsDao.getTotalListeningTimeForMonth(userId, startOfMonth, endOfMonth)
     }
 
-    fun getTopSongForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<TopSongResult?> {
-        return songLogsDao.getTopSongForMonth(userId, startOfMonth, endOfMonth)
+    suspend fun getTopSongForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): List<TopSongResult?> {
+        return songLogsDao.getTopSongForMonth(userId, startOfMonth, endOfMonth).first()
     }
 
-    fun getTopArtistForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<TopArtistResult?> {
-        return songLogsDao.getTopArtistForMonth(userId, startOfMonth, endOfMonth)
+    suspend fun getTopArtistForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): List<TopArtistResult?> {
+        val topArtist = songLogsDao.getTopArtistForMonth(userId, startOfMonth, endOfMonth).first()
+        val nonNullResults = topArtist.filterNotNull()
+
+        // Group entries by artist
+        val artistGroups = nonNullResults.groupBy { it.artist }
+
+        // Process each artist group to create consolidated entries
+        return artistGroups.map { (artist, entries) ->
+            // Calculate total play count for the artist
+            val totalPlayCount = entries.sumOf { it.artistPlayCount }
+
+            // Find the entry with the highest individual play count to get its image path
+            val entryWithHighestCount = entries.maxByOrNull { it.artistPlayCount }
+                ?: throw IllegalStateException("No entries found for artist $artist")
+
+            // Create a new consolidated entry
+            TopArtistResult(
+                artist = artist,
+                imagePath = entryWithHighestCount.imagePath,
+                artistPlayCount = totalPlayCount
+            )
+        }.sortedByDescending { it.artistPlayCount } // Sort by play count in descending order
+
     }
 
     fun getDailyPlayCounts(userId: Int, startDate: Long, endDate: Long): Flow<List<DailyPlayCount>> {

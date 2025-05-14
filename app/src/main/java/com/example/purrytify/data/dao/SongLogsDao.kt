@@ -17,15 +17,14 @@ interface SongLogsDao {
     fun getTotalListeningTimeForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<Int?>
 
     @Query("""
-    SELECT s.id, s.artist, s.title, s.imagePath, SUM(duration) as playCount 
+    SELECT s.id, s.artist, s.title, s.imagePath, COUNT(*) as playCount 
     FROM song_logs l 
     JOIN songs s ON l.id = s.id AND l.userId = s.userId 
     WHERE l.userId = :userId AND l.at >= :startOfMonth AND l.at <= :endOfMonth 
-    GROUP BY s.id, s.artist, s.title, s.imagePath 
+    GROUP BY s.id
     ORDER BY playCount DESC 
-    LIMIT 1
-""")
-    fun getTopSongForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<TopSongResult?>
+    """)
+    fun getTopSongForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<List<TopSongResult?>>
 
     @Query("""
     SELECT s.artist, s.imagePath, SUM(duration) as artistPlayCount 
@@ -33,10 +32,9 @@ interface SongLogsDao {
     JOIN songs s ON l.id = s.id AND l.userId = s.userId 
     WHERE l.userId = :userId AND l.at >= :startOfMonth AND l.at <= :endOfMonth 
     GROUP BY s.artist, s.imagePath 
-    ORDER BY artistPlayCount DESC 
-    LIMIT 1
-""")
-    fun getTopArtistForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<TopArtistResult?>
+    ORDER BY artistPlayCount DESC
+    """)
+    fun getTopArtistForMonth(userId: Int, startOfMonth: Long, endOfMonth: Long): Flow<List<TopArtistResult?>>
 
     @Query("SELECT COUNT(DISTINCT date(at/1000, 'unixepoch')) FROM song_logs WHERE userId = :userId AND at >= :startDate AND at <= :endDate")
     fun getConsecutiveDaysCount(userId: Int, startDate: Long, endDate: Long): Flow<Int>
