@@ -1,5 +1,6 @@
 package com.example.purrytify.ui.screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,11 +41,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.protobuf.Api
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.purrytify.R
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.navigation.Screen
+import com.example.purrytify.service.ApiClient
 import com.example.purrytify.ui.component.EditSongBottomSheet
 import com.example.purrytify.ui.component.NewSongCard
 import com.example.purrytify.ui.component.SongCard
@@ -62,7 +66,8 @@ fun HomeScreen(
     showDetail: () -> Unit,
     globalViewModel: GlobalViewModel,
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialSongId: Int? = null
 ) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
@@ -95,6 +100,24 @@ fun HomeScreen(
 
     val currentSong by globalViewModel.currentSong.collectAsState()
 
+    val navigateSongId by globalViewModel.navigateToSongId.collectAsState()
+
+    LaunchedEffect(initialSongId) {
+        Log.d("SPLASH_LOG", initialSongId.toString())
+        if (initialSongId != null && initialSongId != -1) {
+            Log.d("SPLASH_LOG", "Playing song")
+            viewModel.playSharedSong(initialSongId, showDetail)
+        }
+    }
+
+    LaunchedEffect(navigateSongId) {
+        Log.d("SPLASH_LOG", navigateSongId.toString())
+        if (navigateSongId != null) {
+            viewModel.playSharedSong(navigateSongId!!, showDetail)
+            globalViewModel.clearDeepLink()
+        }
+    }
+
     LogoutListener {
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
@@ -113,7 +136,12 @@ fun HomeScreen(
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp, top = 10.dp),
+                modifier = Modifier.padding(
+                    bottom = 12.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 10.dp
+                ),
                 fontFamily = Poppins
             )
 
@@ -194,7 +222,9 @@ fun HomeScreen(
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp)
             ) {
                 items(songs) { song ->
                     NewSongCard(song = song, onClick = {

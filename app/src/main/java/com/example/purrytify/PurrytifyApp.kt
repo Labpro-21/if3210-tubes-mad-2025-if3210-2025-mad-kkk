@@ -33,11 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.purrytify.navigation.PurrytifyNavigationType
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.ui.component.BottomNavigationBar
@@ -50,7 +53,6 @@ import com.example.purrytify.ui.screen.HomeScreen
 import com.example.purrytify.ui.screen.LibraryScreen
 import com.example.purrytify.ui.screen.LoginScreen
 import com.example.purrytify.ui.screen.ProfileScreen
-import com.example.purrytify.ui.screen.SplashScreen
 import com.example.purrytify.ui.screen.TopFiftyCountryScreen
 import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import kotlinx.coroutines.launch
@@ -60,6 +62,7 @@ import kotlinx.coroutines.launch
 fun PurrytifyApp(
     windowSize: WindowWidthSizeClass,
     globalViewModel: GlobalViewModel,
+    startDestination: Screen = Screen.Login,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -136,15 +139,13 @@ fun PurrytifyApp(
             ) {
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Splash.route,
+                    startDestination = startDestination.route,
                     modifier = Modifier.weight(1f)
                 ) {
-                    composable(Screen.Splash.route) {
-                        SplashScreen(navController)
-                    }
                     composable(Screen.Login.route) {
                         LoginScreen(navController, globalViewModel)
                     }
+
                     composable(Screen.Library.route) {
                         LibraryScreen(
                             {
@@ -154,19 +155,29 @@ fun PurrytifyApp(
                             navController
                         )
                     }
+
                     composable(Screen.Profile.route) {
                         ProfileScreen(globalViewModel, navController)
                     }
 
                     navigation(
                         startDestination = Screen.Home.Main.route,
-                        route = Screen.Home.route
+                        route = Screen.Home.route,
                     ) {
-                        composable(Screen.Home.Main.route) {
+                        composable(
+                            Screen.Home.Main.route,
+                            deepLinks = listOf(navDeepLink { uriPattern = "purrytify://song/{songId}" }),
+                            arguments = listOf(navArgument("songId") {
+                                type = NavType.IntType
+                                defaultValue = -1
+                            }),
+                        ) { backStackEntry ->
+                            val songId = backStackEntry.arguments?.getInt("songId")
                             HomeScreen(
                                 { showDetailSheet = true },
                                 globalViewModel,
-                                navController
+                                navController,
+                                initialSongId = songId
                             )
                         }
 

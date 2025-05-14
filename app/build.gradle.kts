@@ -88,4 +88,5 @@ dependencies {
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     implementation ("androidx.work:work-runtime-ktx:2.9.1")
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
