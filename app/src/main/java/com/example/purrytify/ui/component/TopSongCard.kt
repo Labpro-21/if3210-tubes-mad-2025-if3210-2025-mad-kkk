@@ -71,6 +71,7 @@ fun TopSongCard(rank: Int, song: Song, onClick: () -> Unit, onLongClick: () -> U
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontFamily = Poppins,
+                letterSpacing = 0.2.sp,
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
@@ -80,7 +81,8 @@ fun TopSongCard(rank: Int, song: Song, onClick: () -> Unit, onLongClick: () -> U
                 lineHeight = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                fontFamily = Poppins
+                fontFamily = Poppins,
+                letterSpacing = 0.2.sp,
             )
         }
         IconButton(onClick = onLongClick) {

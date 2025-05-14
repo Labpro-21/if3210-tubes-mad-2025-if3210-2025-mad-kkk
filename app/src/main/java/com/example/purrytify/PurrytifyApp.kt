@@ -48,6 +48,7 @@ import com.example.purrytify.ui.component.CurrentSongPlayerCard
 import com.example.purrytify.ui.component.NavigationRailBar
 import com.example.purrytify.ui.component.SongDetailSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
+import com.example.purrytify.ui.model.AudioDeviceViewModel
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.screen.HomeScreen
 import com.example.purrytify.ui.screen.LibraryScreen
@@ -62,6 +63,7 @@ import kotlinx.coroutines.launch
 fun PurrytifyApp(
     windowSize: WindowWidthSizeClass,
     globalViewModel: GlobalViewModel,
+    audioDeviceViewModel: AudioDeviceViewModel,
     startDestination: Screen = Screen.Login,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
@@ -250,6 +252,7 @@ fun PurrytifyApp(
                         }
                     },
                     globalViewModel = globalViewModel,
+                    audioDeviceViewModel = audioDeviceViewModel,
                     sheetState = detailSheetState,
                     onOpenOption = {
                         showSongOptionSheet = true

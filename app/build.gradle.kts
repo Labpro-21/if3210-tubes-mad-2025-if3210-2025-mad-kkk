@@ -89,4 +89,8 @@ dependencies {
     implementation ("androidx.work:work-runtime-ktx:2.9.1")
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.mediarouter:mediarouter:1.7.0")
+    val appcompat_version = "1.7.0"
+    implementation("androidx.appcompat:appcompat:$appcompat_version")
+    implementation("androidx.appcompat:appcompat-resources:$appcompat_version")
 }
