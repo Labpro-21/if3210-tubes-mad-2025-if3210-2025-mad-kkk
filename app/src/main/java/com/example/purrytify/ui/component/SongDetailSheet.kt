@@ -3,6 +3,7 @@ package com.example.purrytify.ui.component
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,24 +17,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Monitor
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Speaker
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -62,6 +72,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.mediarouter.media.MediaRouter.RouteInfo
+import com.example.purrytify.ui.model.AudioDeviceViewModel
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.model.LoadImage
 import com.example.purrytify.ui.theme.Poppins
@@ -82,6 +94,7 @@ fun SongDetailSheet(
     onDismiss: () -> Unit,
     sheetState: SheetState,
     globalViewModel: GlobalViewModel,
+    audioDeviceViewModel: AudioDeviceViewModel,
     modifier: Modifier = Modifier,
     onOpenOption: () -> Unit
 ) {
@@ -97,8 +110,10 @@ fun SongDetailSheet(
 
     val scope = rememberCoroutineScope()
     var showQueueSheet by remember { mutableStateOf(false) }
-    val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    val queueSheetState = rememberModalBottomSheetState()
+    var showDeviceSheet by remember { mutableStateOf(false) }
+    val deviceSheetState = rememberModalBottomSheetState()
+    val selectedDevice by audioDeviceViewModel.selectedDevice
     val validDuration = remember(duration) {
         maxOf(0.1, duration).toFloat()
     }
@@ -204,14 +219,14 @@ fun SongDetailSheet(
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = Poppins,
-                                    letterSpacing = 0.3.sp
+                                    letterSpacing = 0.2.sp
                                 )
                                 Text(
                                     text = song?.artist ?: "",
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 16.sp,
                                     fontFamily = Poppins,
-                                    letterSpacing = 0.3.sp
+                                    letterSpacing = 0.2.sp
                                 )
                             }
 
@@ -369,39 +384,83 @@ fun SongDetailSheet(
                         }
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            IconButton(
-                                onClick = { showQueueSheet = true },
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable {
+                                    showDeviceSheet = true
+                                }
                             ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                                    contentDescription = "View Queue",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                            if (song!!.serverId != null) {
-                                IconButton(
-                                    onClick = {
-                                        val shareIntent = Intent().apply {
-                                            action = Intent.ACTION_SEND
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                "Check out this song on Purrytify!\n\npurrytify://song/${song!!.serverId}"
-                                            )
-                                            type = "text/plain"
-                                        }
-                                        val chooser = Intent.createChooser(shareIntent, "Share song via...")
-                                        context.startActivity(chooser)
-                                    }
+                                Box(
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .size(36.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = "Share",
+                                        imageVector = when (selectedDevice?.deviceType) {
+                                            RouteInfo.DEVICE_TYPE_WIRED_HEADSET, RouteInfo.DEVICE_TYPE_WIRED_HEADPHONES, RouteInfo.DEVICE_TYPE_BLUETOOTH_A2DP, RouteInfo.DEVICE_TYPE_BLE_HEADSET, RouteInfo.DEVICE_TYPE_USB_HEADSET -> Icons.Default.Headphones
+                                            RouteInfo.DEVICE_TYPE_TV -> Icons.Default.Monitor
+                                            RouteInfo.DEVICE_TYPE_CAR -> Icons.Default.DirectionsCar
+                                            0 -> Icons.Default.Devices
+                                            null -> Icons.Default.Devices
+                                            else -> Icons.Default.Speaker
+                                        },
+                                        contentDescription = "View Devices",
+                                        tint = if (selectedDevice == null || selectedDevice?.deviceType == 0) Color.White else Color.Green,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Text(
+                                    text = if (selectedDevice == null || selectedDevice?.deviceType == 0) "" else selectedDevice?.name ?: "",
+                                    color = if (selectedDevice == null || selectedDevice?.deviceType == 0) Color.White else Color.Green,
+                                    fontSize = 11.sp,
+                                    lineHeight = 11.sp,
+                                    maxLines = 1,
+                                    letterSpacing = 0.2.sp
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (song!!.serverId != null) {
+                                    IconButton(
+                                        onClick = {
+                                            val shareIntent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    "Check out this song on Purrytify!\n\npurrytify://song/${song!!.serverId}"
+                                                )
+                                                type = "text/plain"
+                                            }
+                                            val chooser =
+                                                Intent.createChooser(
+                                                    shareIntent,
+                                                    "Share song via..."
+                                                )
+                                            context.startActivity(chooser)
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Share",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                                IconButton(
+                                    onClick = { showQueueSheet = true },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                                        contentDescription = "View Queue",
                                         tint = Color.White,
-                                        modifier = Modifier.size(28.dp)
+                                        modifier = Modifier.size(26.dp)
                                     )
                                 }
                             }
@@ -431,6 +490,19 @@ fun SongDetailSheet(
             onMove = { from, to ->
                 globalViewModel.moveQueue(from, to)
             }
+        )
+    }
+
+    if (showDeviceSheet) {
+        DeviceSheet(
+            viewModel = audioDeviceViewModel,
+            onDismiss = {
+                scope.launch {
+                    deviceSheetState.hide()
+                    showDeviceSheet = false
+                }
+            },
+            sheetState = deviceSheetState
         )
     }
 }

@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -167,10 +166,8 @@ fun HomeScreen(
                         lineHeight = 16.sp,
                         overflow = TextOverflow.Ellipsis,
                         fontFamily = Poppins,
-                        style = TextStyle(
-                            letterSpacing = 0.1.sp
-                        ),
-                        modifier = Modifier.padding(top = 8.dp)
+                        letterSpacing = 0.2.sp,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 Column(
@@ -198,9 +195,7 @@ fun HomeScreen(
                         lineHeight = 16.sp,
                         overflow = TextOverflow.Ellipsis,
                         fontFamily = Poppins,
-                        style = TextStyle(
-                            letterSpacing = 0.1.sp
-                        ),
+                        letterSpacing = 0.2.sp,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }

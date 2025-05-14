@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.ui.model.LoadImage
 
@@ -98,7 +99,7 @@ fun SongOptionsSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text(song.title)
+                    Text(song.title, letterSpacing = 0.2.sp)
                     Text(song.artist, style = MaterialTheme.typography.bodySmall)
                 }
             }

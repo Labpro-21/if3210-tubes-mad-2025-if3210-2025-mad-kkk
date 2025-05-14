@@ -81,6 +81,7 @@ fun CurrentSongPlayerCard(
                     lineHeight = 14.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
+                    letterSpacing = 0.2.sp,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(3.dp))
@@ -90,6 +91,7 @@ fun CurrentSongPlayerCard(
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     maxLines = 1,
+                    letterSpacing = 0.2.sp,
                     overflow = TextOverflow.Ellipsis
                 )
             }

@@ -5,9 +5,9 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +29,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.purrytify.navigation.Screen
 import com.example.purrytify.service.MediaPlaybackService
+import com.example.purrytify.ui.model.AudioDeviceViewModel
 import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.theme.PurrytifyTheme
 import com.example.purrytify.worker.TOKEN_MONITOR_WORK_TAG
@@ -38,8 +39,9 @@ import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var globalViewModel: GlobalViewModel
+    private lateinit var audioDeviceViewModel: AudioDeviceViewModel
     private lateinit var controllerFuture: ListenableFuture<MediaController>
     private lateinit var workManager: WorkManager
     private var startDestination by mutableStateOf<Screen?>(null)
@@ -52,6 +54,11 @@ class MainActivity : ComponentActivity() {
             this,
             GlobalViewModel.GlobalViewModelFactory(application)
         )[GlobalViewModel::class.java]
+
+        audioDeviceViewModel = ViewModelProvider(
+            this,
+            AudioDeviceViewModel.AudioDeviceViewModelFactory(application)
+        )[AudioDeviceViewModel::class.java]
 
         val sessionToken = SessionToken(
             applicationContext,
@@ -80,7 +87,8 @@ class MainActivity : ComponentActivity() {
                         PurrytifyApp(
                             windowSize = windowSize.widthSizeClass,
                             globalViewModel,
-                            startDestination = it
+                            startDestination = it,
+                            audioDeviceViewModel = audioDeviceViewModel
                         )
                     }
                 }
