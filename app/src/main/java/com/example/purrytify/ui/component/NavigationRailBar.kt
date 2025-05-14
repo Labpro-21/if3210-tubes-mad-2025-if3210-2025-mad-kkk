@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,15 +24,45 @@ import com.example.purrytify.navigation.Screen
 
 @Composable
 fun NavigationRailBar(navController: NavHostController, modifier: Modifier = Modifier) {
-    val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val items = listOf(
+        Screen.Home,
+        Screen.Library,
+        Screen.Profile
+    )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val isInHomeSection = currentRoute?.startsWith("home") == true
 
     NavigationRail(modifier = modifier.statusBarsPadding()) {
         items.forEach { screen ->
-            val selected = currentRoute == screen.route
+            val isSelected = when (screen) {
+                Screen.Home -> isInHomeSection
+                else -> currentRoute == screen.route
+            }
             NavigationRailItem(
-                selected = selected,
-                onClick = { navController.navigate(screen.route) },
+                selected = isSelected,
+                onClick = {
+                    if (screen == Screen.Home && isInHomeSection) {
+                        if (currentRoute != Screen.Home.Main.route) {
+                            navController.navigate(Screen.Home.Main.route) {
+                                popUpTo(Screen.Home.route) {
+                                    inclusive = false
+                                    saveState = true
+                                }
+                            }
+                        }
+                    } else if (currentRoute != screen.route) {
+                        navController.navigate(screen.route) {
+                            popUpTo(0) {
+                                inclusive = false
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
                 icon = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

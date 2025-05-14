@@ -43,8 +43,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     private var _queue = MutableStateFlow<ArrayList<Song>>(ArrayList())
     val queue: StateFlow<ArrayList<Song>> = _queue
     private val repository: SongRepository;
+    private val randomQueueSize = 15;
     private val songLogsRepository: SongLogsRepository
-    private val randomQueueSize = 10;
     private var progressUpdateJob: Job? = null
 
     // current song
@@ -76,7 +76,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     // shuffle
     private val _shuffled = MutableStateFlow(false)
     val shuffled = _shuffled
-    
+
     private var lastTimePlayed: Long
 
     // constructor
@@ -157,8 +157,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             super.onMediaItemTransition(mediaItem, reason)
-            Log.d("MEDIA TRANSITION", "This is called " + reason.toString())
-
+            Log.d("MEDIA TRANSITION", "This is called")
             if (mediaItem != null) {
                 mediaController?.apply {
                     viewModelScope.launch {
@@ -177,20 +176,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                         _currentIdx.value = currentMediaItemIndex
                         if (_currentIdx.value < _queue.value.size) {
                             _currentSong.value = _queue.value[_currentIdx.value]
+                            setLastPlayed(_queue.value[_currentIdx.value])
                         }
                     }
                 }
             }
-
-
             checkAndUpdateProgress()
-        }
-
-        override fun onEvents(player: Player, events: Player.Events) {
-            super.onEvents(player, events)
-            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
-                Log.d("MEDIA TRANSITION", "onEvents fallback called")
-            }
         }
     }
 
@@ -294,6 +285,27 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
     }
+
+    fun playSongs(songs: List<Song>) {
+        if (userId.value == null) return
+        if (songs.isEmpty()) return
+
+        mediaController?.let { controller ->
+            controller.clearMediaItems()
+
+            val mediaItems = songs.map { it.toMediaItem() }
+            _queue.value = ArrayList(songs)
+
+            controller.apply {
+                addMediaItems(mediaItems)
+                prepare()
+                play()
+            }
+
+            setLastPlayed(songs.first())
+        }
+    }
+
 
     fun playNextSong() {
         if (userId.value == null) return
@@ -432,7 +444,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             val oldList = _queue.value
             val newList = oldList.toMutableList()
 
-            val indicesToRemove = newList.mapIndexedNotNull { index, s -> if (s.id == song.id) index else null }
+            val indicesToRemove =
+                newList.mapIndexedNotNull { index, s -> if (s.id == song.id) index else null }
 
             if (indicesToRemove.isEmpty()) return@launch
 
@@ -457,7 +470,6 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
 
-
     // util functions
     private fun SongEntity.toSong(): Song {
         return Song(
@@ -477,9 +489,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun getUriFromPath(path: String): Uri {
-        return if (path.startsWith("content://")) path.toUri()
+        return if (path.startsWith("content://") || path.startsWith("file://") ||
+            path.startsWith("http://") || path.startsWith("https://")
+        ) path.toUri()
         else Uri.fromFile(File(path))
     }
+
 
     private fun Song.toMediaItem(): MediaItem {
         val uri: Uri = getUriFromPath(audioPath)

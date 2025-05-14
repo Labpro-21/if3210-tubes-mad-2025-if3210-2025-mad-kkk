@@ -19,6 +19,7 @@ import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.Profile
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,6 +56,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     var isLoading by mutableStateOf(true)
     var success by mutableStateOf(true)
     var isLoggingOut by mutableStateOf(false)
+        private set
+    private var loadJob: Job? = null
 
     private val _monthlyCapsules: MutableStateFlow<List<MonthlySoundCapsule>> = MutableStateFlow(emptyList())
     val monthlyCapsules: StateFlow<List<MonthlySoundCapsule>> = _monthlyCapsules.asStateFlow()
@@ -70,7 +73,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     }
 
     fun loadUserProfile(onLogout: () -> Unit, onSuccess: () -> Unit) {
-        viewModelScope.launch {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             isLoading = true
             try {
                 var accessToken = tokenManager.getAccessToken()
@@ -140,7 +144,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
 
             val totalSongsFlow = songRepository.getNumberOfSong(userId)
             val likedSongsDeferred = async { songRepository.likedSongs(userId).first().size }
-            val listenedCountDeferred = async { songRepository.getCountOfListenedSong(userId).first() }
+            val listenedCountDeferred =
+                async { songRepository.getCountOfListenedSong(userId).first() }
 
             totalSongsFlow.collect { total ->
                 val liked = likedSongsDeferred.await()
@@ -186,7 +191,8 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
 
 
             val calendarEarliestLog = Calendar.getInstance()
-            calendarEarliestLog.time = Date(songLogsRepository.getEarliestLog())
+            val earliestLog = songLogsRepository.getEarliestLog()
+            calendarEarliestLog.time = Date(earliestLog)
 
             // Process current month and previous months
             for (i in 0 until 3) {

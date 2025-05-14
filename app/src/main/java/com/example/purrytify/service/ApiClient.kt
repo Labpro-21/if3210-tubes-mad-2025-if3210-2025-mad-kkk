@@ -11,5 +11,5 @@ object ApiClient {
 
     val authService: AuthService = retrofit.create(AuthService::class.java)
     val profileService: ProfileService = retrofit.create(ProfileService::class.java)
-
+    val onlineSongService: OnlineSongService = retrofit.create(OnlineSongService::class.java)
 }

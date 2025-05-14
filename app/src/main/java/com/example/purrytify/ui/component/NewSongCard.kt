@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.purrytify.data.model.Song
-import com.example.purrytify.ui.model.ImageLoader
+import com.example.purrytify.ui.model.LoadImage
 import com.example.purrytify.ui.theme.Poppins
 
 @Composable
@@ -27,7 +27,7 @@ fun NewSongCard(song: Song, onClick: () -> Unit) {
             .width(120.dp)
             .clickable(onClick = onClick)
     ) {
-        ImageLoader.LoadImage(
+        LoadImage(
             imagePath = song.imagePath,
             contentDescription = "${song.title} album cover",
             modifier = Modifier
