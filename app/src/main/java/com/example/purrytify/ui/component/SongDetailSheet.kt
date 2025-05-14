@@ -110,9 +110,9 @@ fun SongDetailSheet(
 
     val scope = rememberCoroutineScope()
     var showQueueSheet by remember { mutableStateOf(false) }
-    val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val queueSheetState = rememberModalBottomSheetState()
     var showDeviceSheet by remember { mutableStateOf(false) }
-    val deviceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val deviceSheetState = rememberModalBottomSheetState()
     val selectedDevice by audioDeviceViewModel.selectedDevice
     val validDuration = remember(duration) {
         maxOf(0.1, duration).toFloat()
