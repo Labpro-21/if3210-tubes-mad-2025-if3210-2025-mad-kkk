@@ -46,33 +46,9 @@ fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = M
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    if (nav == Screen.Home && isInHomeSection) {
-                        if (currentRoute != Screen.Home.Main.route) {
-                            navController.navigate(Screen.Home.Main.route) {
-                                popUpTo(Screen.Home.route) {
-                                    inclusive = false
-                                    saveState = true
-                                }
-                            }
-                        }
-                    } else if (nav == Screen.Profile && isInProfileSection) {
-                        if (currentRoute != Screen.Profile.Main.route) {
-                            navController.navigate(Screen.Profile.Main.route) {
-                                popUpTo(Screen.Profile.route) {
-                                    inclusive = false
-                                    saveState = true
-                                }
-                            }
-                        }
-                    } else if (currentRoute != nav.route) {
-                        navController.navigate(nav.route) {
-                            popUpTo(Screen.Home.Main.route) {
-                                inclusive = false
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    navController.navigate(nav.route) {
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 icon = {
