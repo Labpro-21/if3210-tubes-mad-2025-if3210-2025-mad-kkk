@@ -148,12 +148,7 @@ fun TopFiftyCountryScreen(
                         ) {
                             Row {
                                 IconButton(onClick = {
-                                    navController.navigate(Screen.Home.Main.route) {
-                                        popUpTo(Screen.Home.route) {
-                                            inclusive = false
-                                            saveState = true
-                                        }
-                                    }
+                                    navController.popBackStack()
                                 }) {
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowDown,

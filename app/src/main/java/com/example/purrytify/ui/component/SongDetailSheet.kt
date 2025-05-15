@@ -339,7 +339,6 @@ fun SongDetailSheet(
                                 modifier = Modifier
                                     .size(64.dp)
                                     .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                                    .padding(8.dp)
                             ) {
                                 Icon(
                                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
