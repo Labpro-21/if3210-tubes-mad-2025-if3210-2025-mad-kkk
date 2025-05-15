@@ -38,11 +38,6 @@ class AudioDeviceViewModel(application: Application) : AndroidViewModel(applicat
             _selectedDevice.value = route
         }
 
-        override fun onRouteUnselected(router: MediaRouter, route: RouteInfo, reason: Int) {
-            super.onRouteUnselected(router, route, reason)
-            _selectedDevice.value = null
-        }
-
         override fun onRouteChanged(router: MediaRouter, route: RouteInfo) {
             super.onRouteChanged(router, route)
             refreshDevices()
