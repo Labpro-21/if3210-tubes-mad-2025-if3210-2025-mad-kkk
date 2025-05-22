@@ -72,6 +72,8 @@ import java.util.Locale
 fun TopMonthSongScreen(
     globalViewModel: GlobalViewModel,
     navController: NavController,
+    month: Int,
+    year: Int,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -84,9 +86,10 @@ fun TopMonthSongScreen(
     val scope = rememberCoroutineScope()
 
     val topSongsState by viewModel.topSongs.collectAsState()
-    val currentMonth = YearMonth.now()
+    val currentMonth = YearMonth.of(year, month)
     val monthName = currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
     val year = currentMonth.year
+    val nowMonth = YearMonth.now()
 
     Scaffold(
         topBar = {
@@ -106,12 +109,18 @@ fun TopMonthSongScreen(
                 .padding(horizontal = 16.dp)
         ) {
             MonthHeader(month = "$monthName $year")
+
+            val suffixTitle = when {
+                (nowMonth.month == currentMonth.month
+                        && nowMonth.year == currentMonth.year) -> " this month."
+                else -> " last $monthName."
+            }
             val text = buildAnnotatedString {
                 append("You listened to ")
                 pushStyle(SpanStyle(color = Color(0xFFFFEB3B)))
                 append("${topSongsState.size} songs")
                 pop()
-                append(" this month.")
+                append(suffixTitle)
             }
             Text(
                 text = text,

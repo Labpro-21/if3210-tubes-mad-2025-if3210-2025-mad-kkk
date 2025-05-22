@@ -6,8 +6,9 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.LocalSee
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LockClock
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
@@ -16,8 +17,13 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Library : Screen("library", "Your Library", Icons.Default.LibraryMusic)
     data object Profile : Screen("profile", "Profile", Icons.Default.Person) {
         data object Main: Screen("profile/main", "Profile", Icons.Default.Person)
-        data object TopArtist: Screen("profile/topArtist", "Top Artist", Icons.Default.BarChart)
-        data object TopSong: Screen("profile/topSong", "Top Song", Icons.Default.PieChart)
+        data object TopArtist : Screen("profile/topArtist", "Top Artist", Icons.Default.BarChart) {
+            fun createRoute(month: Int, year: Int): String = "profile/topArtist?month=$month&year=$year"
+        }
+        data object TopSong : Screen("profile/topSong", "Top Song", Icons.Default.MusicNote) {
+            fun createRoute(month: Int, year: Int): String = "profile/topSong?month=$month&year=$year"
+        }
+        data object TimeListened: Screen("profile/timeListened", "Time Listened", Icons.Default.LockClock)
     }
     data object Home : Screen("home", "Home", Icons.Default.Home) {
         data object TopFiftyGlobal: Screen("home/topFiftyGlobal", "Top 50 Global", Icons.Default.LocationOn)

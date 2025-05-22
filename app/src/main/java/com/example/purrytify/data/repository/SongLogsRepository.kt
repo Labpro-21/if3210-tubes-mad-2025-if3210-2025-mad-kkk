@@ -12,6 +12,7 @@ import com.example.purrytify.data.dao.TopArtistResult
 import com.example.purrytify.data.dao.TopSongResult
 import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.entity.SongLogsEntity
+import com.example.purrytify.ui.model.MonthDataValue
 import com.example.purrytify.ui.model.TopArtistViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
@@ -212,6 +213,10 @@ class SongLogsRepository(
 
     suspend fun getEarliestLog(): Long {
         return songLogsDao.getEarliestLog().earliest_date
+    }
+
+    fun getMonthData(month: Int, year: Int) : Flow<List<MonthDataValue>> {
+        return songLogsDao.getMonthData(month, year)
     }
 
 

@@ -57,7 +57,9 @@ import com.example.purrytify.ui.model.ProfileViewModel
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 import java.text.DateFormat
+import java.time.Month
 import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -219,11 +221,14 @@ fun ProfileScreen(
                         MonthlySoundCapsuleSection(
                             capsule = monthlyCapsules[i],
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            onClickArtist = {
-                                navController.navigate(Screen.Profile.TopArtist.route)
+                            onClickArtist = { month, year ->
+                                navController.navigate(Screen.Profile.TopArtist.createRoute(month, year))
                             },
-                            onClickSong = {
-                                navController.navigate(Screen.Profile.TopSong.route)
+                            onClickSong = { month, year ->
+                                navController.navigate(Screen.Profile.TopSong.createRoute(month, year))
+                            },
+                            onClickTimeListened = {
+                                navController.navigate(Screen.Profile.TimeListened.route)
                             }
                         )
                         if (streaks[i] != null) {
@@ -294,9 +299,12 @@ fun StatItem(value: String, label: String) {
 fun MonthlySoundCapsuleSection(
     capsule: MonthlySoundCapsule,
     modifier: Modifier = Modifier,
-    onClickArtist: () -> Unit,
-    onClickSong: () -> Unit
+    onClickArtist: (Int, Int) -> Unit,
+    onClickSong: (Int, Int) -> Unit,
+    onClickTimeListened: () -> Unit
 ) {
+    val month = Month.valueOf(capsule.month.split(" ")[0].uppercase(Locale.getDefault())).value
+    val year = capsule.month.split(" ")[1].toInt()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -332,7 +340,9 @@ fun MonthlySoundCapsuleSection(
                 .background(Color(0xFF1E1E1E))
                 .padding(vertical = 12.dp)
         ) {
-            Column (modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column (modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .clickable(onClick = onClickTimeListened)) {
                 Text(
                     text = "Time listened",
                     style = MaterialTheme.typography.bodySmall,
@@ -364,7 +374,7 @@ fun MonthlySoundCapsuleSection(
                 // Top Artist
                 Column (modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClickArtist )) {
+                    .clickable(onClick = { onClickArtist(month, year) } )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -418,7 +428,7 @@ fun MonthlySoundCapsuleSection(
             ) {
                 Column(modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClickSong )) {
+                    .clickable(onClick = { onClickSong(month, year) } )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -464,8 +474,6 @@ fun MonthlySoundCapsuleSection(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 

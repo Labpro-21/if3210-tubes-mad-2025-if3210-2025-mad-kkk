@@ -50,14 +50,18 @@ import com.example.purrytify.ui.component.SongDetailSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.AudioDeviceViewModel
 import com.example.purrytify.ui.model.GlobalViewModel
+import com.example.purrytify.ui.screen.DailyBarData
+import com.example.purrytify.ui.screen.DailyChartScreen
 import com.example.purrytify.ui.screen.HomeScreen
 import com.example.purrytify.ui.screen.LibraryScreen
 import com.example.purrytify.ui.screen.LoginScreen
+import com.example.purrytify.ui.screen.MonthlyBarData
 import com.example.purrytify.ui.screen.ProfileScreen
 import com.example.purrytify.ui.screen.TopFiftyCountryScreen
 import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import com.example.purrytify.ui.screen.TopMonthArtistScreen
 import com.example.purrytify.ui.screen.TopMonthSongScreen
+import com.example.purrytify.ui.screen.YAxisConfig
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,9 +94,21 @@ fun PurrytifyApp(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val hasNavbar = when (currentRoute) {
-        Screen.Home.Main.route, Screen.Home.TopFiftyGlobal.route, Screen.Home.TopFiftyCountry.route,
-        Screen.Library.route, Screen.Profile.Main.route, Screen.Profile.TopArtist.route, Screen.Profile.TopSong.route -> true
+//    val hasNavbar = when (currentRoute) {
+//        Screen.Home.Main.route, Screen.Home.TopFiftyGlobal.route, Screen.Home.TopFiftyCountry.route,
+//        Screen.Library.route, Screen.Profile.Main.route, Screen.Profile.TopArtist.route, Screen.Profile.TopSong.route, Screen.Profile.TimeListened.route -> true
+//        else -> false
+//    }
+
+    val hasNavbar = when {
+        currentRoute == Screen.Home.Main.route ||
+                currentRoute == Screen.Home.TopFiftyGlobal.route ||
+                currentRoute == Screen.Home.TopFiftyCountry.route ||
+                currentRoute == Screen.Library.route ||
+                currentRoute == Screen.Profile.Main.route ||
+                currentRoute?.startsWith(Screen.Profile.TopArtist.route) == true ||
+                currentRoute?.startsWith(Screen.Profile.TopSong.route) == true ||
+                currentRoute == Screen.Profile.TimeListened.route -> true
         else -> false
     }
 
@@ -168,17 +184,52 @@ fun PurrytifyApp(
                         composable(Screen.Profile.Main.route) {
                             ProfileScreen(globalViewModel, navController)
                         }
-                        composable(Screen.Profile.TopArtist.route) {
+                        composable(
+                            route = Screen.Profile.TopArtist.route + "?month={month}&year={year}",
+                            arguments = listOf(
+                                navArgument("month") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                },
+                                navArgument("year") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val month = backStackEntry.arguments?.getInt("month") ?: 3
+                            val year = backStackEntry.arguments?.getInt("year") ?: 2025
                             TopMonthArtistScreen(
                                 globalViewModel,
-                                navController
+                                navController,
+                                month = month,
+                                year = year
                             )
                         }
-                        composable(Screen.Profile.TopSong.route) {
+                        composable(
+                            route = Screen.Profile.TopSong.route + "?month={month}&year={year}",
+                            arguments = listOf(
+                                navArgument("month") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                },
+                                navArgument("year") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val month = backStackEntry.arguments?.getInt("month") ?: 3
+                            val year = backStackEntry.arguments?.getInt("year") ?: 2025
                             TopMonthSongScreen(
                                 globalViewModel,
-                                navController
+                                navController,
+                                month = month,
+                                year = year
                             )
+                        }
+                        composable(Screen.Profile.TimeListened.route) {
+                            DailyChartScreen(globalViewModel, navController, 5, 2025)
                         }
                     }
 
