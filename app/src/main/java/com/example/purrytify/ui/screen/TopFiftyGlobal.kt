@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -200,7 +198,7 @@ fun TopFiftyGlobalScreen(
                                 // TODO: download all songs
                             }) {
                                 Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.download_icon),
+                                    imageVector = ImageVector.vectorResource(R.drawable.ic_download),
                                     tint = Color.White.copy(0.7f),
                                     contentDescription = "Download All",
                                     modifier = Modifier

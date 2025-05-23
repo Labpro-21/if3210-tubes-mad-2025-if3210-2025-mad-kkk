@@ -2,13 +2,22 @@ package com.example.purrytify.ui.model
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfDocument
 import android.location.Location
 import android.location.Address
 import android.location.Geocoder
 import android.util.Log
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import android.graphics.Canvas
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -41,6 +50,9 @@ import java.util.Date
 import java.util.Locale
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import java.io.File
+import java.io.FileOutputStream
+import androidx.core.graphics.createBitmap
 
 
 data class SongStats(
@@ -321,6 +333,74 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
             Log.e("ProfileViewModel", "Error getting country code: ${e.message}")
         }
         return countryCode
+    }
+}
+
+class ComposeToPdfExporter(private val context: Context) {
+
+    suspend fun exportComposableToPdf(
+        composableContent: @Composable () -> Unit,
+        fileName: String = "export_${System.currentTimeMillis()}.pdf"
+    ): File? = withContext(Dispatchers.IO) {
+        try {
+            // Create a bitmap from the composable
+            val bitmap = createBitmapFromComposable(composableContent)
+
+            // Create PDF document
+            val pdfDocument = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(
+                bitmap.width,
+                bitmap.height,
+                1
+            ).create()
+
+            val page = pdfDocument.startPage(pageInfo)
+            val canvas = page.canvas
+
+            // Draw bitmap to PDF canvas
+            canvas.drawBitmap(bitmap, 0f, 0f, null)
+
+            pdfDocument.finishPage(page)
+
+            // Save to file
+            val file = File(context.getExternalFilesDir(null), fileName)
+            val fileOutputStream = FileOutputStream(file)
+            pdfDocument.writeTo(fileOutputStream)
+            pdfDocument.close()
+            fileOutputStream.close()
+
+            bitmap.recycle()
+            file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private suspend fun createBitmapFromComposable(
+        composableContent: @Composable () -> Unit
+    ): Bitmap = withContext(Dispatchers.Main) {
+        val composeView = ComposeView(context)
+        composeView.setContent {
+            Box(modifier = Modifier.size(612.dp, 792.dp)) {
+                composableContent()
+            }
+        }
+
+        // Measure and layout the view
+        val widthMeasureSpec = android.view.View.MeasureSpec.makeMeasureSpec(612, android.view.View.MeasureSpec.EXACTLY)
+        val heightMeasureSpec = android.view.View.MeasureSpec.makeMeasureSpec(792, android.view.View.MeasureSpec.EXACTLY)
+
+        composeView.measure(widthMeasureSpec, heightMeasureSpec)
+        composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+
+        // Create bitmap and draw view to it
+        val bitmap = createBitmap(composeView.measuredWidth, composeView.measuredHeight)
+
+        val canvas = Canvas(bitmap)
+        composeView.draw(canvas)
+
+        bitmap
     }
 }
 

@@ -120,6 +120,10 @@ fun ProfileScreen(
     var checkLocationOnResume by remember { mutableStateOf(false) }
     var showLocationUpdateDialog by remember { mutableStateOf(false) }
 
+    var isExportingPDF by remember { mutableStateOf(false) }
+    var showPDFDialog by remember { mutableStateOf(false) }
+    var pdfFile by remember { mutableStateOf<File?>(null) }
+
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
@@ -329,20 +333,22 @@ fun ProfileScreen(
 
                         Text(
                             text = userState!!.username,
-                            style = MaterialTheme.typography.titleMedium,
+//                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            fontSize = 18.sp
                         )
 
                         Text(
                             text = userState!!.location,
-                            style = MaterialTheme.typography.bodySmall,
+//                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 24.sp,
                             modifier = Modifier.clickable(onClick = { showLocationSheet = true })
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Button(
                             onClick = {
@@ -373,13 +379,36 @@ fun ProfileScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(8.dp)
                         .padding(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     StatItem(value = songStats!!.totalSongs.toString(), label = "SONGS")
                     StatItem(value = songStats!!.likedSongs.toString(), label = "LIKED")
                     StatItem(value = songStats!!.listenedSongs.toString(), label = "LISTENED")
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your sound capsule",
+//                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_download), // Make sure to have this icon
+                        contentDescription = "Download",
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
 
                 // Monthly Sound Capsules
@@ -390,7 +419,7 @@ fun ProfileScreen(
                     for (i in 0 until monthlyCapsules.size) {
                         MonthlySoundCapsuleSection(
                             capsule = monthlyCapsules[i],
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
                             onClickArtist = { month, year ->
                                 navController.navigate(Screen.Profile.TopArtist.createRoute(month, year))
                             },
@@ -404,7 +433,7 @@ fun ProfileScreen(
                         if (streaks[i] != null) {
                             ListeningStreakItem(
                                 streak = streaks[i]!!,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
                             )
                         }
                     }
@@ -691,6 +720,39 @@ fun ProfileScreen(
             textContentColor = Color.Gray
         )
     }
+
+    if (showPDFDialog && pdfFile != null) {
+        AlertDialog(
+            onDismissRequest = { showPDFDialog = false },
+            title = {
+                Text("PDF Export Successful")
+            },
+            text = {
+                Text("Your profile has been exported to PDF successfully!")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Share or open the PDF
+                        sharePDF(context, pdfFile!!)
+                        showPDFDialog = false
+                    }
+                ) {
+                    Text("Share")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showPDFDialog = false }
+                ) {
+                    Text("Close")
+                }
+            },
+            containerColor = Color(0xFF1E1E1E),
+            titleContentColor = Color.White,
+            textContentColor = Color.Gray
+        )
+    }
 }
 
 @Composable
@@ -738,7 +800,9 @@ fun MonthlySoundCapsuleSection(
         ) {
             Text(
                 text = capsule.month,
-                style = MaterialTheme.typography.titleMedium,
+//                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
                 color = Color.White
             )
             Icon(
@@ -762,14 +826,17 @@ fun MonthlySoundCapsuleSection(
                 .clickable(onClick = onClickTimeListened)) {
                 Text(
                     text = "Time listened",
-                    style = MaterialTheme.typography.bodySmall,
+//                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 12.sp,
                     color = Color.Gray
                 )
                 Text(
                     text = "${capsule.totalListeningMinutes} minutes",
-                    style = MaterialTheme.typography.titleLarge,
+//                    style = MaterialTheme.typography.titleLarge,
                     color = Color(0xFF4CAF50),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp
                 )
             }
         }
@@ -799,7 +866,9 @@ fun MonthlySoundCapsuleSection(
                     ) {
                         Text(
                             text = "Top artist",
-                            style = MaterialTheme.typography.bodySmall,
+//                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 12.sp,
                             color = Color.Gray
                         )
                         Icon(
@@ -827,9 +896,10 @@ fun MonthlySoundCapsuleSection(
 
                         Text(
                             text = capsule.topArtist?.name ?: "No Data",
-                            style = MaterialTheme.typography.bodyMedium,
+//                            style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF4A90E2),
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
                         )
                     }
                 }
@@ -853,7 +923,9 @@ fun MonthlySoundCapsuleSection(
                     ) {
                         Text(
                             text = "Top song",
-                            style = MaterialTheme.typography.bodySmall,
+//                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 12.sp,
                             color = Color.Gray
                         )
                         Icon(
@@ -881,9 +953,10 @@ fun MonthlySoundCapsuleSection(
 
                         Text(
                             text = capsule.topSong?.title ?: "No Data",
-                            style = MaterialTheme.typography.bodyMedium,
+//                            style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFFFFEB3B),
                             fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -926,9 +999,10 @@ fun ListeningStreakItem(
         // Streak title and description
         Text(
             text = "You had a ${streak.dayCount}-day streak",
-            style = MaterialTheme.typography.titleMedium,
+//            style = MaterialTheme.typography.titleMedium,
             color = Color.White,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 15.sp
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -937,8 +1011,11 @@ fun ListeningStreakItem(
         streak.trackDetails?.let { track ->
             Text(
                 text = "You played ${track.title} by ${track.artist} day after day. You were on fire",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+//                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 18.sp,
+                fontSize = 12.sp
             )
         }
 
@@ -952,8 +1029,10 @@ fun ListeningStreakItem(
         ) {
             Text(
                 text = dateRange,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+//                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                fontWeight = FontWeight.Normal,
+                fontSize = 12.sp
             )
 
             Icon(
@@ -1171,5 +1250,28 @@ fun LocationSelectionBottomSheet(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+fun sharePDF(context: Context, file: File) {
+    try {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "My Music Profile")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(Intent.createChooser(shareIntent, "Share PDF"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+        // Handle error
     }
 }
