@@ -93,6 +93,7 @@ dependencies {
     val appcompat_version = "1.7.0"
     implementation("androidx.appcompat:appcompat:$appcompat_version")
     implementation("androidx.appcompat:appcompat-resources:$appcompat_version")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.zxing:core:3.5.0")
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
     implementation("androidx.camera:camera-core:1.3.1")

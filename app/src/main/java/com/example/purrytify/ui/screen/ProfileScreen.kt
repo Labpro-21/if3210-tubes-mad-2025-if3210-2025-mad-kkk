@@ -1,7 +1,11 @@
 package com.example.purrytify.ui.screen
 
 import android.app.Application
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,17 +24,25 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +56,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.purrytify.R
@@ -56,10 +71,23 @@ import com.example.purrytify.ui.model.MonthlySoundCapsule
 import com.example.purrytify.ui.model.ProfileViewModel
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.DateFormat
+import java.time.Month
 import java.util.Date
+import java.util.Locale
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.LocationServices
+import android.provider.Settings
+import androidx.core.app.ComponentActivity
+import androidx.core.content.edit
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     globalViewModel: GlobalViewModel,
@@ -79,6 +107,94 @@ fun ProfileScreen(
 
     val monthlyCapsules by viewModel.monthlyCapsules.collectAsState()
     val streaks by viewModel.streaks.collectAsState()
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    val bottomSheetState = rememberModalBottomSheetState()
+
+    var showLocationSheet by remember { mutableStateOf(false) }
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+    val locationSheetState = rememberModalBottomSheetState()
+
+    var checkLocationOnResume by remember { mutableStateOf(false) }
+    var showLocationUpdateDialog by remember { mutableStateOf(false) }
+
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    // Create a temporary file for camera capture
+    val tempImageFile = remember {
+        File(context.cacheDir, "temp_profile_${System.currentTimeMillis()}.jpg")
+    }
+    val tempImageUri = remember {
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            tempImageFile
+        )
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            imageUri = tempImageUri
+            // Navigate to cropping screen
+            navController.navigate(Screen.Profile.CropImage.createRoute(tempImageUri.toString()))
+        }
+        showBottomSheet = false
+    }
+
+    // Camera permission launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted, launch camera
+            cameraLauncher.launch(tempImageUri)
+        } else {
+            // Permission denied, show dialog
+            showPermissionDialog = true
+        }
+    }
+
+    // Gallery launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            imageUri = it
+            // Navigate to cropping screen
+            navController.navigate(Screen.Profile.CropImage.createRoute(it.toString()))
+        }
+        showBottomSheet = false
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted, get location
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        val countryCode = viewModel.getCountryCodeFromLocation(it, context)
+                        viewModel.updateLocation(countryCode)
+                    }
+                }
+            }
+        } else {
+            // Permission denied, show dialog
+            showLocationPermissionDialog = true
+        }
+        showLocationSheet = false
+    }
 
     LogoutListener {
         navController.navigate(Screen.Login.route) {
@@ -110,6 +226,42 @@ fun ProfileScreen(
         }
     }
 
+    // Check SharedPreferences when the screen is active
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("check_location_on_resume", false)) {
+            // Clear the flag
+            prefs.edit().putBoolean("check_location_on_resume", false).apply()
+
+            // Show dialog to confirm location update
+            showLocationUpdateDialog = true
+        }
+    }
+
+    // Effect to check location when the flag is set
+    LaunchedEffect(checkLocationOnResume) {
+        if (checkLocationOnResume) {
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        val countryCode = viewModel.getCountryCodeFromLocation(it, context)
+                        Log.d("LOCATION_CC", countryCode)
+                        viewModel.updateLocation(countryCode)
+                        Toast.makeText(
+                            context,
+                            "Location updated to $countryCode",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    checkLocationOnResume = false
+                }
+            }
+        }
+    }
 
     if (viewModel.isLoading || userState == null || songStats == null) {
         Box(
@@ -153,6 +305,24 @@ fun ProfileScreen(
                                     .size(120.dp)
                                     .clip(CircleShape),
                             )
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        showBottomSheet = true
+                                    }
+//                                    .background(Color.Gray.copy(alpha = 0.3f))
+                                    ,
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_edit), // Make sure you have this icon
+                                    contentDescription = "Edit Profile Picture",
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -167,7 +337,9 @@ fun ProfileScreen(
                         Text(
                             text = userState!!.location,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 24.sp,
+                            modifier = Modifier.clickable(onClick = { showLocationSheet = true })
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -219,11 +391,14 @@ fun ProfileScreen(
                         MonthlySoundCapsuleSection(
                             capsule = monthlyCapsules[i],
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            onClickArtist = {
-                                navController.navigate(Screen.Profile.TopArtist.route)
+                            onClickArtist = { month, year ->
+                                navController.navigate(Screen.Profile.TopArtist.createRoute(month, year))
                             },
-                            onClickSong = {
-                                navController.navigate(Screen.Profile.TopSong.route)
+                            onClickSong = { month, year ->
+                                navController.navigate(Screen.Profile.TopSong.createRoute(month, year))
+                            },
+                            onClickTimeListened = {
+                                navController.navigate(Screen.Profile.TimeListened.route)
                             }
                         )
                         if (streaks[i] != null) {
@@ -269,6 +444,253 @@ fun ProfileScreen(
             }
         }
     }
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = bottomSheetState,
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.Gray)
+                )
+            },
+            containerColor = Color(0xFF1E1E1E),
+            contentColor = Color.White
+        ) {
+            ProfilePictureBottomSheet(
+                onCameraClick = {
+                    // Check camera permission first
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA
+                        ) -> {
+                            // Permission already granted, launch camera
+                            cameraLauncher.launch(tempImageUri)
+                        }
+                        else -> {
+                            // Request camera permission
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
+                    showBottomSheet = false
+                },
+                onGalleryClick = {
+                    // Launch gallery to pick image
+                    galleryLauncher.launch("image/*")
+                },
+                onDismiss = { showBottomSheet = false }
+            )
+        }
+    }
+
+    if (showLocationSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showLocationSheet = false },
+            sheetState = locationSheetState,
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.Gray)
+                )
+            },
+            containerColor = Color(0xFF1E1E1E),
+            contentColor = Color.White
+        ) {
+            LocationSelectionBottomSheet(
+                onAutomaticClick = {
+                    // Check location permission first
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) -> {
+                            // Permission already granted, get location
+                            if (ActivityCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                    location?.let {
+                                        val countryCode = viewModel.getCountryCodeFromLocation(it, context)
+                                        Log.d("LOCATION_CC", countryCode)
+                                        viewModel.updateLocation(countryCode)
+                                    }
+                                    if (location == null ) {
+                                        Log.d("LOCATION_CC", "IS NULL")
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            // Request location permission
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
+                    }
+                    showLocationSheet = false
+                },
+                onManualClick = {
+                    Toast.makeText(
+                        context,
+                        "Select your location by dropping a pin on the map, then return to app",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // Launch Google Maps for manual selection
+                    try {
+                        // Use search intent with the search box open
+                        val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?z=2"))
+
+                        // Just launch the map without trying to handle the result
+                        if (mapIntent.resolveActivity(context.packageManager) != null) {
+                            context.startActivity(mapIntent)
+
+                            // Set a flag in SharedPreferences to indicate we should check location when resuming
+                            val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
+                            prefs.edit().putBoolean("check_location_on_resume", true).apply()
+                        } else {
+                            // Try alternate approach
+                            val alternateIntent = Intent(Intent.ACTION_VIEW,
+                                Uri.parse("https://maps.google.com/"))
+
+                            if (alternateIntent.resolveActivity(context.packageManager) != null) {
+                                context.startActivity(alternateIntent)
+
+                                // Set the same flag
+                                val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
+                                prefs.edit().putBoolean("check_location_on_resume", true).apply()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "No map application found",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ProfileScreen", "Error launching maps: ${e.message}")
+                        Toast.makeText(
+                            context,
+                            "Could not open maps",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    showLocationSheet = false
+                },
+                onDismiss = { showLocationSheet = false }
+            )
+        }
+    }
+
+    // Permission dialog
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = {
+                Text("Camera Permission Required")
+            },
+            text = {
+                Text("To take a photo, please allow camera access in your device settings.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showPermissionDialog = false }
+                ) {
+                    Text("OK")
+                }
+            },
+            containerColor = Color(0xFF1E1E1E),
+            titleContentColor = Color.White,
+            textContentColor = Color.Gray
+        )
+    }
+
+    if (showLocationPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationPermissionDialog = false },
+            title = {
+                Text("Location Permission Required")
+            },
+            text = {
+                Text("To set your location automatically, please allow location access in your device settings.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Open app settings
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts("package", context.packageName, null)
+                        intent.data = uri
+                        context.startActivity(intent)
+                        showLocationPermissionDialog = false
+                    }
+                ) {
+                    Text("Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLocationPermissionDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = Color(0xFF1E1E1E),
+            titleContentColor = Color.White,
+            textContentColor = Color.Gray
+        )
+    }
+
+    // Location update confirmation dialog using Compose
+    if (showLocationUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationUpdateDialog = false },
+            title = {
+                Text("Update Location")
+            },
+            text = {
+                Text("Would you like to update your country based on the location you selected?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Get current location
+                        if (ActivityCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            checkLocationOnResume = true
+                        } else {
+                            // Request permission
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
+                        showLocationUpdateDialog = false
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLocationUpdateDialog = false }
+                ) {
+                    Text("No")
+                }
+            },
+            containerColor = Color(0xFF1E1E1E),
+            titleContentColor = Color.White,
+            textContentColor = Color.Gray
+        )
+    }
 }
 
 @Composable
@@ -294,9 +716,12 @@ fun StatItem(value: String, label: String) {
 fun MonthlySoundCapsuleSection(
     capsule: MonthlySoundCapsule,
     modifier: Modifier = Modifier,
-    onClickArtist: () -> Unit,
-    onClickSong: () -> Unit
+    onClickArtist: (Int, Int) -> Unit,
+    onClickSong: (Int, Int) -> Unit,
+    onClickTimeListened: () -> Unit
 ) {
+    val month = Month.valueOf(capsule.month.split(" ")[0].uppercase(Locale.getDefault())).value
+    val year = capsule.month.split(" ")[1].toInt()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -332,7 +757,9 @@ fun MonthlySoundCapsuleSection(
                 .background(Color(0xFF1E1E1E))
                 .padding(vertical = 12.dp)
         ) {
-            Column (modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column (modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .clickable(onClick = onClickTimeListened)) {
                 Text(
                     text = "Time listened",
                     style = MaterialTheme.typography.bodySmall,
@@ -364,7 +791,7 @@ fun MonthlySoundCapsuleSection(
                 // Top Artist
                 Column (modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClickArtist )) {
+                    .clickable(onClick = { onClickArtist(month, year) } )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -418,7 +845,7 @@ fun MonthlySoundCapsuleSection(
             ) {
                 Column(modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClickSong )) {
+                    .clickable(onClick = { onClickSong(month, year) } )) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -464,8 +891,6 @@ fun MonthlySoundCapsuleSection(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -541,3 +966,210 @@ fun ListeningStreakItem(
     }
 }
 
+@Composable
+fun ProfilePictureBottomSheet(
+    onCameraClick: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(bottom = 16.dp)
+    ) {
+        // Header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Profile photo",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
+            Icon(
+                painter = painterResource(id = R.drawable.ic_close),
+                contentDescription = "Close",
+                tint = Color.Gray,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable { onDismiss() }
+                    .padding(4.dp)
+                    .size(24.dp)
+            )
+        }
+
+        // Options
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // Camera option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onCameraClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF4CAF50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_camera),
+                        contentDescription = "Camera",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Camera",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+
+            // Gallery option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onGalleryClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2196F3)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_gallery),
+                        contentDescription = "Gallery",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Gallery",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun LocationSelectionBottomSheet(
+    onAutomaticClick: () -> Unit,
+    onManualClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(bottom = 16.dp)
+    ) {
+        // Header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Set location",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
+            Icon(
+                painter = painterResource(id = R.drawable.ic_close),
+                contentDescription = "Close",
+                tint = Color.Gray,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable { onDismiss() }
+                    .padding(4.dp)
+                    .size(24.dp)
+            )
+        }
+
+        // Options
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // Automatic option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onAutomaticClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF4CAF50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_location),
+                        contentDescription = "Automatic",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Automatic",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+
+            // Manual option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onManualClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2196F3)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_map),
+                        contentDescription = "Manual",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Manual",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}

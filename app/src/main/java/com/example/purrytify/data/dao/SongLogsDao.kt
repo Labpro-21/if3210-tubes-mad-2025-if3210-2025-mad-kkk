@@ -6,6 +6,7 @@ import androidx.room.Query
 import com.example.purrytify.data.entity.SongEntity
 import kotlinx.coroutines.flow.Flow
 import com.example.purrytify.data.entity.SongLogsEntity
+import com.example.purrytify.ui.model.MonthDataValue
 
 
 @Dao
@@ -163,6 +164,16 @@ interface SongLogsDao {
     SELECT MIN(at) as earliest_date FROM song_logs
     """)
     suspend fun getEarliestLog(): SongEarliestDate
+
+    @Query("""
+    SELECT SUM(duration) as value, DATE(at/1000, 'unixepoch') as day
+    FROM song_logs 
+    WHERE strftime('%m', DATE(at/1000, 'unixepoch')) = printf('%02d', :month)
+    AND strftime('%Y', DATE(at/1000, 'unixepoch')) = printf('%d', :year)
+    GROUP BY DATE(at/1000, 'unixepoch')
+    ORDER BY DATE(at/1000, 'unixepoch')
+""")
+    fun getMonthData(month: Int, year: Int) : Flow<List<MonthDataValue>>
 }
 
 data class TopSongResult(
@@ -224,6 +235,7 @@ data class SongPlayDate(
 data class SongEarliestDate(
     val earliest_date: Long
 )
+
 //SELECT DISTINCT log1.id
 //FROM song_logs log1
 //JOIN song_logs log2 ON log1.id = log2.id AND
