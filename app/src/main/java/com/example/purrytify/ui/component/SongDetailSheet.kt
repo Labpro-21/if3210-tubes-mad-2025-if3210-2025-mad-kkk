@@ -80,7 +80,8 @@ import com.example.purrytify.ui.theme.Poppins
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material3.rememberModalBottomSheetState
 
 private fun formatTime(seconds: Double): String {
     val minutes = TimeUnit.SECONDS.toMinutes(seconds.toLong())
@@ -135,6 +136,9 @@ fun SongDetailSheet(
 
     val isRepeatEnabled by globalViewModel.isRepeat.collectAsState()
     val isShuffled by globalViewModel.shuffled.collectAsState()
+
+    var showQRSheet by remember { mutableStateOf(false) }
+    val qrSheetState = rememberModalBottomSheetState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -428,6 +432,19 @@ fun SongDetailSheet(
                                 if (song!!.serverId != null) {
                                     IconButton(
                                         onClick = {
+                                            showQRSheet = true
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.QrCode,
+                                            contentDescription = "QR Code",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
                                             val shareIntent = Intent().apply {
                                                 action = Intent.ACTION_SEND
                                                 putExtra(
@@ -502,6 +519,18 @@ fun SongDetailSheet(
                 }
             },
             sheetState = deviceSheetState
+        )
+    }
+    if (showQRSheet && song != null) {
+        QRShareSheet(
+            song = song!!,
+            onDismiss = {
+                scope.launch {
+                    qrSheetState.hide()
+                    showQRSheet = false
+                }
+            },
+            sheetState = qrSheetState
         )
     }
 }
