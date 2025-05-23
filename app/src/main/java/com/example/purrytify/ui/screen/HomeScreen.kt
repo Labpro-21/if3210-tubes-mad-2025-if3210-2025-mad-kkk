@@ -5,9 +5,11 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -29,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -122,204 +129,220 @@ fun HomeScreen(
         globalViewModel.logout()
     }
 
-    LazyColumn(
-        modifier = modifier.padding(top = 30.dp),
-        state = listState
-    ) {
-        item {
-            Text(
-                text = "Chart",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(
-                    bottom = 12.dp,
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 10.dp
-                ),
-                fontFamily = Poppins
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.padding(top = 30.dp),
+            state = listState
+        ) {
+            item {
+                Text(
+                    text = "Chart",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(
+                        bottom = 12.dp,
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 10.dp
+                    ),
+                    fontFamily = Poppins
+                )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp)
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.global),
-                        contentDescription = "Top Global Cover",
+                    Column(
                         modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                    Text(
-                        text = "Your daily update of most played tracks globally",
-                        color = Color.Gray,
-                        fontSize = 12.sp,
-                        maxLines = 2,
-                        lineHeight = 16.sp,
-                        overflow = TextOverflow.Ellipsis,
-                        fontFamily = Poppins,
-                        letterSpacing = 0.2.sp,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
+                            .width(120.dp)
+                            .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.global),
+                            contentDescription = "Top Global Cover",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Text(
+                            text = "Your daily update of most played tracks globally",
+                            color = Color.Gray,
+                            fontSize = 12.sp,
+                            maxLines = 2,
+                            lineHeight = 16.sp,
+                            overflow = TextOverflow.Ellipsis,
+                            fontFamily = Poppins,
+                            letterSpacing = 0.2.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
 
-                ) {
-                    Image(
-                        painter = painterResource(
-                            CountryConstant.CountryImage[userCountry]
-                                ?: R.drawable.id
-                        ),
-                        contentDescription = "Top Country Cover",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                    Text(
-                        text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
-                        color = Color.Gray,
-                        fontSize = 12.sp,
-                        maxLines = 2,
-                        lineHeight = 16.sp,
-                        overflow = TextOverflow.Ellipsis,
-                        fontFamily = Poppins,
-                        letterSpacing = 0.2.sp,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    ) {
+                        Image(
+                            painter = painterResource(
+                                CountryConstant.CountryImage[userCountry]
+                                    ?: R.drawable.id
+                            ),
+                            contentDescription = "Top Country Cover",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Text(
+                            text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
+                            color = Color.Gray,
+                            fontSize = 12.sp,
+                            maxLines = 2,
+                            lineHeight = 16.sp,
+                            overflow = TextOverflow.Ellipsis,
+                            fontFamily = Poppins,
+                            letterSpacing = 0.2.sp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "New songs",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
+                    fontFamily = Poppins
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp)
+                ) {
+                    items(songs) { song ->
+                        NewSongCard(song = song, onClick = {
+                            globalViewModel.playSong(song)
+                            showDetail()
+                        })
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Recently played",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
+                    fontFamily = Poppins
+                )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "New songs",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
-                fontFamily = Poppins
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp)
-            ) {
-                items(songs) { song ->
-                    NewSongCard(song = song, onClick = {
+            items(recentlyPlayedSongs) { song ->
+                SongCard(
+                    song = song, onClick = {
                         globalViewModel.playSong(song)
                         showDetail()
+                    },
+                    onLongClick = {
+                        showSongOptionSheet = true
+                        showSong = song
                     })
-                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+        }
 
-            Text(
-                text = "Recently played",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
-                fontFamily = Poppins
+        IconButton(
+            onClick = { navController.navigate(Screen.QrCodeScanner.route) },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp, top = 30.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "QR Code Scanner",
+                tint = Color.White,
+                modifier = Modifier.size(18.dp)
             )
         }
 
-        items(recentlyPlayedSongs) { song ->
-            SongCard(
-                song = song, onClick = {
-                    globalViewModel.playSong(song)
-                    showDetail()
+        if (showSongOptionSheet && showSong != null) {
+            SongOptionsSheet(
+                song = showSong!!,
+                onDismiss = {
+                    scope.launch {
+                        showSongSheetState.hide()
+                        showSongOptionSheet = false
+                    }
                 },
-                onLongClick = {
-                    showSongOptionSheet = true
-                    showSong = song
-                })
+                onEdit = {
+                    scope.launch {
+                        showSongSheetState.hide()
+                        showSongOptionSheet = false
+                        showUploadDialog = true
+                    }
+                },
+                onDelete = {
+                    viewModel.deleteSong(showSong!!)
+                    scope.launch {
+                        showSongSheetState.hide()
+                        showSongOptionSheet = false
+                    }
+                },
+                sheetState = showSongSheetState,
+                onAddToQueue = {
+                    globalViewModel.addToQueue(showSong!!)
+                },
+                detail = showSong?.id == currentSong?.id,
+                onLiked = {
+                    viewModel.toggleLiked(showSong!!)
+                },
+                onStartNewRadio = {
+                    globalViewModel.playSongs(showSong!!)
+                },
+                onAddToNext = {
+                    globalViewModel.addToNext(showSong!!)
+                }
+            )
         }
 
-        item {
-            Spacer(modifier = Modifier.height(40.dp))
-        }
-    }
-    if (showSongOptionSheet && showSong != null) {
-        SongOptionsSheet(
-            song = showSong!!,
-            onDismiss = {
-                scope.launch {
-                    showSongSheetState.hide()
-                    showSongOptionSheet = false
-                }
-            },
-            onEdit = {
-                scope.launch {
-                    showSongSheetState.hide()
-                    showSongOptionSheet = false
-                    showUploadDialog = true
-                }
-            },
-            onDelete = {
-                viewModel.deleteSong(showSong!!)
-                scope.launch {
-                    showSongSheetState.hide()
-                    showSongOptionSheet = false
-                }
-            },
-            sheetState = showSongSheetState,
-            onAddToQueue = {
-                globalViewModel.addToQueue(showSong!!)
-            },
-            detail = showSong?.id == currentSong?.id,
-            onLiked = {
-                viewModel.toggleLiked(showSong!!)
-            },
-            onStartNewRadio = {
-                globalViewModel.playSongs(showSong!!)
-            },
-            onAddToNext = {
-                globalViewModel.addToNext(showSong!!)
-            }
-        )
-    }
-
-    if (showUploadDialog && showSong != null) {
-        EditSongBottomSheet(
-            song = showSong!!,
-            onDismiss = {
-                scope.launch {
-                    uploadSheetState.hide()
-                    showUploadDialog = false
-                }
-            },
-            sheetState = uploadSheetState,
-            onUpdate = { id, title, artist, image, audio ->
-                if (title.isNotEmpty() && artist.isNotEmpty()) {
-                    viewModel.updateSong(id, title, artist, image, audio)
+        if (showUploadDialog && showSong != null) {
+            EditSongBottomSheet(
+                song = showSong!!,
+                onDismiss = {
                     scope.launch {
                         uploadSheetState.hide()
                         showUploadDialog = false
                     }
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Please fill all fields and select both audio and image",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                },
+                sheetState = uploadSheetState,
+                onUpdate = { id, title, artist, image, audio ->
+                    if (title.isNotEmpty() && artist.isNotEmpty()) {
+                        viewModel.updateSong(id, title, artist, image, audio)
+                        scope.launch {
+                            uploadSheetState.hide()
+                            showUploadDialog = false
+                        }
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Please fill all fields and select both audio and image",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-            }
-        )
+            )
+        }
     }
-
 }

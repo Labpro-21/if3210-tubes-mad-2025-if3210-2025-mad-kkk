@@ -62,6 +62,7 @@ import com.example.purrytify.ui.screen.TopFiftyCountryScreen
 import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import com.example.purrytify.ui.screen.TopMonthArtistScreen
 import com.example.purrytify.ui.screen.TopMonthSongScreen
+import com.example.purrytify.ui.screen.QRCodeScannerScreen
 import com.example.purrytify.ui.screen.YAxisConfig
 import kotlinx.coroutines.launch
 
@@ -176,6 +177,9 @@ fun PurrytifyApp(
                             globalViewModel,
                             navController
                         )
+                    }
+                    composable(Screen.QrCodeScanner.route) {
+                        QRCodeScannerScreen(navController = navController, globalViewModel = globalViewModel)
                     }
 
                     navigation(

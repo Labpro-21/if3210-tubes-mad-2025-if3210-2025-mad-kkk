@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
@@ -35,4 +37,5 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
         data object TopFiftyCountry: Screen("home/topFiftyCountry", "Top 50 Country", Icons.Default.LocalSee)
         data object Main: Screen("home/main", "Home Main", Icons.Default.Home)
     }
+    data object QrCodeScanner : Screen("qr_code_scanner", "QR Scanner", Icons.Default.QrCodeScanner)
 }
