@@ -1,7 +1,9 @@
 package com.example.purrytify.navigation
 
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.LocalSee
@@ -24,6 +26,9 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
             fun createRoute(month: Int, year: Int): String = "profile/topSong?month=$month&year=$year"
         }
         data object TimeListened: Screen("profile/timeListened", "Time Listened", Icons.Default.LockClock)
+        data object CropImage : Screen("crop_image/{imageUri}", "Crop Image", Icons.Default.Crop) {
+            fun createRoute(imageUri: String): String = "crop_image/${Uri.encode(imageUri)}"
+        }
     }
     data object Home : Screen("home", "Home", Icons.Default.Home) {
         data object TopFiftyGlobal: Screen("home/topFiftyGlobal", "Top 50 Global", Icons.Default.LocationOn)

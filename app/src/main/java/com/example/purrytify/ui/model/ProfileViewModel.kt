@@ -1,6 +1,10 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
+import android.content.Context
+import android.location.Location
+import android.location.Address
+import android.location.Geocoder
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +39,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+
 
 data class SongStats(
     val totalSongs: Int = 0,
@@ -65,11 +72,17 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     private val _streaks: MutableStateFlow<List<ListeningStreak?>> = MutableStateFlow(emptyList())
     val streaks: StateFlow<List<ListeningStreak?>> = _streaks.asStateFlow()
 
+    private val _location = MutableStateFlow("")
+    val location: StateFlow<String> = _location
+
+    private var fusedLocationClient: FusedLocationProviderClient
+
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
         val songLogsDao = SongDatabase.getDatabase(application).songLogsDao()
         songRepository = SongRepository(songDao, application)
         songLogsRepository = SongLogsRepository(songLogsDao, application)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
     }
 
     fun loadUserProfile(onLogout: () -> Unit, onSuccess: () -> Unit) {
@@ -275,6 +288,39 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
             // Also load listening streaks
 //            loadListeningStreaks(userId)
         }
+    }
+
+    fun updateLocation(countryCode: String) {
+        viewModelScope.launch {
+            try {
+                // Make API call to update user's location (country code)
+//                val response = userRepository.updateUserLocation(countryCode)
+//                if (response.isSuccessful) {
+//                    _location.value = countryCode
+//                }
+            } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Error updating location: ${e.message}")
+            }
+        }
+    }
+
+    fun getCountryCodeFromLocation(location: Location, context: Context): String {
+        var countryCode = "ID" // Default to Indonesia if we can't determine
+        try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val addresses: List<Address>? = geocoder.getFromLocation(
+                location.latitude, location.longitude, 1
+            )
+            if (addresses != null && addresses.isNotEmpty()) {
+                val address = addresses[0]
+                if (!address.countryCode.isNullOrEmpty()) {
+                    countryCode = address.countryCode
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileViewModel", "Error getting country code: ${e.message}")
+        }
+        return countryCode
     }
 }
 

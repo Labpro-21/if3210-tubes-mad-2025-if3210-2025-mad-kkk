@@ -53,6 +53,7 @@ import com.example.purrytify.ui.model.GlobalViewModel
 import com.example.purrytify.ui.screen.DailyBarData
 import com.example.purrytify.ui.screen.DailyChartScreen
 import com.example.purrytify.ui.screen.HomeScreen
+import com.example.purrytify.ui.screen.ImageCropScreen
 import com.example.purrytify.ui.screen.LibraryScreen
 import com.example.purrytify.ui.screen.LoginScreen
 import com.example.purrytify.ui.screen.MonthlyBarData
@@ -112,7 +113,7 @@ fun PurrytifyApp(
         else -> false
     }
 
-    val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route
+    val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
 
     val currentSong by globalViewModel.currentSong.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
@@ -182,7 +183,10 @@ fun PurrytifyApp(
                         route = Screen.Profile.route,
                     ) {
                         composable(Screen.Profile.Main.route) {
-                            ProfileScreen(globalViewModel, navController)
+                            ProfileScreen(
+                                globalViewModel,
+                                navController
+                            )
                         }
                         composable(
                             route = Screen.Profile.TopArtist.route + "?month={month}&year={year}",
@@ -230,6 +234,21 @@ fun PurrytifyApp(
                         }
                         composable(Screen.Profile.TimeListened.route) {
                             DailyChartScreen(globalViewModel, navController, 5, 2025)
+                        }
+                        composable(
+                            route = Screen.Profile.CropImage.route,
+                            arguments = listOf(
+                                navArgument("imageUri") {
+                                    type = NavType.StringType
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val imageUri = backStackEntry.arguments?.getString("imageUri")
+                            ImageCropScreen(
+                                globalViewModel,
+                                navController,
+                                imageUri
+                            )
                         }
                     }
 

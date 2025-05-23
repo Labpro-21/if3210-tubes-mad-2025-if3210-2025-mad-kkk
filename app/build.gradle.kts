@@ -93,4 +93,5 @@ dependencies {
     val appcompat_version = "1.7.0"
     implementation("androidx.appcompat:appcompat:$appcompat_version")
     implementation("androidx.appcompat:appcompat-resources:$appcompat_version")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }
