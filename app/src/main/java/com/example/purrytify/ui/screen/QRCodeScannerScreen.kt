@@ -8,7 +8,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -212,6 +214,7 @@ private fun CameraPreview(onQrCodeScanned: (String) -> Unit) {
 }
 
 
+@OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(imageProxy: ImageProxy, onSuccess: (String) -> Unit) {
     val mediaImage = imageProxy.image
     if (mediaImage != null) {
