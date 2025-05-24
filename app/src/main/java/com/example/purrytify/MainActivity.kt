@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         requestNotificationPermissionIfNeeded()
+        audioDeviceViewModel.refreshDevices()
     }
 
     @SuppressLint("ImplicitSamInstance")
