@@ -61,9 +61,9 @@ class AudioDeviceViewModel(application: Application) : AndroidViewModel(applicat
 
     fun refreshDevices() {
         _devices.clear()
+        _selectedDevice.value = mediaRouter.selectedRoute
         mediaRouter.routes.forEach { route ->
             _devices.add(route)
-            Log.d("DEBUG MEDIA ROUTE", route.deviceType.toString())
         }
     }
 

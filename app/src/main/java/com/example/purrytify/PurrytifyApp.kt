@@ -50,20 +50,21 @@ import com.example.purrytify.ui.component.SongDetailSheet
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.model.AudioDeviceViewModel
 import com.example.purrytify.ui.model.GlobalViewModel
-import com.example.purrytify.ui.screen.DailyBarData
 import com.example.purrytify.ui.screen.DailyChartScreen
 import com.example.purrytify.ui.screen.HomeScreen
 import com.example.purrytify.ui.screen.ImageCropScreen
 import com.example.purrytify.ui.screen.LibraryScreen
 import com.example.purrytify.ui.screen.LoginScreen
-import com.example.purrytify.ui.screen.MonthlyBarData
 import com.example.purrytify.ui.screen.ProfileScreen
+import com.example.purrytify.ui.screen.QRCodeScannerScreen
 import com.example.purrytify.ui.screen.TopFiftyCountryScreen
 import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import com.example.purrytify.ui.screen.TopMonthArtistScreen
 import com.example.purrytify.ui.screen.TopMonthSongScreen
+import com.example.purrytify.ui.screen.RecommendationsScreen
 import com.example.purrytify.ui.screen.QRCodeScannerScreen
 import com.example.purrytify.ui.screen.YAxisConfig
+import com.example.purrytify.worker.DownloadListener
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,11 +97,6 @@ fun PurrytifyApp(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-//    val hasNavbar = when (currentRoute) {
-//        Screen.Home.Main.route, Screen.Home.TopFiftyGlobal.route, Screen.Home.TopFiftyCountry.route,
-//        Screen.Library.route, Screen.Profile.Main.route, Screen.Profile.TopArtist.route, Screen.Profile.TopSong.route, Screen.Profile.TimeListened.route -> true
-//        else -> false
-//    }
 
     val hasNavbar = when {
         currentRoute == Screen.Home.Main.route ||
@@ -110,11 +106,15 @@ fun PurrytifyApp(
                 currentRoute == Screen.Profile.Main.route ||
                 currentRoute?.startsWith(Screen.Profile.TopArtist.route) == true ||
                 currentRoute?.startsWith(Screen.Profile.TopSong.route) == true ||
-                currentRoute == Screen.Profile.TimeListened.route -> true
+                currentRoute == Screen.Profile.TimeListened.route ||
+                currentRoute == Screen.Home.Recommendations.route -> true
         else -> false
     }
 
-    val showPlayer = currentRoute != Screen.QrCodeScanner.route && currentRoute != Screen.Login.route && currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
+    var showPlayer = currentRoute != Screen.Splash.route &&
+            currentRoute != Screen.Login.route &&
+            currentRoute != Screen.QrCodeScanner.route &&
+            currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
 
     val currentSong by globalViewModel.currentSong.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
@@ -150,6 +150,7 @@ fun PurrytifyApp(
             .navigationBarsPadding()
     ) {
         Row(Modifier.fillMaxSize()) {
+            DownloadListener(globalViewModel)
             AnimatedVisibility(visible = (navigationType == PurrytifyNavigationType.NAVIGATION_RAIL && hasNavbar)) {
                 NavigationRailBar(navController)
             }
@@ -178,7 +179,9 @@ fun PurrytifyApp(
                             navController
                         )
                     }
+
                     composable(Screen.QrCodeScanner.route) {
+                        showPlayer = false
                         QRCodeScannerScreen(navController = navController, globalViewModel = globalViewModel)
                     }
 
@@ -294,6 +297,15 @@ fun PurrytifyApp(
                                 showDetailSheet = true
                             }
                         }
+                        composable(Screen.Home.Recommendations.route) {
+                            RecommendationsScreen(
+                                globalViewModel,
+                                navController
+                            ) {
+                                showDetailSheet = true
+
+                            }
+                        }
                     }
                 }
 
@@ -378,6 +390,11 @@ fun PurrytifyApp(
                     },
                     onAddToNext = {
                         globalViewModel.addToNext(currentSong!!)
+                    },
+                    onDownloadSong = {
+                        if (!currentSong!!.isDownloaded) {
+                            globalViewModel.downloadSongs(listOf(currentSong!!), "")
+                        }
                     }
                 )
             }

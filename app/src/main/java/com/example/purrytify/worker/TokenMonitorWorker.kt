@@ -2,6 +2,7 @@ package com.example.purrytify.worker
 
 import android.content.Context
 import android.content.Intent
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.purrytify.data.TokenManager
@@ -53,8 +54,8 @@ class TokenMonitorWorker(
     }
 
     private fun sendLogoutBroadcast() {
-        val intent = Intent("com.purrytify.LOGOUT")
-        applicationContext.sendBroadcast(intent)
+        val intent = Intent("com.example.purrytify.LOGOUT")
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 }
 

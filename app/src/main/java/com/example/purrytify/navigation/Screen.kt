@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.Recommend
+
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Splash : Screen("splash", "Splash", Icons.Default.Home)
@@ -35,6 +37,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Home : Screen("home", "Home", Icons.Default.Home) {
         data object TopFiftyGlobal: Screen("home/topFiftyGlobal", "Top 50 Global", Icons.Default.LocationOn)
         data object TopFiftyCountry: Screen("home/topFiftyCountry", "Top 50 Country", Icons.Default.LocalSee)
+        data object Recommendations: Screen("home/recommendationsScreen", "For You", Icons.Default.Recommend)
         data object Main: Screen("home/main", "Home Main", Icons.Default.Home)
     }
     data object QrCodeScanner : Screen("qr_code_scanner", "QR Scanner", Icons.Default.QrCodeScanner)

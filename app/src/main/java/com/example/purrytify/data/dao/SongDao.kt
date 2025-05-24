@@ -89,4 +89,21 @@ interface SongDao {
 
     @Query("UPDATE songs SET lastPlayed = :timestamp WHERE id = :id")
     suspend fun updateLastPlayed(id: Long, timestamp: Long)
+
+    @Query("""
+        SELECT * FROM songs
+        WHERE artist IN (:artists)
+        AND userId = :userId -- Ensure songs belong to the specific user
+        AND isLiked = 0 -- Exclude already liked songs
+        AND id NOT IN (
+            SELECT id FROM song_logs
+            WHERE userId = :userId AND at >= :recentThreshold -- Exclude recently played songs
+        )
+        ORDER BY dateAdded DESC, title ASC -- Prioritize newer songs, then alphabetically
+    """)
+    suspend fun getCandidateRecommendationSongsByArtists(
+        userId: Int,
+        artists: List<String>,
+        recentThreshold: Long
+    ): List<SongEntity>
 }

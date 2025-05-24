@@ -14,6 +14,8 @@ import com.example.purrytify.data.entity.SongEntity
 import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.service.ApiClient
+import com.example.purrytify.service.DownloadRequest
+import com.example.purrytify.service.DownloadService
 import com.example.purrytify.service.OnlineSongResponse
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +71,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
             artist = this.artist,
             imagePath = this.imagePath,
             audioPath = this.audioPath,
+            remoteImagePath = this.remoteImagePath,
+            remoteAudioPath = this.remoteAudioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
@@ -87,6 +91,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 artist = this.artist,
                 imagePath = this.imagePath,
                 audioPath = this.audioPath,
+                remoteImagePath = this.remoteImagePath,
+                remoteAudioPath = this.remoteAudioPath,
                 isLiked = this.isLiked,
                 primaryColor = this.primaryColor,
                 secondaryColor = this.secondaryColor,
@@ -107,6 +113,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
     fun playSharedSong(songId: Int, onSuccess: () -> Unit) {
         if (loadJob?.isActive == true) loadJob?.wait()
         loadJob = viewModelScope.launch {
+            val filesToUndo = mutableListOf<String>()
+            val filesToDelete = mutableListOf<String>()
             try {
                 val userId = globalViewModel.userId.value
                     ?: throw IllegalStateException("User ID is null")
@@ -136,6 +144,8 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                                 imagePath = rawSong.artwork,
                                 audioPath = rawSong.url,
                                 primaryColor = primaryColor,
+                                remoteAudioPath = rawSong.url,
+                                remoteImagePath = rawSong.artwork,
                                 secondaryColor = secondaryColor,
                                 userId = userId,
                                 isDownloaded = false
@@ -150,38 +160,52 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                 } else if (
                     song.title != rawSong.title ||
                     song.artist != rawSong.artist ||
-                    song.imagePath != rawSong.artwork ||
-                    song.audioPath != rawSong.url
+                    song.remoteImagePath != rawSong.artwork ||
+                    song.remoteAudioPath != rawSong.url
                 ) {
-                    val uriImage = getUriFromPath(rawSong.artwork)
-                    val colors = extractColorsFromImage(context, uriImage)
-                    val primaryColor = colors[0].toArgb()
-                    val secondaryColor = colors[1].toArgb()
-                    val thumbnail = rawSong.artwork
-                    val audio = rawSong.url
+                    var primaryColor = song.primaryColor
+                    var secondaryColor = song.secondaryColor
+                    var remoteAudioPath = song.remoteAudioPath
+                    var remoteImagePath = song.remoteImagePath
+                    var audioPath = song.audioPath
+                    var imagePath = song.imagePath
 
-                    // TODO: handle this
-//                    if (song.isDownloaded) {
-//                        val uriAudio = getUriFromPath(rawSong.url)
-//                        val imageJob = async(Dispatchers.IO) {
-//                            thumbnail = repository.saveThumbnail(uriImage, userId)
-//                        }
-//                        val audioJob = async(Dispatchers.IO) {
-//                            audio = repository.saveAudio(uriAudio, userId)
-//                        }
-//                        imageJob.await()
-//                        audioJob.await()
-//                        filesToUndo += listOf(thumbnail, audio)
-//                        filesToDelete += listOf(song.imagePath, song.audioPath)
-//                    }
+                    if (remoteImagePath != rawSong.artwork || remoteAudioPath != rawSong.url) {
+                        val uriImage = getUriFromPath(rawSong.artwork)
+                        val colors = extractColorsFromImage(context, uriImage)
+                        primaryColor = colors[0].toArgb()
+                        secondaryColor = colors[0].toArgb()
+
+                        if (song.isDownloaded) {
+                            val uriAudio = getUriFromPath(rawSong.url)
+                            val imageJob = async(Dispatchers.IO) {
+                                imagePath = repository.saveThumbnail(uriImage, userId)
+                            }
+                            val audioJob = async(Dispatchers.IO) {
+                                audioPath = repository.saveAudio(uriAudio, userId)
+                            }
+                            imageJob.await()
+                            audioJob.await()
+                            filesToUndo += listOf(imagePath, audioPath)
+                            filesToDelete += listOf(song.imagePath, song.audioPath)
+                        } else {
+                            audioPath = rawSong.url
+                            imagePath = rawSong.artwork
+                        }
+                    }
+
+                    remoteAudioPath = rawSong.url
+                    remoteImagePath = rawSong.artwork
 
                     val songUpdate = withContext(Dispatchers.IO) {
                         repository.updateAndGetSong(
                             song = song.copy(
                                 title = rawSong.title,
                                 artist = rawSong.artist,
-                                imagePath = thumbnail,
-                                audioPath = audio,
+                                imagePath = imagePath,
+                                audioPath = audioPath,
+                                remoteAudioPath = remoteAudioPath,
+                                remoteImagePath = remoteImagePath,
                                 primaryColor = primaryColor,
                                 secondaryColor = secondaryColor
                             ),
@@ -196,12 +220,32 @@ class HomeViewModel(application: Application, private val globalViewModel: Globa
                     songToPlay = song.toSong()
                 }
 
+                launch(Dispatchers.IO) {
+                    filesToDelete.forEach { path ->
+                        try {
+                            File(path).delete()
+                        } catch (e: Exception) {
+                            Log.e("LOAD_ONLINE_SONGS", "Failed to delete $path", e)
+                        }
+                    }
+                }
+
                 if (songToPlay != null) {
                     globalViewModel.playSong(songToPlay)
                     onSuccess()
                 }
             } catch (e: Exception) {
                 Log.e("LOAD_ONLINE_SONGS", "Error: ${e.message}", e)
+
+                launch(Dispatchers.IO) {
+                    filesToUndo.forEach { path ->
+                        try {
+                            File(path).delete()
+                        } catch (e: Exception) {
+                            Log.e("LOAD_ONLINE_SONGS", "Failed to undo $path", e)
+                        }
+                    }
+                }
             }
         }
     }

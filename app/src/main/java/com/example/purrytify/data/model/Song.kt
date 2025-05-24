@@ -7,6 +7,8 @@ data class Song(
     val artist: String,
     val imagePath: String,
     val audioPath: String,
+    val remoteImagePath: String? = null,
+    val remoteAudioPath: String? = null,
     val isLiked: Boolean = false,
     val lastPlayed: Long? = null,
     val primaryColor: Int,

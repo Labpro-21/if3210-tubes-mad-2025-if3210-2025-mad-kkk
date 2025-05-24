@@ -53,20 +53,20 @@ import com.example.purrytify.ui.component.NoInternetScreen
 import com.example.purrytify.ui.component.SongOptionsSheet
 import com.example.purrytify.ui.component.TopSongCard
 import com.example.purrytify.ui.model.GlobalViewModel
-import com.example.purrytify.ui.model.TopGlobalViewModel
+import com.example.purrytify.ui.model.RecommendationsViewModel
 import com.example.purrytify.worker.LogoutListener
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopFiftyGlobalScreen(
+fun RecommendationsScreen(
     globalViewModel: GlobalViewModel,
     navController: NavController,
     showDetail: () -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel: TopGlobalViewModel = viewModel(
-        factory = TopGlobalViewModel.TopGlobalViewModelFactory(
+    val viewModel: RecommendationsViewModel = viewModel(
+        factory = RecommendationsViewModel.RecommendationsViewModelFactory(
             context.applicationContext as Application,
             globalViewModel
         )
@@ -82,8 +82,6 @@ fun TopFiftyGlobalScreen(
     var showSong by remember { mutableStateOf<Song?>(null) }
     var showIndex by remember { mutableStateOf<Int?>(null) }
 
-    val isDownloadLoading by globalViewModel.isTopGlobalDownloading.collectAsState()
-
     LogoutListener {
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
@@ -94,8 +92,8 @@ fun TopFiftyGlobalScreen(
 
     LaunchedEffect(isConnected) {
         if (isConnected) {
-            if (viewModel.songs.isEmpty()) {
-                viewModel.loadOnlineSong()
+            if (viewModel.recommendedSongs.isEmpty()) {
+                viewModel.loadRecommendedSongs()
             } else {
                 viewModel.isLoading = false
                 viewModel.success = true
@@ -110,7 +108,7 @@ fun TopFiftyGlobalScreen(
         PullToRefreshBox(
             isRefreshing = viewModel.isLoading,
             onRefresh = {
-                viewModel.loadOnlineSong()
+                viewModel.loadRecommendedSongs()
             }) {
             LazyColumn {
                 item {
@@ -120,8 +118,8 @@ fun TopFiftyGlobalScreen(
                             .background(
                                 Brush.verticalGradient(
                                     colorStops = arrayOf(
-                                        0.0f to Color(0xFF1C8075),
-                                        0.4f to Color(0xFF1D4569),
+                                        0.0f to Color(0xFF8B008B),
+                                        0.4f to Color(0xFF4B0082),
                                         1.0f to Color(0xFF121212)
                                     ),
                                 )
@@ -153,14 +151,14 @@ fun TopFiftyGlobalScreen(
                                     .fillMaxWidth(), horizontalArrangement = Arrangement.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.top_global_cover),
-                                    contentDescription = "Playlist Cover",
+                                    painter = painterResource(id = R.drawable.jazz), // TODO: change picture
+                                    contentDescription = "Recommendations Cover",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.size(223.dp)
                                 )
                             }
                             Text(
-                                text = "Your daily update of most played tracks globally",
+                                text = "Songs we think you'll love!",
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 14.dp),
@@ -183,7 +181,7 @@ fun TopFiftyGlobalScreen(
                                 )
                             }
                             Text(
-                                text = "May 2025 • 2h 55min",
+                                text = "Based on your listening habits",
                                 color = Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(top = 1.dp, bottom = 8.dp),
                                 fontSize = 12.sp,
@@ -196,13 +194,9 @@ fun TopFiftyGlobalScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(
-                                onClick = {
-                                    globalViewModel.onTopGlobalDownloadStart()
-                                    globalViewModel.downloadSongs(viewModel.songs, "TOPGLOBAL")
-                                },
-                                enabled = !isDownloadLoading && !viewModel.isLoading
-                            ) {
+                            IconButton(onClick = {
+                                // TODO: download all recommended songs
+                            }) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_download),
                                     tint = Color.White.copy(0.7f),
@@ -219,10 +213,10 @@ fun TopFiftyGlobalScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 IconButton(onClick = {
-                                    if (viewModel.songs.isNotEmpty()) {
-                                        globalViewModel.playSongs(viewModel.songs)
+                                    if (viewModel.recommendedSongs.isNotEmpty()) {
+                                        globalViewModel.playSongs(viewModel.recommendedSongs)
                                     }
-                                }, enabled = !viewModel.isLoading) {
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play & Pause",
@@ -235,9 +229,9 @@ fun TopFiftyGlobalScreen(
                         }
                     }
                 }
-                itemsIndexed(viewModel.songs) { index, song ->
+                itemsIndexed(viewModel.recommendedSongs) { index, song ->
                     TopSongCard(index + 1, song, {
-                        val songs = viewModel.songs
+                        val songs = viewModel.recommendedSongs
                         val songSize = songs.size
                         if (songSize == 0) return@TopSongCard
 
@@ -274,7 +268,7 @@ fun TopFiftyGlobalScreen(
                 },
                 onStartNewRadio = {
                     val idx = showIndex ?: return@SongOptionsSheet
-                    val songs = viewModel.songs
+                    val songs = viewModel.recommendedSongs
                     val songSize = songs.size
                     if (songSize == 0) return@SongOptionsSheet
 
@@ -297,7 +291,7 @@ fun TopFiftyGlobalScreen(
     } else {
         NoInternetScreen {
             scope.launch {
-                viewModel.loadOnlineSong()
+                viewModel.loadRecommendedSongs()
             }
         }
     }

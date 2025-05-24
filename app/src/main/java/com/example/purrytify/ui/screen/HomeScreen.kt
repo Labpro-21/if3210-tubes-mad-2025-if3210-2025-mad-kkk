@@ -149,63 +149,95 @@ fun HomeScreen(
                     fontFamily = Poppins
                 )
 
-                Row(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.global),
-                            contentDescription = "Top Global Cover",
+                    item {
+                        Column(
                             modifier = Modifier
-                                .size(120.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        Text(
-                            text = "Your daily update of most played tracks globally",
-                            color = Color.Gray,
-                            fontSize = 12.sp,
-                            maxLines = 2,
-                            lineHeight = 16.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            fontFamily = Poppins,
-                            letterSpacing = 0.2.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
+                                .width(120.dp)
+                                .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyGlobal.route) })
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.global),
+                                contentDescription = "Top Global Cover",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = "Your daily update of most played tracks globally",
+                                color = Color.Gray,
+                                fontSize = 12.sp,
+                                maxLines = 2,
+                                lineHeight = 16.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                fontFamily = Poppins,
+                                letterSpacing = 0.2.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
                     }
-                    Column(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
 
-                    ) {
-                        Image(
-                            painter = painterResource(
-                                CountryConstant.CountryImage[userCountry]
-                                    ?: R.drawable.id
-                            ),
-                            contentDescription = "Top Country Cover",
+                    item {
+                        Column(
                             modifier = Modifier
-                                .size(120.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        Text(
-                            text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
-                            color = Color.Gray,
-                            fontSize = 12.sp,
-                            maxLines = 2,
-                            lineHeight = 16.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            fontFamily = Poppins,
-                            letterSpacing = 0.2.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+                                .width(120.dp)
+                                .clickable(onClick = { navController.navigate(Screen.Home.TopFiftyCountry.route) })
+                        ) {
+                            Image(
+                                painter = painterResource(
+                                    CountryConstant.CountryImage[userCountry]
+                                        ?: R.drawable.id
+                                ),
+                                contentDescription = "Top Country Cover",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
+                                color = Color.Gray,
+                                fontSize = 12.sp,
+                                maxLines = 2,
+                                lineHeight = 16.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                fontFamily = Poppins,
+                                letterSpacing = 0.2.sp,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
+
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .clickable(onClick = { navController.navigate(Screen.Home.Recommendations.route) })
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.jazz), // TODO: change picture
+                                contentDescription = "Recommendations Cover",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = "Discover new songs picked just for you!",
+                                color = Color.Gray,
+                                fontSize = 12.sp,
+                                maxLines = 2,
+                                lineHeight = 16.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                fontFamily = Poppins,
+                                letterSpacing = 0.2.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
                     }
                 }
 
@@ -264,6 +296,7 @@ fun HomeScreen(
         }
 
         IconButton(
+
             onClick = { navController.navigate(Screen.QrCodeScanner.route) },
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -313,6 +346,11 @@ fun HomeScreen(
                 },
                 onAddToNext = {
                     globalViewModel.addToNext(showSong!!)
+                },
+                onDownloadSong = {
+                    if (showSong != null && !showSong!!.isDownloaded) {
+                        globalViewModel.downloadSongs(listOf(showSong!!), "")
+                    }
                 }
             )
         }
