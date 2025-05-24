@@ -75,14 +75,20 @@ class RecommendationsViewModel(
                     ?: throw IllegalStateException("User ID is null")
 
                 val likedArtistBased = withContext(Dispatchers.IO) {
-                    songRecommendationRepository.getLikedArtistsBasedRecommendations(currentUserId).first()
+                    songRecommendationRepository.getLikedArtistsBasedRecommendations(currentUserId)
+                        .first()
                 }
                 Log.d("RecommendationsVM", "Liked Artist Based: ${likedArtistBased.size} songs")
 
                 val durationArtistBased = withContext(Dispatchers.IO) {
-                    songRecommendationRepository.getDurationArtistsBasedRecommendations(currentUserId).first()
+                    songRecommendationRepository.getDurationArtistsBasedRecommendations(
+                        currentUserId
+                    ).first()
                 }
-                Log.d("RecommendationsVM", "Duration Artist Based: ${durationArtistBased.size} songs")
+                Log.d(
+                    "RecommendationsVM",
+                    "Duration Artist Based: ${durationArtistBased.size} songs"
+                )
 
                 val combinedUserRecommendations = (likedArtistBased + durationArtistBased)
                     .distinctBy { it.id }
@@ -90,10 +96,16 @@ class RecommendationsViewModel(
                 val finalRecommendations = mutableListOf<SongEntity>()
                 finalRecommendations.addAll(combinedUserRecommendations)
 
-                Log.d("RecommendationsVM", "User-related recommendations combined: ${finalRecommendations.size} songs")
+                Log.d(
+                    "RecommendationsVM",
+                    "User-related recommendations combined: ${finalRecommendations.size} songs"
+                )
 
                 if (finalRecommendations.size < MIN_RECOMMENDATIONS_TARGET) {
-                    Log.d("RecommendationsVM", "Below target (${finalRecommendations.size} < $MIN_RECOMMENDATIONS_TARGET). Fetch Top Global Songs.")
+                    Log.d(
+                        "RecommendationsVM",
+                        "Below target (${finalRecommendations.size} < $MIN_RECOMMENDATIONS_TARGET). Fetch Top Global Songs."
+                    )
 
                     val context = getApplication<Application>().applicationContext
 
@@ -101,61 +113,109 @@ class RecommendationsViewModel(
                         try {
                             ApiClient.onlineSongService.topGlobalSongs()
                         } catch (e: Exception) {
-                            Log.e("RecommendationsVM", "Error fetching online top global songs: ${e.message}", e)
+                            Log.e(
+                                "RecommendationsVM",
+                                "Error fetching online top global songs: ${e.message}",
+                                e
+                            )
                             emptyList()
                         }
                     }
 
                     val sortedOnlineSongs = rawOnlineSongs.sortedBy { it.rank }
-                    Log.d("RecommendationsVM", "Fetched ${sortedOnlineSongs.size} song from Top Global Songs.")
+                    Log.d(
+                        "RecommendationsVM",
+                        "Fetched ${sortedOnlineSongs.size} song from Top Global Songs."
+                    )
+
+                    val serverIds = sortedOnlineSongs.map { it.id }
+                    val existing = songRepository
+                        .getSongsByServerId(serverIds, currentUserId)
+                        .associateBy { it.serverId }
+
+                    val toInsert = mutableListOf<SongEntity>()
 
                     for (onlineSong in sortedOnlineSongs) {
                         if (finalRecommendations.size >= MIN_RECOMMENDATIONS_TARGET) {
-                            Log.d("RecommendationsVM", "Target (${MIN_RECOMMENDATIONS_TARGET}) reached. Stopping.")
+                            Log.d(
+                                "RecommendationsVM",
+                                "Target (${MIN_RECOMMENDATIONS_TARGET}) reached. Stopping."
+                            )
                             break
                         }
-                        if (finalRecommendations.none { it.serverId == onlineSong.id }) {
-                            Log.d("RecommendationsVM", "Add top global song: ${onlineSong.title}")
-                            val uriImage = getUriFromPath(onlineSong.artwork)
-                            val colors = extractColorsFromImage(context, uriImage)
-                            val primaryColor = colors[0].toArgb()
-                            val secondaryColor = colors[1].toArgb()
 
-                            finalRecommendations.add(
-                                SongEntity(
+                        if (finalRecommendations.none { it.serverId == onlineSong.id }) {
+                            val local = existing[onlineSong.id]
+                            if (local == null) {
+                                val uriImage = getUriFromPath(onlineSong.artwork)
+                                val colors = extractColorsFromImage(context, uriImage)
+                                val primaryColor = colors[0].toArgb()
+                                val secondaryColor = colors[1].toArgb()
+                                toInsert += SongEntity(
                                     serverId = onlineSong.id,
                                     title = onlineSong.title,
                                     artist = onlineSong.artist,
                                     imagePath = onlineSong.artwork,
                                     audioPath = onlineSong.url,
+                                    remoteImagePath = onlineSong.artwork,
+                                    remoteAudioPath = onlineSong.url,
                                     primaryColor = primaryColor,
                                     secondaryColor = secondaryColor,
                                     userId = currentUserId,
-                                    isLiked = false,
-                                    lastPlayed = 0,
                                     isDownloaded = false
                                 )
-                            )
-                        } else {
-                            Log.d("RecommendationsVM", "Skipping duplicate online global song (serverId): ${onlineSong.title}")
+                                finalRecommendations += SongEntity(
+                                    serverId = onlineSong.id,
+                                    title = onlineSong.title,
+                                    artist = onlineSong.artist,
+                                    imagePath = onlineSong.artwork,
+                                    audioPath = onlineSong.url,
+                                    remoteImagePath = onlineSong.artwork,
+                                    remoteAudioPath = onlineSong.url,
+                                    primaryColor = primaryColor,
+                                    secondaryColor = secondaryColor,
+                                    userId = currentUserId,
+                                    isDownloaded = false
+                                )
+                            } else {
+                                finalRecommendations += local.copy()
+                            }
                         }
+                    }
+
+                    withContext(Dispatchers.IO) {
+                        songRepository.insertAndUpdate(
+                            toInsert,
+                            emptyList(),
+                            serverIds,
+                            currentUserId
+                        )
                     }
                 }
 
-                Log.d("RecommendationsVM", "Final recommendations list size before conversion: ${finalRecommendations.size} songs")
+                Log.d(
+                    "RecommendationsVM",
+                    "Final recommendations list size before conversion: ${finalRecommendations.size} songs"
+                )
 
                 withContext(Dispatchers.Main) {
                     recommendedSongs.clear()
                     recommendedSongs.addAll(finalRecommendations.map { it.toSong() })
                     success = true
                 }
-                Log.d("RecommendationsVM", "Recommended songs list updated. Final size: ${recommendedSongs.size}")
+                Log.d(
+                    "RecommendationsVM",
+                    "Recommended songs list updated. Final size: ${recommendedSongs.size}"
+                )
 
 
             } catch (e: Exception) {
                 Log.e("RecommendationsVM", "Error loading recommended songs: ${e.message}", e)
                 if (e is ConnectException || e is UnknownHostException) {
-                    Log.w("RecommendationsVM", "Network issue: Could not fetch online global songs. Recommendations might be sparse.")
+                    Log.w(
+                        "RecommendationsVM",
+                        "Network issue: Could not fetch online global songs. Recommendations might be sparse."
+                    )
                 }
                 withContext(Dispatchers.Main) {
                     success = false
@@ -164,7 +224,10 @@ class RecommendationsViewModel(
                 withContext(Dispatchers.Main) {
                     isLoading = false
                 }
-                Log.d("RecommendationsVM", "Finished loading recommended songs. isLoading: $isLoading")
+                Log.d(
+                    "RecommendationsVM",
+                    "Finished loading recommended songs. isLoading: $isLoading"
+                )
             }
         }
     }
