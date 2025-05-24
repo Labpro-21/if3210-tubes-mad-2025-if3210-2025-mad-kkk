@@ -79,6 +79,7 @@ import java.util.Locale
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.os.Environment
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.LocationServices
@@ -433,6 +434,7 @@ fun ProfileScreen(
                                                     "Failed exporting to PDF",
                                                     Toast.LENGTH_LONG
                                                 ).show()
+                                                Log.d("ERROR PDF", error)
                                                 // Handle error (show toast, etc.)
                                             }
                                         )

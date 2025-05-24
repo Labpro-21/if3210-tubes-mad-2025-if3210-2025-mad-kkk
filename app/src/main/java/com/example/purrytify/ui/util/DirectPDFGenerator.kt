@@ -3,6 +3,7 @@ package com.example.purrytify.ui.util
 import android.content.Context
 import android.graphics.*
 import android.graphics.pdf.PdfDocument
+import android.os.Environment
 import com.example.purrytify.R
 import androidx.core.content.res.ResourcesCompat
 import com.example.purrytify.service.Profile
@@ -185,7 +186,11 @@ class DirectPDFGenerator(private val context: Context) {
             pdfDocument.finishPage(page)
 
             // Save to file
-            val documentsDir = File(context.getExternalFilesDir(null), "Documents")
+            val documentsDir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+                "Purrytify"
+            )
+
             if (!documentsDir.exists()) {
                 documentsDir.mkdirs()
             }

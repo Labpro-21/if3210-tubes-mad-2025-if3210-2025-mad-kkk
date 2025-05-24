@@ -11,6 +11,16 @@
         name="documents"
         path="Documents/" />
 
+    <!-- Public Documents directory - ADD THIS -->
+    <external-path
+        name="public_documents"
+        path="Documents/" />
+
+    <!-- Root external storage - ADD THIS -->
+    <external-path
+        name="external_storage"
+        path="." />
+
     <!-- Cache directory -->
 <!--    <external-cache-path-->
 <!--        name="external_cache"-->
