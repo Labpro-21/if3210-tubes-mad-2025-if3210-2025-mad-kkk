@@ -300,7 +300,7 @@ fun HomeScreen(
             onClick = { navController.navigate(Screen.QrCodeScanner.route) },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 16.dp, top = 30.dp)
+                .padding(end = 6.dp, top = 30.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.QrCodeScanner,
@@ -346,6 +346,11 @@ fun HomeScreen(
                 },
                 onAddToNext = {
                     globalViewModel.addToNext(showSong!!)
+                },
+                onDownloadSong = {
+                    if (showSong != null && !showSong!!.isDownloaded) {
+                        globalViewModel.downloadSongs(listOf(showSong!!), "")
+                    }
                 }
             )
         }

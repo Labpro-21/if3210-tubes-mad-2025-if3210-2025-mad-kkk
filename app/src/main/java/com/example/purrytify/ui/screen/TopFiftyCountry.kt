@@ -85,6 +85,7 @@ fun TopFiftyCountryScreen(
     var showIndex by remember { mutableStateOf<Int?>(null) }
 
     val userCountry by globalViewModel.userLocation.collectAsState()
+    val isDownloadLoading by globalViewModel.isTopCountryDownloading.collectAsState()
 
     LogoutListener {
         navController.navigate(Screen.Login.route) {
@@ -214,12 +215,16 @@ fun TopFiftyCountryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = {
-                                // TODO: download all songs
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.onTopCountryDownloadStart()
+                                    globalViewModel.downloadSongs(viewModel.songs, "TOPCOUNTRY")
+                                },
+                                enabled = !isDownloadLoading && !viewModel.isLoading
+                            ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_download),
-                                    tint = Color.White.copy(0.7f),
+                                    tint = if (viewModel.isAllDownloaded) Color.Green.copy(0.7f) else Color.White.copy(0.7f),
                                     contentDescription = "Download All",
                                     modifier = Modifier
                                         .size(20.dp)
@@ -234,7 +239,7 @@ fun TopFiftyCountryScreen(
                             ) {
                                 IconButton(onClick = {
                                     globalViewModel.playSongs(viewModel.songs)
-                                }) {
+                                }, enabled = !viewModel.isLoading) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play & Pause",
@@ -298,6 +303,11 @@ fun TopFiftyCountryScreen(
                 },
                 onAddToNext = {
                     globalViewModel.addToNext(showSong!!)
+                },
+                onDownloadSong = {
+                    if (showSong != null && !showSong!!.isDownloaded) {
+                        globalViewModel.downloadSongs(listOf(showSong!!), "")
+                    }
                 }
             )
         }

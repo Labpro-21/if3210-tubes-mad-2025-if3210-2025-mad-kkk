@@ -56,7 +56,8 @@ fun SongOptionsSheet(
     onAddToQueue: () -> Unit,
     onLiked: () -> Unit,
     onStartNewRadio: () -> Unit,
-    onAddToNext: () -> Unit
+    onAddToNext: () -> Unit,
+    onDownloadSong: () -> Unit
 ) {
     val context = LocalContext.current
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -137,7 +138,11 @@ fun SongOptionsSheet(
                 SheetOption(icon = Icons.Default.Edit, text = "Edit Song", onClick = onEdit)
             }
             if (song.serverId != null && !song.isDownloaded) {
-                SheetOption(icon = Icons.Default.Download, text = "Download Song") { }
+                SheetOption(icon = Icons.Default.Download, text = "Download Song") {
+                    onDownloadSong()
+                    Toast.makeText(context, "Downloading ${song.title}", Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                }
             }
         }
     }

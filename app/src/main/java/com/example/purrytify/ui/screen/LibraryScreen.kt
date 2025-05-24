@@ -381,6 +381,11 @@ fun LibraryScreen(
                 },
                 onAddToNext = {
                     globalViewModel.addToNext(showSong!!)
+                },
+                onDownloadSong = {
+                    if (showSong != null && !showSong!!.isDownloaded) {
+                        globalViewModel.downloadSongs(listOf(showSong!!), "")
+                    }
                 }
             )
         }

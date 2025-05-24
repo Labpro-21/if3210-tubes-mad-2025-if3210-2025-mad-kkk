@@ -1,8 +1,10 @@
 package com.example.purrytify.ui.model
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.datastore.preferences.protobuf.Api
 import androidx.lifecycle.AndroidViewModel
@@ -21,6 +23,8 @@ import com.example.purrytify.data.repository.SongLogsRepository
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.network.NetworkMonitor
 import com.example.purrytify.service.ApiClient
+import com.example.purrytify.service.DownloadRequest
+import com.example.purrytify.service.DownloadService
 import com.example.purrytify.service.RefreshRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.lang.Thread.State
 import java.util.UUID
 import kotlin.math.min
 
@@ -85,6 +90,12 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private var lastTimePlayed: Long
 
+    // download loading
+    private val _isTopGlobalDownloading = MutableStateFlow(false)
+    val isTopGlobalDownloading: StateFlow<Boolean> = _isTopGlobalDownloading
+    private val _isTopCountryDownloading = MutableStateFlow(false)
+    val isTopCountryDownloading: StateFlow<Boolean> = _isTopCountryDownloading
+
     // constructor
     init {
         val songDao = SongDatabase.getDatabase(application).songDao()
@@ -99,6 +110,23 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
     override fun onCleared() {
         super.onCleared()
         networkMonitor.unregister()
+    }
+
+    // downloading related function
+    fun onTopGlobalDownloadStart() {
+        _isTopGlobalDownloading.value = true
+    }
+
+    fun onTopGlobalDownloadComplete() {
+        _isTopGlobalDownloading.value = false
+    }
+
+    fun onTopCountryDownloadStart() {
+        _isTopCountryDownloading.value = true
+    }
+
+    fun onTopCountryDownloadComplete() {
+        _isTopCountryDownloading.value = false
     }
 
     // user related functions
@@ -348,6 +376,29 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun downloadSongs(songs: List<Song>, downloadType: String) {
+        if (userId.value == null) return;
+        val realSongs = songs.filter { song -> !song.isDownloaded }
+        val downloadList = realSongs.map { song ->
+            DownloadRequest(
+                serverId = song.serverId!!,
+                userId = userId.value!!,
+                remoteAudioUrl = song.audioPath,
+                remoteImageUrl = song.imagePath,
+                title = song.title
+            )
+        }
+        if (downloadList.isNotEmpty()) {
+            Log.d("DOWNLOAD_SERVICE", "Declaring intent")
+            val intent = Intent(getApplication(), DownloadService::class.java).apply {
+                putExtra("downloadList", ArrayList(downloadList))
+                putExtra("downloadType", downloadType)
+            }
+            Log.d("DOWNLOAD_SERVICE", "Calling function")
+            ContextCompat.startForegroundService(getApplication(), intent)
+        }
+    }
+
     fun playNextSong() {
         if (userId.value == null) return
         mediaController?.seekToNextMediaItem()
@@ -519,6 +570,8 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
             artist = this.artist,
             imagePath = this.imagePath,
             audioPath = this.audioPath,
+            remoteImagePath = this.remoteImagePath,
+            remoteAudioPath = this.remoteAudioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,
