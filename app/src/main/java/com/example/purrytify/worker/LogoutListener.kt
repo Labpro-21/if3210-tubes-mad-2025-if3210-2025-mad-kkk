@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 @Composable
 fun LogoutListener(
@@ -18,7 +19,7 @@ fun LogoutListener(
     val logoutReceiver = remember {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == "com.purrytify.LOGOUT") {
+                if (intent?.action == "com.example.purrytify.LOGOUT") {
                     onLogout()
                 }
             }
@@ -26,20 +27,11 @@ fun LogoutListener(
     }
 
     DisposableEffect(Unit) {
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Context.RECEIVER_NOT_EXPORTED
-        } else {
-            0
-        }
-
-        context.registerReceiver(
-            logoutReceiver,
-            IntentFilter("com.purrytify.LOGOUT"),
-            flags
-        )
+        LocalBroadcastManager.getInstance(context)
+            .registerReceiver(logoutReceiver, IntentFilter("com.example.purrytify.LOGOUT"))
 
         onDispose {
-            context.unregisterReceiver(logoutReceiver)
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(logoutReceiver)
         }
     }
 }

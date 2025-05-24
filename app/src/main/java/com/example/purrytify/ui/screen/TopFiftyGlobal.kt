@@ -82,6 +82,8 @@ fun TopFiftyGlobalScreen(
     var showSong by remember { mutableStateOf<Song?>(null) }
     var showIndex by remember { mutableStateOf<Int?>(null) }
 
+    val isDownloadLoading by globalViewModel.isTopGlobalDownloading.collectAsState()
+
     LogoutListener {
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { inclusive = true }
@@ -194,9 +196,13 @@ fun TopFiftyGlobalScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = {
-                                // TODO: download all songs
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    globalViewModel.onTopGlobalDownloadStart()
+                                    globalViewModel.downloadSongs(viewModel.songs, "TOPGLOBAL")
+                                },
+                                enabled = !isDownloadLoading
+                            ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_download),
                                     tint = Color.White.copy(0.7f),
@@ -280,6 +286,11 @@ fun TopFiftyGlobalScreen(
                 },
                 onAddToNext = {
                     globalViewModel.addToNext(showSong!!)
+                },
+                onDownloadSong = {
+                    if (showSong != null && !showSong!!.isDownloaded) {
+                        globalViewModel.downloadSongs(listOf(showSong!!), "")
+                    }
                 }
             )
         }

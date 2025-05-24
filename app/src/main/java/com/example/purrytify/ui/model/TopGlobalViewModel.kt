@@ -21,6 +21,7 @@ import com.example.purrytify.service.OnlineSongResponse
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -34,6 +35,7 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
     var isLoading by mutableStateOf(true)
     var success by mutableStateOf(true)
     var songs by mutableStateOf<List<Song>>(emptyList())
+    var isAllDownloaded by mutableStateOf(false)
     private var loadJob: Job? = null
 
     init {
@@ -69,6 +71,8 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
                 val toInsert = mutableListOf<SongEntity>()
                 val toUpdate = mutableListOf<SongEntity>()
 
+                var isD = true;
+
                 sortedRaw.forEach { remote ->
                     val local = existing[remote.id]
 
@@ -88,44 +92,66 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
                             userId = userId,
                             isDownloaded = false
                         )
+                        isD = false;
                     } else if (
                         local.title != remote.title ||
                         local.artist != remote.artist ||
-                        local.imagePath != remote.artwork ||
-                        local.audioPath != remote.url
+                        local.remoteImagePath != remote.artwork ||
+                        local.remoteAudioPath != remote.url
                     ) {
-                        val uriImage = getUriFromPath(remote.artwork)
-                        val colors = extractColorsFromImage(context, uriImage)
-                        val primaryColor = colors[0].toArgb()
-                        val secondaryColor = colors[1].toArgb()
-                        var thumbnail = remote.artwork
-                        var audio = remote.url
+                        var primaryColor = local.primaryColor
+                        var secondaryColor = local.secondaryColor
+                        var remoteAudioPath = local.remoteAudioPath
+                        var remoteImagePath = local.remoteImagePath
+                        var audioPath = local.audioPath
+                        var imagePath = local.imagePath
 
-                        // TODO: handle this
-//                        if (local.isDownloaded) {
-//                            val uriAudio = getUriFromPath(remote.url)
-//                            val imageJob = async(Dispatchers.IO) {
-//                                thumbnail = songRepository.saveThumbnail(uriImage, userId)
-//                            }
-//                            val audioJob = async(Dispatchers.IO) {
-//                                audio = songRepository.saveAudio(uriAudio, userId)
-//                            }
-//                            imageJob.await()
-//                            audioJob.await()
-//                            filesToUndo += listOf(thumbnail, audio)
-//                            filesToDelete += listOf(local.imagePath, local.audioPath)
-//                        }
+                        // update primary and secondary color
+                        if (remoteImagePath != remote.artwork || remoteAudioPath != remote.url) {
+                            val uriImage = getUriFromPath(remote.artwork)
+                            val colors = extractColorsFromImage(context, uriImage)
+                            primaryColor = colors[0].toArgb()
+                            secondaryColor = colors[0].toArgb()
+
+                            if (local.isDownloaded) {
+                                val uriAudio = getUriFromPath(remote.url)
+                                val imageJob = async(Dispatchers.IO) {
+                                    imagePath = songRepository.saveThumbnail(uriImage, userId)
+                                }
+                                val audioJob = async(Dispatchers.IO) {
+                                    audioPath = songRepository.saveAudio(uriAudio, userId)
+                                }
+                                imageJob.await()
+                                audioJob.await()
+                                filesToUndo += listOf(imagePath, audioPath)
+                                filesToDelete += listOf(local.imagePath, local.audioPath)
+                            } else {
+                                audioPath = remote.url
+                                imagePath = remote.artwork
+                            }
+                        }
+
+                        remoteAudioPath = remote.url
+                        remoteImagePath = remote.artwork
 
                         toUpdate += local.copy(
                             title = remote.title,
                             artist = remote.artist,
-                            imagePath = thumbnail,
-                            audioPath = audio,
+                            imagePath = imagePath,
+                            audioPath = audioPath,
+                            remoteAudioPath = remoteAudioPath,
+                            remoteImagePath = remoteImagePath,
                             primaryColor = primaryColor,
                             secondaryColor = secondaryColor
                         )
                     }
+
+                    if (local != null && !local.isDownloaded) {
+                        isD = false;
+                    }
                 }
+
+                isAllDownloaded = isD
 
                 // transaction
                 songs = if (toInsert.isNotEmpty() || toUpdate.isNotEmpty()) {
@@ -203,6 +229,8 @@ class TopGlobalViewModel(application: Application, private val globalViewModel: 
             artist = this.artist,
             imagePath = this.imagePath,
             audioPath = this.audioPath,
+            remoteImagePath = this.remoteImagePath,
+            remoteAudioPath = this.remoteAudioPath,
             isLiked = this.isLiked,
             primaryColor = this.primaryColor,
             secondaryColor = this.secondaryColor,

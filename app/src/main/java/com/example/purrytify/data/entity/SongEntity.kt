@@ -14,6 +14,8 @@ data class SongEntity(
     val artist: String,
     val imagePath: String,
     val audioPath: String,
+    val remoteImagePath: String? = null,
+    val remoteAudioPath: String? = null,
     val dateAdded: Long = System.currentTimeMillis(),
     val lastPlayed: Long? = null,
     val isLiked: Boolean = false,
