@@ -83,8 +83,11 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.LocationServices
 import android.provider.Settings
-import androidx.core.app.ComponentActivity
 import androidx.core.content.edit
+import com.example.purrytify.service.Profile
+import com.example.purrytify.ui.model.SongStats
+import com.example.purrytify.ui.util.DirectPDFGenerator
+import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,7 +238,7 @@ fun ProfileScreen(
         val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
         if (prefs.getBoolean("check_location_on_resume", false)) {
             // Clear the flag
-            prefs.edit().putBoolean("check_location_on_resume", false).apply()
+            prefs.edit() { putBoolean("check_location_on_resume", false) }
 
             // Show dialog to confirm location update
             showLocationUpdateDialog = true
@@ -403,12 +406,47 @@ fun ProfileScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_download), // Make sure to have this icon
-                        contentDescription = "Download",
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (!isExportingPDF) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_download), // Make sure to have this icon
+                            contentDescription = "Download",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(24.dp)
+                                .clickable(onClick = {
+                                    scope.launch {
+                                        isExportingPDF = true
+                                        exportProfileToPDFDirect(
+                                            context = context,
+                                            userState = userState,
+                                            songStats = songStats,
+                                            monthlyCapsules = monthlyCapsules,
+                                            streaks = streaks,
+                                            onSuccess = { file ->
+                                                pdfFile = file
+                                                showPDFDialog = true
+                                                isExportingPDF = false
+                                            },
+                                            onError = { error ->
+                                                isExportingPDF = false
+                                                Toast.makeText(
+                                                    context,
+                                                    "Failed exporting to PDF",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                                // Handle error (show toast, etc.)
+                                            }
+                                        )
+                                    }
+                                }, enabled = !isExportingPDF)
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    }
+
                 }
 
                 // Monthly Sound Capsules
@@ -575,7 +613,7 @@ fun ProfileScreen(
                     // Launch Google Maps for manual selection
                     try {
                         // Use search intent with the search box open
-                        val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?z=2"))
+                        val mapIntent = Intent(Intent.ACTION_VIEW, "geo:0,0?z=2".toUri())
 
                         // Just launch the map without trying to handle the result
                         if (mapIntent.resolveActivity(context.packageManager) != null) {
@@ -583,18 +621,18 @@ fun ProfileScreen(
 
                             // Set a flag in SharedPreferences to indicate we should check location when resuming
                             val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
-                            prefs.edit().putBoolean("check_location_on_resume", true).apply()
+                            prefs.edit() { putBoolean("check_location_on_resume", true) }
                         } else {
                             // Try alternate approach
                             val alternateIntent = Intent(Intent.ACTION_VIEW,
-                                Uri.parse("https://maps.google.com/"))
+                                "https://maps.google.com/".toUri())
 
                             if (alternateIntent.resolveActivity(context.packageManager) != null) {
                                 context.startActivity(alternateIntent)
 
                                 // Set the same flag
                                 val prefs = context.getSharedPreferences("location_prefs", Context.MODE_PRIVATE)
-                                prefs.edit().putBoolean("check_location_on_resume", true).apply()
+                                prefs.edit() { putBoolean("check_location_on_resume", true) }
                             } else {
                                 Toast.makeText(
                                     context,
@@ -728,17 +766,17 @@ fun ProfileScreen(
                 Text("PDF Export Successful")
             },
             text = {
-                Text("Your profile has been exported to PDF successfully!")
+                Text("Your sound capsule has been exported to PDF successfully!")
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // Share or open the PDF
-                        sharePDF(context, pdfFile!!)
+                        // Open the PDF
+                        openPDF(context, pdfFile!!)
                         showPDFDialog = false
                     }
                 ) {
-                    Text("Share")
+                    Text("Open PDF")
                 }
             },
             dismissButton = {
@@ -973,8 +1011,8 @@ fun ListeningStreakItem(
     modifier: Modifier = Modifier
 ) {
     val startDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.startDate))
-    val endDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.endDate))
-    val dateRange = if (startDate == endDate) startDate else "$startDate - $endDate"
+//    val endDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.endDate))
+//    val dateRange = if (startDate == endDate) startDate else "$startDate - $endDate"
 
     Column(
         modifier = modifier
@@ -1028,7 +1066,7 @@ fun ListeningStreakItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = dateRange,
+                text = startDate,
 //                style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
                 fontWeight = FontWeight.Normal,
@@ -1253,25 +1291,75 @@ fun LocationSelectionBottomSheet(
     }
 }
 
-fun sharePDF(context: Context, file: File) {
+suspend fun exportProfileToPDFDirect(
+    context: Context,
+    userState: Profile?, // Your actual UserState type
+    songStats: SongStats?, // Your actual SongStats type
+    monthlyCapsules: List<MonthlySoundCapsule>, // Your actual MonthlySoundCapsule type
+    streaks: List<ListeningStreak?>, // Your actual ListeningStreak type
+    onSuccess: (File) -> Unit,
+    onError: (String) -> Unit
+) {
     try {
-        val uri = androidx.core.content.FileProvider.getUriForFile(
+        val pdfGenerator = DirectPDFGenerator(context)
+        val file = pdfGenerator.generateProfilePDF(
+            userState = userState,
+            songStats = songStats,
+            monthlyCapsules = monthlyCapsules,
+            streaks = streaks
+        )
+
+        if (file != null) {
+            onSuccess(file)
+        } else {
+            onError("Failed to generate PDF")
+        }
+    } catch (e: Exception) {
+        onError(e.message ?: "Unknown error")
+    }
+}
+
+fun openPDF(context: Context, file: File) {
+    try {
+        val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.provider",
             file
         )
 
-        val shareIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "application/pdf"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "My Music Profile")
+        val openIntent = Intent().apply {
+            action = Intent.ACTION_VIEW
+            setDataAndType(uri, "application/pdf")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        context.startActivity(Intent.createChooser(shareIntent, "Share PDF"))
+        // Check if there's an app that can handle PDF files
+        if (openIntent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(openIntent)
+        } else {
+            // If no PDF viewer is available, try to open with any available app
+            val chooserIntent = Intent.createChooser(openIntent, "Open PDF with")
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+            if (chooserIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(chooserIntent)
+            } else {
+                // Show a toast if no app can handle the PDF
+                Toast.makeText(
+                    context,
+                    "No PDF viewer app found. Please install a PDF reader.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     } catch (e: Exception) {
         e.printStackTrace()
-        // Handle error
+        Toast.makeText(
+            context,
+            "Error opening PDF: ${e.message}",
+            Toast.LENGTH_SHORT
+        ).show()
+        Log.d("ERROR PDF", e.message.toString())
     }
 }
