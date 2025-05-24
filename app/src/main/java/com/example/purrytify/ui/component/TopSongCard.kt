@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -83,6 +85,13 @@ fun TopSongCard(rank: Int, song: Song, onClick: () -> Unit, onLongClick: () -> U
                 overflow = TextOverflow.Ellipsis,
                 fontFamily = Poppins,
                 letterSpacing = 0.2.sp,
+            )
+        }
+        if (song.isDownloaded) {
+            Icon(
+                imageVector = Icons.Default.DownloadForOffline,
+                contentDescription = "Downloaded",
+                tint = Color.Green,
             )
         }
         IconButton(onClick = onLongClick) {
