@@ -174,6 +174,33 @@ interface SongLogsDao {
     ORDER BY DATE(at/1000, 'unixepoch')
 """)
     fun getMonthData(month: Int, year: Int) : Flow<List<MonthDataValue>>
+    // if need to seperated the code
+    // start
+    @Query("""
+    SELECT
+        artist,
+        SUM(CASE WHEN isLiked = 1 THEN 1 ELSE 0 END) AS likedSongsCount
+    FROM songs
+    WHERE userId = :userId
+    GROUP BY artist
+    HAVING likedSongsCount > 0 -- Only include artists with at least one liked song
+    ORDER BY likedSongsCount DESC
+    """)
+    suspend fun getArtistsByLikedSongsCount(userId: Int): List<ArtistLikedCount>
+
+    @Query("""
+    SELECT
+        s.artist,
+        COALESCE(SUM(l.duration), 0) AS totalDuration
+    FROM song_logs l
+    JOIN songs s ON l.id = s.id AND l.userId = s.userId
+    WHERE l.userId = :userId
+    GROUP BY s.artist
+    HAVING totalDuration > 0 -- Only include artists with some listening duration
+    ORDER BY totalDuration DESC
+    """)
+    suspend fun getArtistsByTotalListeningDuration(userId: Int): List<ArtistDurationCount>
+    // end
 }
 
 data class TopSongResult(
@@ -235,7 +262,17 @@ data class SongPlayDate(
 data class SongEarliestDate(
     val earliest_date: Long
 )
-
+// if need to seperated the code
+// start
+data class ArtistLikedCount(
+    val artist: String,
+    val likedSongsCount: Int
+)
+data class ArtistDurationCount(
+    val artist: String,
+    val totalDuration: Int // Make sure units (milliseconds) are consistent
+)
+// end
 //SELECT DISTINCT log1.id
 //FROM song_logs log1
 //JOIN song_logs log2 ON log1.id = log2.id AND

@@ -62,6 +62,7 @@ import com.example.purrytify.ui.screen.TopFiftyCountryScreen
 import com.example.purrytify.ui.screen.TopFiftyGlobalScreen
 import com.example.purrytify.ui.screen.TopMonthArtistScreen
 import com.example.purrytify.ui.screen.TopMonthSongScreen
+import com.example.purrytify.ui.screen.RecommendationsScreen
 import com.example.purrytify.ui.screen.QRCodeScannerScreen
 import com.example.purrytify.ui.screen.YAxisConfig
 import kotlinx.coroutines.launch
@@ -114,7 +115,10 @@ fun PurrytifyApp(
         else -> false
     }
 
-    val showPlayer = currentRoute != Screen.Splash.route && currentRoute != Screen.Login.route && currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
+    var showPlayer = currentRoute != Screen.Splash.route &&
+            currentRoute != Screen.Login.route &&
+            currentRoute != Screen.QrCodeScanner.route &&
+            currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
 
     val currentSong by globalViewModel.currentSong.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
@@ -178,7 +182,9 @@ fun PurrytifyApp(
                             navController
                         )
                     }
+
                     composable(Screen.QrCodeScanner.route) {
+                        showPlayer = false
                         QRCodeScannerScreen(navController = navController, globalViewModel = globalViewModel)
                     }
 
@@ -292,6 +298,15 @@ fun PurrytifyApp(
                                 navController
                             ) {
                                 showDetailSheet = true
+                            }
+                        }
+                        composable(Screen.Home.Recommendations.route) {
+                            RecommendationsScreen(
+                                globalViewModel,
+                                navController
+                            ) {
+                                showDetailSheet = true
+
                             }
                         }
                     }
