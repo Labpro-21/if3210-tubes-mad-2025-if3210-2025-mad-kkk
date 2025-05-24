@@ -33,34 +33,21 @@ fun NavigationRailBar(navController: NavHostController, modifier: Modifier = Mod
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isInHomeSection = currentRoute?.startsWith("home") == true
+    val isInProfileSection = currentRoute?.startsWith("profile") == true
 
     NavigationRail(modifier = modifier.statusBarsPadding()) {
         items.forEach { screen ->
             val isSelected = when (screen) {
                 Screen.Home -> isInHomeSection
+                Screen.Profile -> isInProfileSection
                 else -> currentRoute == screen.route
             }
             NavigationRailItem(
                 selected = isSelected,
                 onClick = {
-                    if (screen == Screen.Home && isInHomeSection) {
-                        if (currentRoute != Screen.Home.Main.route) {
-                            navController.navigate(Screen.Home.Main.route) {
-                                popUpTo(Screen.Home.route) {
-                                    inclusive = false
-                                    saveState = true
-                                }
-                            }
-                        }
-                    } else if (currentRoute != screen.route) {
-                        navController.navigate(screen.route) {
-                            popUpTo(0) {
-                                inclusive = false
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    navController.navigate(screen.route) {
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 icon = {

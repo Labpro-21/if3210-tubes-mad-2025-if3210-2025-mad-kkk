@@ -106,7 +106,8 @@ fun PurrytifyApp(
                 currentRoute == Screen.Profile.Main.route ||
                 currentRoute?.startsWith(Screen.Profile.TopArtist.route) == true ||
                 currentRoute?.startsWith(Screen.Profile.TopSong.route) == true ||
-                currentRoute == Screen.Profile.TimeListened.route -> true
+                currentRoute == Screen.Profile.TimeListened.route ||
+                currentRoute == Screen.Home.Recommendations.route -> true
         else -> false
     }
 

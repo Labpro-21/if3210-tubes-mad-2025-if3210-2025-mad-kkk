@@ -44,7 +44,7 @@ class RecommendationsViewModel(
 
     var isLoading by mutableStateOf(true)
 
-    var success by mutableStateOf(false)
+    var success by mutableStateOf(true)
 
     var recommendedSongs = mutableStateListOf<Song>()
         private set
