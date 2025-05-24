@@ -201,7 +201,7 @@ fun TopFiftyGlobalScreen(
                                     globalViewModel.onTopGlobalDownloadStart()
                                     globalViewModel.downloadSongs(viewModel.songs, "TOPGLOBAL")
                                 },
-                                enabled = !isDownloadLoading
+                                enabled = !isDownloadLoading && !viewModel.isLoading
                             ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_download),
@@ -222,7 +222,7 @@ fun TopFiftyGlobalScreen(
                                     if (viewModel.songs.isNotEmpty()) {
                                         globalViewModel.playSongs(viewModel.songs)
                                     }
-                                }) {
+                                }, enabled = !viewModel.isLoading) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play & Pause",

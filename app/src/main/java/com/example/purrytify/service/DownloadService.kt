@@ -13,9 +13,6 @@ import com.example.purrytify.R
 import com.example.purrytify.data.database.SongDatabase
 import com.example.purrytify.data.repository.SongRepository
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -38,7 +35,7 @@ class DownloadService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "purrytify_download_channel"
-        private const val NOTIF_ID = 1001
+        private const val NOTIF_ID = 1005
         const val EXTRA_DOWNLOAD_LIST = "downloadList"
     }
 

@@ -220,7 +220,7 @@ fun TopFiftyCountryScreen(
                                     globalViewModel.onTopCountryDownloadStart()
                                     globalViewModel.downloadSongs(viewModel.songs, "TOPCOUNTRY")
                                 },
-                                enabled = !isDownloadLoading
+                                enabled = !isDownloadLoading && !viewModel.isLoading
                             ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_download),
@@ -239,7 +239,7 @@ fun TopFiftyCountryScreen(
                             ) {
                                 IconButton(onClick = {
                                     globalViewModel.playSongs(viewModel.songs)
-                                }) {
+                                }, enabled = !viewModel.isLoading) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play & Pause",

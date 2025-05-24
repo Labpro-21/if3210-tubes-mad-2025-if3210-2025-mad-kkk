@@ -1,15 +1,17 @@
 package com.example.purrytify.data.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "songs"
+    tableName = "songs",
+    indices = [Index(value = ["serverId", "userId"], unique = true)]
 )
 data class SongEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val serverId: Int?,
+    val serverId: Int?,  // Nullable
     val title: String,
     val artist: String,
     val imagePath: String,
