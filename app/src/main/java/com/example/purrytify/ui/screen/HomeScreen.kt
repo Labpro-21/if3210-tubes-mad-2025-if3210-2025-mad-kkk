@@ -219,7 +219,7 @@ fun HomeScreen(
                                 .clickable(onClick = { navController.navigate(Screen.Home.Recommendations.route) })
                         ) {
                             Image(
-                                painter = painterResource(R.drawable.jazz), // TODO: change picture
+                                painter = painterResource(R.drawable.recom2), // TODO: change picture
                                 contentDescription = "Recommendations Cover",
                                 modifier = Modifier
                                     .size(120.dp)

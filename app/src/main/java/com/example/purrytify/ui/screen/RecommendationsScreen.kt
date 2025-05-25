@@ -151,7 +151,7 @@ fun RecommendationsScreen(
                                     .fillMaxWidth(), horizontalArrangement = Arrangement.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.jazz), // TODO: change picture
+                                    painter = painterResource(id = R.drawable.recom2), // TODO: change picture
                                     contentDescription = "Recommendations Cover",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.size(223.dp)
