@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.Recommend
+import androidx.compose.material.icons.filled.TurnSharpLeft
 
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
@@ -32,6 +33,9 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
         data object TimeListened: Screen("profile/timeListened", "Time Listened", Icons.Default.LockClock)
         data object CropImage : Screen("crop_image/{imageUri}", "Crop Image", Icons.Default.Crop) {
             fun createRoute(imageUri: String): String = "crop_image/${Uri.encode(imageUri)}"
+        }
+        data object ShareMonthlyCapsule : Screen("profile/shareCapsule", "Share Monthly Capsule", Icons.Default.TurnSharpLeft) {
+            fun createRoute(month: Int, year: Int): String = "profile/shareCapsule?month=$month&year=$year"
         }
     }
     data object Home : Screen("home", "Home", Icons.Default.Home) {

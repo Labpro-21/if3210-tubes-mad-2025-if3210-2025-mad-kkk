@@ -53,6 +53,9 @@ import com.google.android.gms.location.LocationServices
 import java.io.File
 import java.io.FileOutputStream
 import androidx.core.graphics.createBitmap
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 
 
 data class SongStats(
@@ -305,13 +308,33 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     fun updateLocation(countryCode: String) {
         viewModelScope.launch {
             try {
-                // Make API call to update user's location (country code)
-//                val response = userRepository.updateUserLocation(countryCode)
-//                if (response.isSuccessful) {
-//                    _location.value = countryCode
-//                }
+                val accessToken = tokenManager.getAccessToken() ?: run {
+                    return@launch
+                }
+
+                withContext(Dispatchers.IO) {
+                    // Create request body with proper media type
+
+                    // Create multipart body part
+                    val newLocation = MultipartBody.Part.createFormData(
+                        "location",
+                        countryCode
+                    )
+
+                    // Make the API call
+                    ApiClient.editProfileService.editProfileLocation(
+                        "Bearer $accessToken",
+                        newLocation
+                    )
+
+                    Log.d("EDIT LOCATION", "Upload successful")
+
+                    // Delete the temporary file after successful upload
+                }
+            } catch (e: retrofit2.HttpException) {
+                Log.e("EDIT LOCATION", "HTTP error: ${e.code()} - ${e.message()}")
             } catch (e: Exception) {
-                Log.e("ProfileViewModel", "Error updating location: ${e.message}")
+                Log.e("EDIT PROFILE", "Upload error: ${e.message}", e)
             }
         }
     }
@@ -336,73 +359,6 @@ class ProfileViewModel(application: Application, private val tokenManager: Token
     }
 }
 
-class ComposeToPdfExporter(private val context: Context) {
-
-    suspend fun exportComposableToPdf(
-        composableContent: @Composable () -> Unit,
-        fileName: String = "export_${System.currentTimeMillis()}.pdf"
-    ): File? = withContext(Dispatchers.IO) {
-        try {
-            // Create a bitmap from the composable
-            val bitmap = createBitmapFromComposable(composableContent)
-
-            // Create PDF document
-            val pdfDocument = PdfDocument()
-            val pageInfo = PdfDocument.PageInfo.Builder(
-                bitmap.width,
-                bitmap.height,
-                1
-            ).create()
-
-            val page = pdfDocument.startPage(pageInfo)
-            val canvas = page.canvas
-
-            // Draw bitmap to PDF canvas
-            canvas.drawBitmap(bitmap, 0f, 0f, null)
-
-            pdfDocument.finishPage(page)
-
-            // Save to file
-            val file = File(context.getExternalFilesDir(null), fileName)
-            val fileOutputStream = FileOutputStream(file)
-            pdfDocument.writeTo(fileOutputStream)
-            pdfDocument.close()
-            fileOutputStream.close()
-
-            bitmap.recycle()
-            file
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private suspend fun createBitmapFromComposable(
-        composableContent: @Composable () -> Unit
-    ): Bitmap = withContext(Dispatchers.Main) {
-        val composeView = ComposeView(context)
-        composeView.setContent {
-            Box(modifier = Modifier.size(612.dp, 792.dp)) {
-                composableContent()
-            }
-        }
-
-        // Measure and layout the view
-        val widthMeasureSpec = android.view.View.MeasureSpec.makeMeasureSpec(612, android.view.View.MeasureSpec.EXACTLY)
-        val heightMeasureSpec = android.view.View.MeasureSpec.makeMeasureSpec(792, android.view.View.MeasureSpec.EXACTLY)
-
-        composeView.measure(widthMeasureSpec, heightMeasureSpec)
-        composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
-
-        // Create bitmap and draw view to it
-        val bitmap = createBitmap(composeView.measuredWidth, composeView.measuredHeight)
-
-        val canvas = Canvas(bitmap)
-        composeView.draw(canvas)
-
-        bitmap
-    }
-}
 
 data class MonthlySoundCapsule(
     val month: String,

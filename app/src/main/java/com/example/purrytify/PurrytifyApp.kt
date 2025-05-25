@@ -1,5 +1,6 @@
 package com.example.purrytify
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -63,6 +64,7 @@ import com.example.purrytify.ui.screen.TopMonthArtistScreen
 import com.example.purrytify.ui.screen.TopMonthSongScreen
 import com.example.purrytify.ui.screen.RecommendationsScreen
 import com.example.purrytify.ui.screen.QRCodeScannerScreen
+import com.example.purrytify.ui.screen.ShareMonthlyCapsuleScreen
 import com.example.purrytify.ui.screen.YAxisConfig
 import com.example.purrytify.worker.DownloadListener
 import kotlinx.coroutines.launch
@@ -208,7 +210,7 @@ fun PurrytifyApp(
                                 }
                             )
                         ) { backStackEntry ->
-                            val month = backStackEntry.arguments?.getInt("month") ?: 3
+                            val month = backStackEntry.arguments?.getInt("month") ?: 5
                             val year = backStackEntry.arguments?.getInt("year") ?: 2025
                             TopMonthArtistScreen(
                                 globalViewModel,
@@ -230,7 +232,7 @@ fun PurrytifyApp(
                                 }
                             )
                         ) { backStackEntry ->
-                            val month = backStackEntry.arguments?.getInt("month") ?: 3
+                            val month = backStackEntry.arguments?.getInt("month") ?: 5
                             val year = backStackEntry.arguments?.getInt("year") ?: 2025
                             TopMonthSongScreen(
                                 globalViewModel,
@@ -255,6 +257,29 @@ fun PurrytifyApp(
                                 globalViewModel,
                                 navController,
                                 imageUri
+                            )
+                        }
+                        composable(
+                            route = Screen.Profile.ShareMonthlyCapsule.route + "?month={month}&year={year}",
+                            arguments = listOf(
+                                navArgument("month") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                },
+                                navArgument("year") {
+                                    type = NavType.IntType
+                                    nullable = false
+                                }
+                            )
+                        ) { backStackEntry ->
+                            Log.d("SHARE MONTHLY", "SHARE MONTHLY")
+                            val month = backStackEntry.arguments?.getInt("month") ?: 5
+                            val year = backStackEntry.arguments?.getInt("year") ?: 2025
+                            ShareMonthlyCapsuleScreen(
+                                globalViewModel,
+                                navController,
+                                month = month,
+                                year = year
                             )
                         }
                     }

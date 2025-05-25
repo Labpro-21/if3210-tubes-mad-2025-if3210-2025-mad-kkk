@@ -77,8 +77,10 @@ import java.time.Month
 import java.util.Date
 import java.util.Locale
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Environment
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -89,6 +91,7 @@ import com.example.purrytify.service.Profile
 import com.example.purrytify.ui.model.SongStats
 import com.example.purrytify.ui.util.DirectPDFGenerator
 import androidx.core.net.toUri
+import com.example.purrytify.OSMLocationPickerActivity
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,6 +130,10 @@ fun ProfileScreen(
     var isExportingPDF by remember { mutableStateOf(false) }
     var showPDFDialog by remember { mutableStateOf(false) }
     var pdfFile by remember { mutableStateOf<File?>(null) }
+
+//    var showShareScreen by remember { mutableStateOf(false) }
+//    var selectedCapsule by remember { mutableStateOf<MonthlySoundCapsule?>(null) }
+//    var selectedStreak by remember { mutableStateOf<ListeningStreak?>(null) }
 
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
@@ -194,6 +201,12 @@ fun ProfileScreen(
                     location?.let {
                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                         viewModel.updateLocation(countryCode)
+                        globalViewModel.setUserLocation(countryCode)
+                        Toast.makeText(
+                            context,
+                            "Location updated to $countryCode",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -202,6 +215,56 @@ fun ProfileScreen(
             showLocationPermissionDialog = true
         }
         showLocationSheet = false
+    }
+
+    val osmLocationPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { data ->
+                val latitude = data.getDoubleExtra("latitude", 0.0)
+                val longitude = data.getDoubleExtra("longitude", 0.0)
+                val address = data.getStringExtra("address") ?: "Selected Location"
+
+                // Convert coordinates to country code using your existing method
+                val location = android.location.Location("").apply {
+                    this.latitude = latitude
+                    this.longitude = longitude
+                }
+                val countryCode = viewModel.getCountryCodeFromLocation(location, context)
+
+                // Update location
+                viewModel.updateLocation(countryCode)
+                Toast.makeText(
+                    context,
+                    "Location updated to $countryCode",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                Log.d("OSM_LOCATION", "Selected: $latitude, $longitude -> $countryCode")
+
+                scope.launch {
+                    if (isConnected) {
+                        viewModel.loadUserProfile(
+                            onLogout = {
+                                viewModel.logout(onComplete = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                    globalViewModel.clearUserId()
+                                    globalViewModel.logout()
+                                })
+                            },
+                            onSuccess = {
+
+                            }
+                        )
+                    }
+                }
+            }
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(context, "Location selection cancelled", Toast.LENGTH_SHORT).show()
+        }
     }
 
     LogoutListener {
@@ -259,6 +322,7 @@ fun ProfileScreen(
                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                         Log.d("LOCATION_CC", countryCode)
                         viewModel.updateLocation(countryCode)
+                        globalViewModel.setUserLocation(countryCode)
                         Toast.makeText(
                             context,
                             "Location updated to $countryCode",
@@ -468,11 +532,23 @@ fun ProfileScreen(
                             },
                             onClickTimeListened = {
                                 navController.navigate(Screen.Profile.TimeListened.route)
+                            },
+                            onShare = { month, year ->
+                                navController.navigate(Screen.Profile.ShareMonthlyCapsule.createRoute(month, year))
+//                                selectedCapsule = monthlyCapsules[i]
+////                                shareType = ShareType.MONTHLY_CAPSULE
+//                                showShareScreen = true
+
                             }
                         )
                         if (streaks[i] != null) {
                             ListeningStreakItem(
                                 streak = streaks[i]!!,
+                                onShare = {
+//                                    selectedStreak = streaks[i]
+////                                    shareType = ShareType.LISTENING_STREAK
+//                                    showShareScreen = true
+                                },
                                 modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
                             )
                         }
@@ -591,6 +667,12 @@ fun ProfileScreen(
                                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                                         Log.d("LOCATION_CC", countryCode)
                                         viewModel.updateLocation(countryCode)
+                                        globalViewModel.setUserLocation(countryCode)
+                                        Toast.makeText(
+                                            context,
+                                            "Location updated to $countryCode",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                     if (location == null ) {
                                         Log.d("LOCATION_CC", "IS NULL")
@@ -652,6 +734,12 @@ fun ProfileScreen(
                         ).show()
                     }
 
+                    showLocationSheet = false
+                },
+                onOSMClick = {
+                    // Launch OSMDroid location picker
+                    val intent = Intent(context, OSMLocationPickerActivity::class.java)
+                    osmLocationPickerLauncher.launch(intent)
                     showLocationSheet = false
                 },
                 onDismiss = { showLocationSheet = false }
@@ -820,7 +908,8 @@ fun MonthlySoundCapsuleSection(
     modifier: Modifier = Modifier,
     onClickArtist: (Int, Int) -> Unit,
     onClickSong: (Int, Int) -> Unit,
-    onClickTimeListened: () -> Unit
+    onClickTimeListened: () -> Unit,
+    onShare: (Int, Int) -> Unit
 ) {
     val month = Month.valueOf(capsule.month.split(" ")[0].uppercase(Locale.getDefault())).value
     val year = capsule.month.split(" ")[1].toInt()
@@ -850,6 +939,7 @@ fun MonthlySoundCapsuleSection(
                 contentDescription = "Share",
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(18.dp)
+                    .clickable(onClick = { onShare(month, year) })
             )
         }
 
@@ -1010,7 +1100,8 @@ fun MonthlySoundCapsuleSection(
 @Composable
 fun ListeningStreakItem(
     streak: ListeningStreak,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShare: () -> Unit
 ) {
     val startDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.startDate))
 //    val endDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.endDate))
@@ -1080,6 +1171,7 @@ fun ListeningStreakItem(
                 contentDescription = "Share",
                 tint = Color.Gray,
                 modifier = Modifier.size(18.dp)
+                    .clickable(onClick = { onShare() })
             )
         }
     }
@@ -1193,6 +1285,7 @@ fun ProfilePictureBottomSheet(
 fun LocationSelectionBottomSheet(
     onAutomaticClick: () -> Unit,
     onManualClick: () -> Unit,
+    onOSMClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Column(
@@ -1283,6 +1376,33 @@ fun LocationSelectionBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Manual",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+
+            // OSMDroid option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onOSMClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFF9800)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_osm_2),
+                        contentDescription = "OSMDroid",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "OSMDroid",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White
                 )
