@@ -116,7 +116,8 @@ fun PurrytifyApp(
     var showPlayer = currentRoute != Screen.Splash.route &&
             currentRoute != Screen.Login.route &&
             currentRoute != Screen.QrCodeScanner.route &&
-            currentRoute?.startsWith(Screen.Profile.CropImage.route) == false
+            currentRoute?.startsWith(Screen.Profile.CropImage.route) == false &&
+            currentRoute.startsWith(Screen.Profile.ShareMonthlyCapsule.route) == false
 
     val currentSong by globalViewModel.currentSong.collectAsState()
     val duration by globalViewModel.duration.collectAsState()
