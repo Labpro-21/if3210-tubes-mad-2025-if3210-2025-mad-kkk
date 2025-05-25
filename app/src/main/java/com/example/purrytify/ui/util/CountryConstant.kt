@@ -35,4 +35,14 @@ object CountryConstant {
         "US" to "United States",
         "" to ""
     )
+
+    val CountrySet: Set<String> = setOf(
+        "BR",
+        "CH",
+        "DE",
+        "GB",
+        "ID",
+        "MY",
+        "US",
+    )
 }

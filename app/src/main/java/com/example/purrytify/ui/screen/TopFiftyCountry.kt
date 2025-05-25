@@ -125,11 +125,11 @@ fun TopFiftyCountryScreen(
                                     colorStops = arrayOf(
                                         0.0f to Color(
                                             CountryConstant.CountryColor[userCountry]?.first
-                                                ?: 0xFF1C8075
+                                                ?: 0xFFEF4E5E
                                         ),
                                         0.4f to Color(
-                                            CountryConstant.CountryColor[userCountry]?.first
-                                                ?: 0xFF1D4569
+                                            CountryConstant.CountryColor[userCountry]?.second
+                                                ?: 0xFFEB1F35
                                         ),
                                         1.0f to Color(0xFF121212)
                                     ),
@@ -179,7 +179,7 @@ fun TopFiftyCountryScreen(
                                 )
                             }
                             Text(
-                                text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
+                                text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry] ?: "Indonesia"}",
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 14.dp),

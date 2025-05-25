@@ -86,6 +86,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.LocationServices
 import android.provider.Settings
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.core.content.edit
 import com.example.purrytify.service.Profile
 import com.example.purrytify.ui.model.SongStats
@@ -346,217 +347,226 @@ fun ProfileScreen(
         }
     } else {
         if (isConnected && viewModel.success) {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    secondaryColor,
-                                    MaterialTheme.colorScheme.background
-                                ),
-                            )
-                        )
-                        .padding(top = 48.dp, bottom = 24.dp)
+            PullToRefreshBox(isRefreshing = viewModel.isLoading, onRefresh = {
+                viewModel.loadUserProfile(
+                    onLogout = {},
+                    onSuccess = {
+                        viewModel.loadSongStats()
+                        viewModel.loadSoundCapsules()
+                    }
+                )
+            }) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(contentAlignment = Alignment.BottomEnd) {
-                            LoadImage(
-                                "${baseUrl}uploads/profile-picture/${userState!!.profilePhoto}",
-                                contentDescription = "Profile Picture",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .clip(CircleShape),
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        secondaryColor,
+                                        MaterialTheme.colorScheme.background
+                                    ),
+                                )
                             )
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .clickable {
-                                        showBottomSheet = true
-                                    }
+                            .padding(top = 48.dp, bottom = 24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(contentAlignment = Alignment.BottomEnd) {
+                                LoadImage(
+                                    "${baseUrl}uploads/profile-picture/${userState!!.profilePhoto}",
+                                    contentDescription = "Profile Picture",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape),
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            showBottomSheet = true
+                                        }
 //                                    .background(Color.Gray.copy(alpha = 0.3f))
                                     ,
-                                contentAlignment = Alignment.Center
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_edit), // Make sure you have this icon
+                                        contentDescription = "Edit Profile Picture",
+                                        tint = Color.White.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = userState!!.username,
+//                            style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 18.sp
+                            )
+
+                            Text(
+                                text = userState!!.location,
+//                            style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 24.sp,
+                                modifier = Modifier.clickable(onClick = { showLocationSheet = true })
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Button(
+                                onClick = {
+                                    viewModel.logout(onComplete = {
+                                        navController.navigate(Screen.Login.route) {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                        globalViewModel.clearUserId()
+                                        globalViewModel.logout()
+                                    })
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Gray.copy(alpha = 0.3f)
+                                ),
+                                enabled = !viewModel.isLoggingOut,
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .height(36.dp)
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_edit), // Make sure you have this icon
-                                    contentDescription = "Edit Profile Picture",
-                                    tint = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(20.dp)
+                                Text(
+                                    text = "Log Out",
+                                    color = Color.White
                                 )
                             }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .padding(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        StatItem(value = songStats!!.totalSongs.toString(), label = "SONGS")
+                        StatItem(value = songStats!!.likedSongs.toString(), label = "LIKED")
+                        StatItem(value = songStats!!.listenedSongs.toString(), label = "LISTENED")
+                    }
 
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = userState!!.username,
-//                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            text = "Your sound capsule",
+//                        style = MaterialTheme.typography.titleMedium,
                             color = Color.White,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
-
-                        Text(
-                            text = userState!!.location,
-//                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 24.sp,
-                            modifier = Modifier.clickable(onClick = { showLocationSheet = true })
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Button(
-                            onClick = {
-                                viewModel.logout(onComplete = {
-                                    navController.navigate(Screen.Login.route) {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                    globalViewModel.clearUserId()
-                                    globalViewModel.logout()
-                                })
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Gray.copy(alpha = 0.3f)
-                            ),
-                            enabled = !viewModel.isLoggingOut,
-                            modifier = Modifier
-                                .width(120.dp)
-                                .height(36.dp)
-                        ) {
-                            Text(
-                                text = "Log Out",
-                                color = Color.White
+                        if (!isExportingPDF) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_download), // Make sure to have this icon
+                                contentDescription = "Download",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(24.dp)
+                                    .clickable(onClick = {
+                                        scope.launch {
+                                            isExportingPDF = true
+                                            exportProfileToPDFDirect(
+                                                context = context,
+                                                userState = userState,
+                                                songStats = songStats,
+                                                monthlyCapsules = monthlyCapsules,
+                                                streaks = streaks,
+                                                onSuccess = { file ->
+                                                    pdfFile = file
+                                                    showPDFDialog = true
+                                                    isExportingPDF = false
+                                                },
+                                                onError = { error ->
+                                                    isExportingPDF = false
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Failed exporting to PDF",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                    Log.d("ERROR PDF", error)
+                                                    // Handle error (show toast, etc.)
+                                                }
+                                            )
+                                        }
+                                    }, enabled = !isExportingPDF)
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
                             )
                         }
-                    }
-                }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    StatItem(value = songStats!!.totalSongs.toString(), label = "SONGS")
-                    StatItem(value = songStats!!.likedSongs.toString(), label = "LIKED")
-                    StatItem(value = songStats!!.listenedSongs.toString(), label = "LISTENED")
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Your sound capsule",
-//                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    if (!isExportingPDF) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_download), // Make sure to have this icon
-                            contentDescription = "Download",
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(24.dp)
-                                .clickable(onClick = {
-                                    scope.launch {
-                                        isExportingPDF = true
-                                        exportProfileToPDFDirect(
-                                            context = context,
-                                            userState = userState,
-                                            songStats = songStats,
-                                            monthlyCapsules = monthlyCapsules,
-                                            streaks = streaks,
-                                            onSuccess = { file ->
-                                                pdfFile = file
-                                                showPDFDialog = true
-                                                isExportingPDF = false
-                                            },
-                                            onError = { error ->
-                                                isExportingPDF = false
-                                                Toast.makeText(
-                                                    context,
-                                                    "Failed exporting to PDF",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
-                                                Log.d("ERROR PDF", error)
-                                                // Handle error (show toast, etc.)
-                                            }
-                                        )
-                                    }
-                                }, enabled = !isExportingPDF)
-                        )
-                    } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
                     }
 
-                }
-
-                // Monthly Sound Capsules
-                if (monthlyCapsules.isNotEmpty()) {
-                    if (monthlyCapsules.size != streaks.size) {
-                        Log.d("FATAL", "MONTHLY CAPSULED AND STREAKS DOES NOT HAVE THE SAME SIZE")
-                    }
-                    for (i in 0 until monthlyCapsules.size) {
-                        MonthlySoundCapsuleSection(
-                            capsule = monthlyCapsules[i],
-                            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
-                            onClickArtist = { month, year ->
-                                navController.navigate(Screen.Profile.TopArtist.createRoute(month, year))
-                            },
-                            onClickSong = { month, year ->
-                                navController.navigate(Screen.Profile.TopSong.createRoute(month, year))
-                            },
-                            onClickTimeListened = {
-                                navController.navigate(Screen.Profile.TimeListened.route)
-                            },
-                            onShare = { month, year ->
-                                navController.navigate(Screen.Profile.ShareMonthlyCapsule.createRoute(month, year))
+                    // Monthly Sound Capsules
+                    if (monthlyCapsules.isNotEmpty()) {
+                        if (monthlyCapsules.size != streaks.size) {
+                            Log.d("FATAL", "MONTHLY CAPSULED AND STREAKS DOES NOT HAVE THE SAME SIZE")
+                        }
+                        for (i in 0 until monthlyCapsules.size) {
+                            MonthlySoundCapsuleSection(
+                                capsule = monthlyCapsules[i],
+                                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
+                                onClickArtist = { month, year ->
+                                    navController.navigate(Screen.Profile.TopArtist.createRoute(month, year))
+                                },
+                                onClickSong = { month, year ->
+                                    navController.navigate(Screen.Profile.TopSong.createRoute(month, year))
+                                },
+                                onClickTimeListened = {
+                                    navController.navigate(Screen.Profile.TimeListened.route)
+                                },
+                                onShare = { month, year ->
+                                    navController.navigate(Screen.Profile.ShareMonthlyCapsule.createRoute(month, year))
 //                                selectedCapsule = monthlyCapsules[i]
 ////                                shareType = ShareType.MONTHLY_CAPSULE
 //                                showShareScreen = true
 
-                            }
-                        )
-                        if (streaks[i] != null) {
-                            ListeningStreakItem(
-                                streak = streaks[i]!!,
-                                onShare = {
+                                }
+                            )
+                            if (streaks[i] != null) {
+                                ListeningStreakItem(
+                                    streak = streaks[i]!!,
+                                    onShare = {
 //                                    selectedStreak = streaks[i]
 ////                                    shareType = ShareType.LISTENING_STREAK
 //                                    showShareScreen = true
-                                },
-                                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
-                            )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
+                                )
+                            }
                         }
                     }
-                }
 
-                // Listening Streaks
+                    // Listening Streaks
 //                if (streaks.isNotEmpty()) {
 //                    streaks.take(3).forEach { streak ->
 //                        ListeningStreakItem(
@@ -567,7 +577,8 @@ fun ProfileScreen(
 //                }
 
 //                Spacer(modifier = Modifier.height(80.dp))
-                Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         } else {
             NoInternetScreen {
