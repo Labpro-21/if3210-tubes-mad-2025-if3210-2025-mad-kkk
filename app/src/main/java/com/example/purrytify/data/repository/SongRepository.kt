@@ -45,6 +45,10 @@ class SongRepository(
         return songDao.searchAllLikedSongs(query, userId)
     }
 
+    fun searchDownloadedSongs(query: String, userId: Int): Flow<List<SongEntity>> {
+        return songDao.searchAllDownloadedSongs(query, userId)
+    }
+
     fun getSongById(songId: Long): Flow<SongEntity?> {
         return songDao.getSong(songId)
     }

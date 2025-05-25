@@ -63,6 +63,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
             val flow = when (filterType) {
                 FilterType.ALL -> repository.searchAllSongs(query, userId)
                 FilterType.LIKED -> repository.searchLikedSongs(query, userId)
+                FilterType.DOWNLOADED -> repository.searchDownloadedSongs(query, userId)
             }
             flow.map { entities -> entities.map { it.toSong() } }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -269,7 +270,7 @@ class LibraryViewModel(application: Application, private val globalViewModel: Gl
     }
 
     enum class FilterType {
-        ALL, LIKED
+        ALL, LIKED, DOWNLOADED
     }
 
     class LibraryViewModelFactory(

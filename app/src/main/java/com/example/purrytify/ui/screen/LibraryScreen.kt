@@ -271,6 +271,27 @@ fun LibraryScreen(
                             fontSize = 16.sp
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (filterType == LibraryViewModel.FilterType.DOWNLOADED) accentGreen else Color.DarkGray)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clickable {
+                                viewModel.setFilter(
+                                    LibraryViewModel.FilterType.DOWNLOADED
+                                )
+                            }
+                    ) {
+                        Text(
+                            text = "Downloaded",
+                            color = if (filterType == LibraryViewModel.FilterType.DOWNLOADED) Color.Black else Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
 

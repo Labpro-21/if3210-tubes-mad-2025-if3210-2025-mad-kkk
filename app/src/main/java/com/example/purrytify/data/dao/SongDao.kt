@@ -18,6 +18,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE userId = :userId AND isLiked = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY id DESC")
     fun searchAllLikedSongs(query: String, userId: Int): Flow<List<SongEntity>>
 
+    @Query("SELECT * FROM songs WHERE userId = :userId AND isDownloaded = 1 AND (title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%') ORDER BY id DESC")
+    fun searchAllDownloadedSongs(query: String, userId: Int): Flow<List<SongEntity>>
+
     @Query("SELECT * FROM songs WHERE userId = :userId AND lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT 12")
     fun getRecentlyPlayedSongs(userId: Int): Flow<List<SongEntity>>
 
