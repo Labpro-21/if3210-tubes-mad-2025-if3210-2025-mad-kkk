@@ -62,24 +62,20 @@ fun ShareMonthlyCapsuleScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     val viewModel: ShareMonthlyCapsuleViewModel = viewModel(
         factory = ShareMonthlyCapsuleViewModel.ShareMonthlyCapsuleViewModelFactory(
             context.applicationContext as Application,
-            globalViewModel)
+            globalViewModel,
+            month,
+            year
+        )
     )
 
     // Get the full capsule data from your ViewModel
     val topSongsState by viewModel.topSongs.collectAsState()
     val topArtistsState by viewModel.topArtists.collectAsState()
-
-    LaunchedEffect(capturedBitmap) {
-        capturedBitmap?.let { bitmap ->
-            shareImage(context, bitmap, "Check out my ${getMonthName(month)} $year Sound Capsule!")
-//            navController.popBackStack()
-        }
-    }
+    val totalListening by viewModel.totalListening.collectAsState()
 
     Column(
         modifier = Modifier
@@ -93,7 +89,6 @@ fun ShareMonthlyCapsuleScreen(
                 .fillMaxWidth()
                 .height(56.dp)
                 .padding(top = 32.dp)
-//            .background(Color.Black)
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(
@@ -112,48 +107,47 @@ fun ShareMonthlyCapsuleScreen(
             )
         }
 
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(24.dp)) {
-//                Icon(
-//                    painter = painterResource(id = R.drawable.ic_close),
-//                    contentDescription = "Close",
-//                    tint = Color.White
-//                )
-//            }
-//
-//            Text(
-//                text = "Share",
-//                color = Color.White,
-//                fontWeight = FontWeight.Medium,
-//                fontSize = 18.sp
-//            )
-//
-//            Spacer(modifier = Modifier.width(48.dp))
-//        }
-
-        // Shareable content - Fixed positioning with more height
-        Row(
+        // Shareable content
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-//                .fillMaxHeight(0.8f) // Take up more of the screen height
+                .weight(1f)
                 .padding(16.dp)
-                .padding(bottom = 32.dp)
         ) {
             MonthlyCapsuleShareContent(
                 month = month,
                 year = year,
                 topArtists = topArtistsState,
                 topSongs = topSongsState,
-                onBitmapCaptured = { bitmap ->
-                    capturedBitmap = bitmap
-                }
+                totalListening = totalListening,
+                modifier = Modifier.weight(1f)
             )
+
+            // Share button
+            Button(
+                onClick = {
+                    // Create and share bitmap programmatically
+                    createAndShareBitmap(
+                        context = context,
+                        month = month,
+                        year = year,
+                        topArtists = topArtistsState,
+                        topSongs = topSongsState
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                Text(
+                    text = "Share My Sound Capsule",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -164,17 +158,14 @@ fun MonthlyCapsuleShareContent(
     year: Int,
     topArtists: List<ArtistWithPlayCount>,
     topSongs: List<SongWithPlayCount>,
-    onBitmapCaptured: (Bitmap) -> Unit
+    totalListening: Int,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
-//            .aspectRatio(0.6f) // Changed from 0.75f to make it taller
+        modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .capturable(onBitmapCaptured)
     ) {
-        Column (
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Background with top song image
             LoadImage(
                 imagePath = (if (topSongs.isEmpty()) {
@@ -189,22 +180,6 @@ fun MonthlyCapsuleShareContent(
                     .height(150.dp)
             )
 
-            // Dark overlay
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(
-//                    Brush.verticalGradient(
-//                        colors = listOf(
-//                            Color.Black.copy(alpha = 0.3f),
-//                            Color.Black.copy(alpha = 0.8f)
-//                        ),
-//                        startY = 0f,
-//                        endY = Float.POSITIVE_INFINITY
-//                    )
-//                )
-//        )
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -212,7 +187,7 @@ fun MonthlyCapsuleShareContent(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top section with logo and date
-                Column (modifier = Modifier
+                Column(modifier = Modifier
                     .padding(horizontal = 24.dp)
                     .padding(top = 24.dp)) {
                     Row(
@@ -249,8 +224,6 @@ fun MonthlyCapsuleShareContent(
                         lineHeight = 34.sp
                     )
                 }
-
-//                Spacer(modifier = Modifier.height(16.dp))
 
                 // Middle section with top artists and songs
                 Row(
@@ -309,7 +282,7 @@ fun MonthlyCapsuleShareContent(
                         fontSize = 16.sp
                     )
                     Text(
-                        text = "862 minutes", // You can pass this as parameter or calculate from data
+                        text = "$totalListening minutes",
                         color = Color(0xFF4CAF50),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 32.sp
@@ -320,39 +293,103 @@ fun MonthlyCapsuleShareContent(
     }
 }
 
-// Fixed bitmap capture extension
-@Composable
-fun Modifier.capturable(onBitmapCaptured: (Bitmap) -> Unit): Modifier {
-    val context = LocalContext.current
-
-    return this.drawWithContent {
-        drawContent()
-
-        // Create bitmap after drawing
-        val bitmap = Bitmap.createBitmap(
-            size.width.toInt(),
-            size.height.toInt(),
-            Bitmap.Config.ARGB_8888
-        )
+// Create bitmap programmatically without relying on Compose drawing
+fun createAndShareBitmap(
+    context: Context,
+    month: Int,
+    year: Int,
+    topArtists: List<ArtistWithPlayCount>,
+    topSongs: List<SongWithPlayCount>
+) {
+    try {
+        // Create bitmap with specific dimensions
+        val width = 800
+        val height = 1200
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(bitmap)
 
-        // Draw the content onto the bitmap canvas
-        val nativeCanvas = drawContext.canvas.nativeCanvas
-        val checkPoint = nativeCanvas.save()
-
-        try {
-            drawIntoCanvas { canvas ->
-                draw(this, layoutDirection, canvas, size) {
-                    this@drawWithContent.drawContent()
-                }
-            }
-            onBitmapCaptured(bitmap)
-        } finally {
-            nativeCanvas.restoreToCount(checkPoint)
+        // Set up paint objects
+        val backgroundPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#212121")
         }
+
+        val whitePaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 48f
+            isAntiAlias = true
+        }
+
+        val titlePaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 64f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val subtitlePaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 40f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val textPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 32f
+            isAntiAlias = true
+        }
+
+        val greenPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#4CAF50")
+            textSize = 72f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        // Draw background
+        canvas.drawRect(0f, 150f, width.toFloat(), height.toFloat(), backgroundPaint)
+
+        // Draw header section
+        var yPos = 200f
+        canvas.drawText("Purritify", 60f, yPos, whitePaint)
+        canvas.drawText(getCurrentFormattedDate(), width - 250f, yPos, textPaint)
+
+        yPos += 100f
+        canvas.drawText("My ${getMonthName(month)} Sound Capsule", 60f, yPos, titlePaint)
+
+        // Draw top artists section
+        yPos += 150f
+        canvas.drawText("Top artists", 60f, yPos, subtitlePaint)
+        yPos += 60f
+
+        topArtists.take(5).forEachIndexed { index, artist ->
+            canvas.drawText("${index + 1} ${artist.artist}", 60f, yPos, textPaint)
+            yPos += 50f
+        }
+
+        // Draw top songs section
+        yPos = 350f + 150f + 60f // Reset to align with artists
+        canvas.drawText("Top songs", width/2f + 40f, yPos, subtitlePaint)
+        yPos += 60f
+
+        topSongs.take(5).forEachIndexed { index, song ->
+            canvas.drawText("${index + 1} ${song.title}", width/2f + 40f, yPos, textPaint)
+            yPos += 50f
+        }
+
+        // Draw time listened section
+        yPos = height - 200f
+        canvas.drawText("Time listened", 60f, yPos, subtitlePaint)
+        yPos += 80f
+        canvas.drawText("862 minutes", 60f, yPos, greenPaint)
+
+        // Share the bitmap
+        shareImage(context, bitmap, "Check out my ${getMonthName(month)} $year Sound Capsule!")
+
+    } catch (e: Exception) {
+        Log.e("CreateBitmap", "Error creating bitmap", e)
     }
 }
-
 // Helper function to get month name
 private fun getMonthName(month: Int): String {
     return Month.of(month).name.lowercase().replaceFirstChar { it.uppercase() }

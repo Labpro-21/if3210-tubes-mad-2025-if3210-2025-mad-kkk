@@ -16,15 +16,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.util.Calendar
 
 class ShareMonthlyCapsuleViewModel(
     application: Application,
-    private val globalViewModel: GlobalViewModel
+    private val globalViewModel: GlobalViewModel,
+    private val month: Int,
+    private val year: Int
 ) : AndroidViewModel(application) {
 
     private val _topArtists = MutableStateFlow<List<ArtistWithPlayCount>>(emptyList())
@@ -32,6 +36,9 @@ class ShareMonthlyCapsuleViewModel(
 
     private val _topSongs = MutableStateFlow<List<SongWithPlayCount>>(emptyList())
     val topSongs: StateFlow<List<SongWithPlayCount>> = _topSongs
+
+    private val _totalListening = MutableStateFlow<Int>(0)
+    val totalListening: StateFlow<Int> = _totalListening
 
     private val songLogsRepository: SongLogsRepository
 
@@ -41,6 +48,7 @@ class ShareMonthlyCapsuleViewModel(
 
         loadTopArtistsForCurrentMonth()
         loadTopSongsForCurrentMonth()
+        loadTotalMinutesForMonth()
     }
 
     private fun loadTopArtistsForCurrentMonth() {
@@ -50,7 +58,7 @@ class ShareMonthlyCapsuleViewModel(
                 ?: throw IllegalStateException("User ID is null")
 
             // Calculate start and end of current month
-            val currentMonth = YearMonth.now()
+            val currentMonth = YearMonth.of(year, month)
             val startOfMonth = currentMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfMonth = currentMonth.atEndOfMonth().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
@@ -74,6 +82,41 @@ class ShareMonthlyCapsuleViewModel(
             _topArtists.value = artistsList
         }
     }
+
+    private fun loadTotalMinutesForMonth() {
+        viewModelScope.launch {
+
+            val userId = globalViewModel.userId.value
+                ?: throw IllegalStateException("User ID is null")
+
+            val calendar = Calendar.getInstance()
+
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.MONTH, month - 1)
+
+            calendar.set(Calendar.DAY_OF_MONTH, 1)
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+
+            val startOfMonth = calendar.timeInMillis
+
+            // Set to last day of month
+            calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+            calendar.set(Calendar.HOUR_OF_DAY, 23)
+            calendar.set(Calendar.MINUTE, 59)
+            calendar.set(Calendar.SECOND, 59)
+            calendar.set(Calendar.MILLISECOND, 999)
+
+            val endOfMonth = calendar.timeInMillis
+
+            val totalListeningTime = songLogsRepository.getTotalListeningTimeForMonth(userId, startOfMonth, endOfMonth).firstOrNull() ?: 0
+
+            _totalListening.value = totalListeningTime.div(60)
+        }
+    }
+
 
     private fun loadTopSongsForCurrentMonth() {
         viewModelScope.launch {
@@ -117,12 +160,14 @@ class ShareMonthlyCapsuleViewModel(
 
     class ShareMonthlyCapsuleViewModelFactory(
         private val application: Application,
-        private val globalViewModel: GlobalViewModel
+        private val globalViewModel: GlobalViewModel,
+        private val month: Int,
+        private val year: Int
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ShareMonthlyCapsuleViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return ShareMonthlyCapsuleViewModel(application, globalViewModel) as T
+                return ShareMonthlyCapsuleViewModel(application, globalViewModel, month, year) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
