@@ -507,6 +507,7 @@ fun generateMonthlyBarData(monthData: List<MonthDataValue>, title: String): Mont
     }
 
     if (intervals.last() < maxValue) {
+        intervals.removeLast()
         intervals.add(maxValue)
         val suffix = when {
             (3600 <= cur) -> 'h'
