@@ -235,6 +235,7 @@ fun ProfileScreen(
 
                 // Update location
                 viewModel.updateLocation(countryCode)
+                globalViewModel.setUserLocation(countryCode)
                 Toast.makeText(
                     context,
                     "Location updated to $countryCode",
