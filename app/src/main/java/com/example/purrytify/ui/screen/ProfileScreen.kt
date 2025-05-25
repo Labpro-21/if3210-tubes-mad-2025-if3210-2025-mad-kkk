@@ -242,6 +242,25 @@ fun ProfileScreen(
                 ).show()
 
                 Log.d("OSM_LOCATION", "Selected: $latitude, $longitude -> $countryCode")
+
+                scope.launch {
+                    if (isConnected) {
+                        viewModel.loadUserProfile(
+                            onLogout = {
+                                viewModel.logout(onComplete = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                    globalViewModel.clearUserId()
+                                    globalViewModel.logout()
+                                })
+                            },
+                            onSuccess = {
+
+                            }
+                        )
+                    }
+                }
             }
         } else if (result.resultCode == Activity.RESULT_CANCELED) {
             Toast.makeText(context, "Location selection cancelled", Toast.LENGTH_SHORT).show()
@@ -1371,7 +1390,7 @@ fun LocationSelectionBottomSheet(
                     modifier = Modifier
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF2196F3)),
+                        .background(Color(0xFFFF9800)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
