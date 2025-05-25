@@ -16,4 +16,11 @@ interface EditProfile {
         @Header("Authorization") token: String,
         @Part profilePhoto : MultipartBody.Part
     )
+
+    @Multipart
+    @PATCH("api/profile")
+    suspend fun editProfileLocation(
+        @Header("Authorization") token: String,
+        @Part location : MultipartBody.Part
+    )
 }

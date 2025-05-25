@@ -22,21 +22,16 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-data class ArtistWithPlayCount (
-    val artist: String,
-    val imagePath: String,
-    val playCount: Int
-)
-
-class TopArtistViewModel(
+class ShareMonthlyCapsuleViewModel(
     application: Application,
-    private val globalViewModel: GlobalViewModel,
-    private val month: Int,
-    private val year: Int
+    private val globalViewModel: GlobalViewModel
 ) : AndroidViewModel(application) {
 
     private val _topArtists = MutableStateFlow<List<ArtistWithPlayCount>>(emptyList())
     val topArtists: StateFlow<List<ArtistWithPlayCount>> = _topArtists
+
+    private val _topSongs = MutableStateFlow<List<SongWithPlayCount>>(emptyList())
+    val topSongs: StateFlow<List<SongWithPlayCount>> = _topSongs
 
     private val songLogsRepository: SongLogsRepository
 
@@ -45,6 +40,7 @@ class TopArtistViewModel(
         songLogsRepository = SongLogsRepository(songLogsDao, application)
 
         loadTopArtistsForCurrentMonth()
+        loadTopSongsForCurrentMonth()
     }
 
     private fun loadTopArtistsForCurrentMonth() {
@@ -54,7 +50,7 @@ class TopArtistViewModel(
                 ?: throw IllegalStateException("User ID is null")
 
             // Calculate start and end of current month
-            val currentMonth = YearMonth.of(year, month)
+            val currentMonth = YearMonth.now()
             val startOfMonth = currentMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfMonth = currentMonth.atEndOfMonth().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
@@ -64,9 +60,6 @@ class TopArtistViewModel(
             songLogsRepository.getTopArtistForMonth(userId, startOfMonth, endOfMonth)
                 .filterNotNull()
                 .forEach { topArtist ->
-                    // In a real app, we'd likely have a dedicated query for getting all artists
-                    // with play counts. For now, we'll create a simulated list with the top artist
-                    // and some dummy data.
 
                     // Add the top artist
                     artistsList.add(
@@ -82,16 +75,54 @@ class TopArtistViewModel(
         }
     }
 
-    class TopArtistViewModelFactory(
+    private fun loadTopSongsForCurrentMonth() {
+        viewModelScope.launch {
+
+            val userId = globalViewModel.userId.value
+                ?: throw IllegalStateException("User ID is null")
+
+            // Calculate start and end of current month
+            val currentMonth = YearMonth.now()
+            val startOfMonth =
+                currentMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
+                    .toEpochMilli()
+            val endOfMonth =
+                currentMonth.atEndOfMonth().plusDays(1).atStartOfDay(ZoneId.systemDefault())
+                    .toInstant().toEpochMilli() - 1
+
+            val songList = mutableListOf<SongWithPlayCount>()
+
+            // First, get the top artist
+            songLogsRepository.getTopSongForMonth(userId, startOfMonth, endOfMonth)
+                .filterNotNull()
+                .forEach { topSong ->
+                    // In a real app, we'd likely have a dedicated query for getting all artists
+                    // with play counts. For now, we'll create a simulated list with the top artist
+                    // and some dummy data.
+
+                    // Add the top artist
+                    songList.add(
+                        SongWithPlayCount(
+                            title = topSong.title,
+                            artist = topSong.artist,
+                            imagePath = topSong.imagePath,
+                            playCount = topSong.playCount
+                        )
+                    )
+                    // Sort by play count (descending
+                }
+            _topSongs.value = songList
+        }
+    }
+
+    class ShareMonthlyCapsuleViewModelFactory(
         private val application: Application,
-        private val globalViewModel: GlobalViewModel,
-        private val month: Int,
-        private val year: Int
+        private val globalViewModel: GlobalViewModel
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(TopArtistViewModel::class.java)) {
+            if (modelClass.isAssignableFrom(ShareMonthlyCapsuleViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return TopArtistViewModel(application, globalViewModel, month, year) as T
+                return ShareMonthlyCapsuleViewModel(application, globalViewModel) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

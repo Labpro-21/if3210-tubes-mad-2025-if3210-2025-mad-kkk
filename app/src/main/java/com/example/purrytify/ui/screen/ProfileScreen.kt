@@ -79,6 +79,7 @@ import java.util.Locale
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Environment
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -127,6 +128,10 @@ fun ProfileScreen(
     var isExportingPDF by remember { mutableStateOf(false) }
     var showPDFDialog by remember { mutableStateOf(false) }
     var pdfFile by remember { mutableStateOf<File?>(null) }
+
+//    var showShareScreen by remember { mutableStateOf(false) }
+//    var selectedCapsule by remember { mutableStateOf<MonthlySoundCapsule?>(null) }
+//    var selectedStreak by remember { mutableStateOf<ListeningStreak?>(null) }
 
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
@@ -194,6 +199,11 @@ fun ProfileScreen(
                     location?.let {
                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                         viewModel.updateLocation(countryCode)
+                        Toast.makeText(
+                            context,
+                            "Location updated to $countryCode",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -468,11 +478,23 @@ fun ProfileScreen(
                             },
                             onClickTimeListened = {
                                 navController.navigate(Screen.Profile.TimeListened.route)
+                            },
+                            onShare = { month, year ->
+                                navController.navigate(Screen.Profile.ShareMonthlyCapsule.createRoute(month, year))
+//                                selectedCapsule = monthlyCapsules[i]
+////                                shareType = ShareType.MONTHLY_CAPSULE
+//                                showShareScreen = true
+
                             }
                         )
                         if (streaks[i] != null) {
                             ListeningStreakItem(
                                 streak = streaks[i]!!,
+                                onShare = {
+//                                    selectedStreak = streaks[i]
+////                                    shareType = ShareType.LISTENING_STREAK
+//                                    showShareScreen = true
+                                },
                                 modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
                             )
                         }
@@ -591,6 +613,11 @@ fun ProfileScreen(
                                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                                         Log.d("LOCATION_CC", countryCode)
                                         viewModel.updateLocation(countryCode)
+                                        Toast.makeText(
+                                            context,
+                                            "Location updated to $countryCode",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                     if (location == null ) {
                                         Log.d("LOCATION_CC", "IS NULL")
@@ -820,7 +847,8 @@ fun MonthlySoundCapsuleSection(
     modifier: Modifier = Modifier,
     onClickArtist: (Int, Int) -> Unit,
     onClickSong: (Int, Int) -> Unit,
-    onClickTimeListened: () -> Unit
+    onClickTimeListened: () -> Unit,
+    onShare: (Int, Int) -> Unit
 ) {
     val month = Month.valueOf(capsule.month.split(" ")[0].uppercase(Locale.getDefault())).value
     val year = capsule.month.split(" ")[1].toInt()
@@ -850,6 +878,7 @@ fun MonthlySoundCapsuleSection(
                 contentDescription = "Share",
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(18.dp)
+                    .clickable(onClick = { onShare(month, year) })
             )
         }
 
@@ -1010,7 +1039,8 @@ fun MonthlySoundCapsuleSection(
 @Composable
 fun ListeningStreakItem(
     streak: ListeningStreak,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShare: () -> Unit
 ) {
     val startDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.startDate))
 //    val endDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(streak.endDate))
@@ -1080,6 +1110,7 @@ fun ListeningStreakItem(
                 contentDescription = "Share",
                 tint = Color.Gray,
                 modifier = Modifier.size(18.dp)
+                    .clickable(onClick = { onShare() })
             )
         }
     }

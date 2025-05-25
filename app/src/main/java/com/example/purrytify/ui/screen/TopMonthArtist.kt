@@ -79,7 +79,10 @@ fun TopMonthArtistScreen(
     val viewModel: TopArtistViewModel = viewModel(
         factory = TopArtistViewModel.TopArtistViewModelFactory(
             context.applicationContext as Application,
-            globalViewModel)
+            globalViewModel,
+            month,
+            year
+        )
     )
     val scope = rememberCoroutineScope()
 

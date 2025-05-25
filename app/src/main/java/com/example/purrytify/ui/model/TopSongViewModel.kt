@@ -31,7 +31,9 @@ data class SongWithPlayCount (
 
 class TopSongViewModel(
     application: Application,
-    private val globalViewModel: GlobalViewModel
+    private val globalViewModel: GlobalViewModel,
+    private val month: Int,
+    private val year: Int
 ) : AndroidViewModel(application) {
 
     private val _topSongs = MutableStateFlow<List<SongWithPlayCount>>(emptyList())
@@ -53,7 +55,7 @@ class TopSongViewModel(
                 ?: throw IllegalStateException("User ID is null")
 
             // Calculate start and end of current month
-            val currentMonth = YearMonth.now()
+            val currentMonth = YearMonth.of(year, month)
             val startOfMonth = currentMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfMonth = currentMonth.atEndOfMonth().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
@@ -84,12 +86,14 @@ class TopSongViewModel(
 
     class TopSongViewModelFactory(
         private val application: Application,
-        private val globalViewModel: GlobalViewModel
+        private val globalViewModel: GlobalViewModel,
+        private val month: Int,
+        private val year: Int,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(TopSongViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return TopSongViewModel(application, globalViewModel) as T
+                return TopSongViewModel(application, globalViewModel, month, year) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
