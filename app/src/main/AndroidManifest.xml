@@ -68,6 +68,11 @@
                 <data android:scheme="purrytify" android:host="song" android:pathPattern="/.*"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name=".OSMLocationPickerActivity"
+            android:exported="false"
+            android:label="Select Location"
+            android:theme="@style/Theme.Purrytify.Splash" />
         <service
             android:name=".service.MediaPlaybackService"
             android:enabled="true"

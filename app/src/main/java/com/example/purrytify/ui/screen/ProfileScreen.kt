@@ -77,6 +77,7 @@ import java.time.Month
 import java.util.Date
 import java.util.Locale
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -90,6 +91,7 @@ import com.example.purrytify.service.Profile
 import com.example.purrytify.ui.model.SongStats
 import com.example.purrytify.ui.util.DirectPDFGenerator
 import androidx.core.net.toUri
+import com.example.purrytify.OSMLocationPickerActivity
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -212,6 +214,37 @@ fun ProfileScreen(
             showLocationPermissionDialog = true
         }
         showLocationSheet = false
+    }
+
+    val osmLocationPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { data ->
+                val latitude = data.getDoubleExtra("latitude", 0.0)
+                val longitude = data.getDoubleExtra("longitude", 0.0)
+                val address = data.getStringExtra("address") ?: "Selected Location"
+
+                // Convert coordinates to country code using your existing method
+                val location = android.location.Location("").apply {
+                    this.latitude = latitude
+                    this.longitude = longitude
+                }
+                val countryCode = viewModel.getCountryCodeFromLocation(location, context)
+
+                // Update location
+                viewModel.updateLocation(countryCode)
+                Toast.makeText(
+                    context,
+                    "Location updated to $countryCode",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                Log.d("OSM_LOCATION", "Selected: $latitude, $longitude -> $countryCode")
+            }
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(context, "Location selection cancelled", Toast.LENGTH_SHORT).show()
+        }
     }
 
     LogoutListener {
@@ -679,6 +712,12 @@ fun ProfileScreen(
                         ).show()
                     }
 
+                    showLocationSheet = false
+                },
+                onOSMClick = {
+                    // Launch OSMDroid location picker
+                    val intent = Intent(context, OSMLocationPickerActivity::class.java)
+                    osmLocationPickerLauncher.launch(intent)
                     showLocationSheet = false
                 },
                 onDismiss = { showLocationSheet = false }
@@ -1224,6 +1263,7 @@ fun ProfilePictureBottomSheet(
 fun LocationSelectionBottomSheet(
     onAutomaticClick: () -> Unit,
     onManualClick: () -> Unit,
+    onOSMClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Column(
@@ -1314,6 +1354,33 @@ fun LocationSelectionBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Manual",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+
+            // OSMDroid option
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onOSMClick() }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2196F3)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_osm_2),
+                        contentDescription = "OSMDroid",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "OSMDroid",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White
                 )
