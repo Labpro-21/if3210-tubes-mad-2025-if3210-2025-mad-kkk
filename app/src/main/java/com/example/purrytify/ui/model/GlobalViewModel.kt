@@ -90,6 +90,10 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
 
     private var lastTimePlayed: Long
 
+    private var memoryTimePlayed: Long
+
+    private var haveListened = false
+
     // download loading
     private val _isTopGlobalDownloading = MutableStateFlow(false)
     val isTopGlobalDownloading: StateFlow<Boolean> = _isTopGlobalDownloading
@@ -101,6 +105,7 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         val songDao = SongDatabase.getDatabase(application).songDao()
         val songLogsDao = SongDatabase.getDatabase(application).songLogsDao()
         lastTimePlayed = System.currentTimeMillis()
+        memoryTimePlayed = 0
         repository = SongRepository(songDao, application)
         songLogsRepository = SongLogsRepository(songLogsDao, application)
         networkMonitor.register()
@@ -232,16 +237,20 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
                 mediaController?.apply {
                     viewModelScope.launch {
                         if (userId.value !== null && _currentSong.value !== null) {
-                            var temp_dur = System.currentTimeMillis() - lastTimePlayed
+                            var temp_dur = System.currentTimeMillis() - lastTimePlayed + memoryTimePlayed
                             temp_dur = Math.max(temp_dur, 0)
                             Log.d("MEDIA TRANSITION", "INSERTED " + _currentSong.value!!.title + " " + temp_dur.toString())
-                            songLogsRepository.insertLog(
-                                _currentSong.value!!.id,
-                                userId.value!!,
-                                temp_dur.div(1000).toInt(),
-                                System.currentTimeMillis()
-                            )
+                            if (haveListened) {
+                                songLogsRepository.insertLog(
+                                    _currentSong.value!!.id,
+                                    userId.value!!,
+                                    temp_dur.div(1000).toInt(),
+                                    System.currentTimeMillis()
+                                )
+                            }
                             lastTimePlayed = System.currentTimeMillis()
+                            memoryTimePlayed = 0
+                            haveListened = true
                         }
                         _currentIdx.value = currentMediaItemIndex
                         if (_currentIdx.value < _queue.value.size) {
@@ -424,9 +433,11 @@ class GlobalViewModel(application: Application) : AndroidViewModel(application) 
         if (isPlaying.value) {
             mediaController?.pause()
             _isPlaying.value = false
+            memoryTimePlayed += System.currentTimeMillis() - lastTimePlayed
         } else {
             mediaController?.play()
             _isPlaying.value = true
+            lastTimePlayed = System.currentTimeMillis()
         }
     }
 

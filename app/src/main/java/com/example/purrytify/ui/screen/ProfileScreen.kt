@@ -1041,7 +1041,9 @@ fun MonthlySoundCapsuleSection(
 //                            style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF4A90E2),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
