@@ -199,7 +199,7 @@ fun HomeScreen(
                                 contentScale = ContentScale.Crop
                             )
                             Text(
-                                text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry]}",
+                                text = "Your daily update of most played tracks in ${CountryConstant.CountryName[userCountry] ?: "Indonesia"}",
                                 color = Color.Gray,
                                 fontSize = 12.sp,
                                 maxLines = 2,

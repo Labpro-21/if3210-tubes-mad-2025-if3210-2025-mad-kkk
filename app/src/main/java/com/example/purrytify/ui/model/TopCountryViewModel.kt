@@ -18,6 +18,7 @@ import com.example.purrytify.data.model.Song
 import com.example.purrytify.data.repository.SongRepository
 import com.example.purrytify.service.ApiClient
 import com.example.purrytify.service.OnlineSongResponse
+import com.example.purrytify.ui.util.CountryConstant
 import com.example.purrytify.ui.util.extractColorsFromImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,7 +54,11 @@ class TopCountryViewModel(application: Application, private val globalViewModel:
             try {
                 val userId = globalViewModel.userId.value
                     ?: throw IllegalStateException("User ID is null")
-                val userLocation = globalViewModel.userLocation.value
+                var userLocation = globalViewModel.userLocation.value
+
+                if (!CountryConstant.CountrySet.contains(userLocation)) {
+                    userLocation = "ID"
+                }
 
                 val context = getApplication<Application>().applicationContext
 
