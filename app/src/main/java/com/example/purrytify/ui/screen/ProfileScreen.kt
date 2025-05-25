@@ -199,6 +199,7 @@ fun ProfileScreen(
                     location?.let {
                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                         viewModel.updateLocation(countryCode)
+                        globalViewModel.setUserLocation(countryCode)
                         Toast.makeText(
                             context,
                             "Location updated to $countryCode",
@@ -269,6 +270,7 @@ fun ProfileScreen(
                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                         Log.d("LOCATION_CC", countryCode)
                         viewModel.updateLocation(countryCode)
+                        globalViewModel.setUserLocation(countryCode)
                         Toast.makeText(
                             context,
                             "Location updated to $countryCode",
@@ -613,6 +615,7 @@ fun ProfileScreen(
                                         val countryCode = viewModel.getCountryCodeFromLocation(it, context)
                                         Log.d("LOCATION_CC", countryCode)
                                         viewModel.updateLocation(countryCode)
+                                        globalViewModel.setUserLocation(countryCode)
                                         Toast.makeText(
                                             context,
                                             "Location updated to $countryCode",
