@@ -131,7 +131,8 @@ fun ShareMonthlyCapsuleScreen(
                         month = month,
                         year = year,
                         topArtists = topArtistsState,
-                        topSongs = topSongsState
+                        topSongs = topSongsState,
+                        totalListening = totalListening
                     )
                 },
                 modifier = Modifier
@@ -299,7 +300,8 @@ fun createAndShareBitmap(
     month: Int,
     year: Int,
     topArtists: List<ArtistWithPlayCount>,
-    topSongs: List<SongWithPlayCount>
+    topSongs: List<SongWithPlayCount>,
+    totalListening: Int
 ) {
     try {
         // Create bitmap with specific dimensions
@@ -347,10 +349,10 @@ fun createAndShareBitmap(
         }
 
         // Draw background
-        canvas.drawRect(0f, 150f, width.toFloat(), height.toFloat(), backgroundPaint)
+//        canvas.drawRect(0f, 150f, width.toFloat(), height.toFloat(), backgroundPaint)
 
         // Draw header section
-        var yPos = 200f
+        var yPos = 60f
         canvas.drawText("Purritify", 60f, yPos, whitePaint)
         canvas.drawText(getCurrentFormattedDate(), width - 250f, yPos, textPaint)
 
@@ -381,7 +383,7 @@ fun createAndShareBitmap(
         yPos = height - 200f
         canvas.drawText("Time listened", 60f, yPos, subtitlePaint)
         yPos += 80f
-        canvas.drawText("862 minutes", 60f, yPos, greenPaint)
+        canvas.drawText("$totalListening minutes", 60f, yPos, greenPaint)
 
         // Share the bitmap
         shareImage(context, bitmap, "Check out my ${getMonthName(month)} $year Sound Capsule!")

@@ -208,7 +208,11 @@ class SongLogsRepository(
             }
         }
 
-        return longestStreak
+        if (longestStreak != null && longestStreak.streak_length >= 2) {
+            return longestStreak
+        }
+
+        return null
     }
 
     suspend fun getEarliestLog(): Long {
